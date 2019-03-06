@@ -1,0 +1,3 @@
+[submodule "software/1d-blood-flow"]
+	path = software/1d-blood-flow
+	url = ssh://git@gitlab.computationalscience.nl:1022/insist/1d-blood-flow.git
