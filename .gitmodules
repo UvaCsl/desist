@@ -1,3 +1,9 @@
 [submodule "software/1d-blood-flow"]
 	path = software/1d-blood-flow
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/1d-blood-flow.git
+[submodule "software/virtual_patient_generation"]
+	path = software/virtual_patient_generation
+	url = ssh://git@gitlab.computationalscience.nl:1022/insist/virtual_patient_generation.git
+[submodule "software/thrombectomy_python_rs"]
+	path = software/thrombectomy_python_rs
+	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombectomy_python_rs.git
