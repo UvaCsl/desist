@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="config.xsl"?>
+<insist_variables>
+<root_directory>/home/vikko/in-silico-trial/</root_directory>
+<config_file_location>/home/vikko/in-silico-trial/workflow/config.xml</config_file_location>
+
+<!--Relative to root_directory -->
+<software_directory>/software/</software_directory>
+<patients_directory>/workflow/patients/</patients_directory>
+
+<!--Relative to software_directory -->
+<virtual_patient_generation_dir>/virtual_patient_generation/</virtual_patient_generation_dir>
+
+<!--Relative to virtual_patient_generation_dir -->
+<virtual_patient_xsl>Virtualsubjects_11-10-2018.xlsx</virtual_patient_xsl>
+<virtual_patient_generation_executable>generate_patients.py</virtual_patient_generation_executable>
+
+<!-- Relative to patients_directory -->
+<virtual_patient_prefix>patient</virtual_patient_prefix>
+
+</insist_variables>

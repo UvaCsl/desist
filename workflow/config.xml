@@ -1,4 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <insist>
-<software_directory>../software/</software_directory>
+  <software_directory>/home/vikko/in-silico-trial//software/</software_directory>
+  <generate_patients>/home/vikko/in-silico-trial//software//virtual_patient_generation/generate_patients.py</generate_patients>
+  <generate_patients_flags>-f</generate_patients_flags>
+  <generate_patients_xlsx>/home/vikko/in-silico-trial//software//virtual_patient_generation/Virtualsubjects_11-10-2018.xlsx</generate_patients_xlsx>
+  <generate_patients_prefix>/home/vikko/in-silico-trial//workflow/patients/patient</generate_patients_prefix>
 </insist>
