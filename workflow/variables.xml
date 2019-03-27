@@ -11,11 +11,13 @@
 <!--Relative to software_directory -->
 <virtual_patient_generation_dir>/virtual_patient_generation/</virtual_patient_generation_dir>
 <blood_flow_software_directory>/1d-blood-flow/</blood_flow_software_directory>
+<perfusion_software_directory>/darcy_multi-comp/</perfusion_software_directory>
 
 <!--Relative to virtual_patient_generation_dir -->
 <virtual_patient_xsl>Virtualsubjects_11-10-2018.xlsx</virtual_patient_xsl>
 <virtual_patient_generation_executable>generate_patients.py</virtual_patient_generation_executable>
 <generate_blood_flow_variables>generate_blood_flow_specific_parameter_files.py</generate_blood_flow_variables>
+<generate_perfusion_variables>generate_perfusion_specific_parameter_files.py</generate_perfusion_variables>
 
 <!-- Relative to patients_directory -->
 <virtual_patient_prefix>patient</virtual_patient_prefix>
