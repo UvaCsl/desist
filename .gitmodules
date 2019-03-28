@@ -9,4 +9,4 @@
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombectomy_python_rs.git
 [submodule "software/darcy_multi-comp"]
 	path = software/darcy_multi-comp
-	url = git@bitbucket.org:jozsait/darcy_multi-comp.git
+	url = ssh://git@gitlab.computationalscience.nl:1022/insist/darcy_multi-comp.git
