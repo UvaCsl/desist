@@ -28,6 +28,6 @@
 
 <!-- Relative to blood_flow_software_directory -->
 <bf_executable>Bloodflow_model/Blood Flow Model/bin/Debug/BloodflowModel.exe</bf_executable>
-<bf_run_script>scripts/TavernaBloodFlow.py</bf_run_script>
+<bf_run_script>scripts/BloodflowOnlyClot.py</bf_run_script>
 
 </insist_variables>
