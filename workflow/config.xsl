@@ -42,6 +42,12 @@
        <xsl:value-of select="virtual_patient_generation_dir"/>
        <xsl:value-of select="generate_perfusion_variables"/>
      </generate_perfusion_variables>
+     <generate_cell_death_variables>
+       <xsl:value-of select="root_directory"/>
+       <xsl:value-of select="software_directory"/>
+       <xsl:value-of select="virtual_patient_generation_dir"/>
+       <xsl:value-of select="generate_cell_death_variables"/>
+     </generate_cell_death_variables>
      <blood_flow_directory>
        <xsl:value-of select="root_directory"/>
        <xsl:value-of select="software_directory"/>
@@ -64,6 +70,11 @@
        <xsl:value-of select="software_directory"/>
        <xsl:value-of select="perfusion_software_directory"/>
      </perfusion_directory>
+     <cell_death_directory>
+       <xsl:value-of select="root_directory"/>
+       <xsl:value-of select="software_directory"/>
+       <xsl:value-of select="cell_death_software_directory"/>
+     </cell_death_directory>
    </insist>
   </xsl:template>
 </xsl:stylesheet>
