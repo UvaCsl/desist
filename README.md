@@ -19,6 +19,8 @@ Then dependencies need to be installed, on ubuntu these are (usually)
 apt-get install python3-openpyxl xsltproc python3-lxml
 ```
 
+The 2018 version of fenics needs to be installed
+
 The software modules need to be compiled (software/1d_blood_flow and
 software/darcy_multi-comp) see their READMES.
 
