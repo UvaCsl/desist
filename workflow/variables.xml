@@ -13,6 +13,7 @@
 <blood_flow_software_directory>/1d-blood-flow/</blood_flow_software_directory>
 <perfusion_software_directory>/darcy_multi-comp/</perfusion_software_directory>
 <cell_death_software_directory>/cell_death_model/</cell_death_software_directory>
+<thrombectomy_software_directory>/thrombectomy_python_rs/</thrombectomy_software_directory>
 
 <!--Relative to virtual_patient_generation_dir -->
 <virtual_patient_xsl>Virtualsubjects_11-10-2018.xlsx</virtual_patient_xsl>

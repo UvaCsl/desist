@@ -75,6 +75,11 @@
        <xsl:value-of select="software_directory"/>
        <xsl:value-of select="cell_death_software_directory"/>
      </cell_death_directory>
+     <thrombectomy_directory>
+       <xsl:value-of select="root_directory"/>
+       <xsl:value-of select="software_directory"/>
+       <xsl:value-of select="thrombectomy_software_directory"/>
+     </thrombectomy_directory>
    </insist>
   </xsl:template>
 </xsl:stylesheet>
