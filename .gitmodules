@@ -13,3 +13,6 @@
 [submodule "software/cell_death_model"]
 	path = software/cell_death_model
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/cell_death_model.git
+[submodule "software/thrombo-sis-lysis"]
+	path = software/thrombo-sis-lysis
+	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombo-sis-lysis.git
