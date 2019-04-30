@@ -16,3 +16,6 @@
 [submodule "software/thrombo-sis-lysis"]
 	path = software/thrombo-sis-lysis
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombo-sis-lysis.git
+[submodule "software/place_clot"]
+	path = software/place_clot
+	url = ssh://gitlab.computationalscience.nl:1022/insist/place_clot.git
