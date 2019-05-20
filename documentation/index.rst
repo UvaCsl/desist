@@ -11,9 +11,11 @@ custom trials.
 
 .. toctree::
    :maxdepth: 2
-   :glob:
 
-   *
+   trial
+   example
+   modules
+
 
 * :ref:`genindex`
 * :ref:`modindex`

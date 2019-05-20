@@ -109,7 +109,7 @@ html_static_path = ['_static']
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
     '**': [
-        'localtoc.html',
+        'globaltoc.html',
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
     ]
@@ -175,3 +175,6 @@ texinfo_documents = [
 
 import sys,os
 sys.path.insert(0, os.path.abspath('../software/'))
+sys.path.insert(0, os.path.abspath('../software/place_clot/'))
+sys.path.insert(0, os.path.abspath('../software/place_clot/eventmodule/'))
+autoclass_content = 'both'
