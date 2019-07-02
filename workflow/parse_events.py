@@ -53,4 +53,7 @@ if __name__ == '__main__':
           parsed_events.append(number)
         else:
           new_queued_events.append((name,number,depend))
+      if len(queued_events) == len(new_queued_events):
+        print("error parsing events, unsatisfiable dependency detected")
+        exit(1)
       queued_events = new_queued_events
