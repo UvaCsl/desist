@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 function usage {
   echo "Usage: $0 <variables.xml> <working_folder> <number_of_patients>"
@@ -20,8 +21,7 @@ if [ -e $2 ]; then
 fi
 
 mkdir $2
-cp $1 $2/variables.xml
-cp config.xsl $2/config.xsl
+cp $1 $2/config.xml
 
-sudo docker run -v `realpath $2`:/patients in_silico_trial
 sudo docker run -v `realpath $2`:/patients virtual_patient_generation $3
+sudo docker run -v `realpath $2`:/patients in_silico_trial
