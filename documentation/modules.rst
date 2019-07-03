@@ -17,6 +17,8 @@ eventmodule\.EventHandler module
 
 .. automethod:: eventmodule.EventHandler.handle_event
 
+.. automethod:: eventmodule.EventHandler.handle_tests
+
 place\_clot\.API module
 -----------------------
 

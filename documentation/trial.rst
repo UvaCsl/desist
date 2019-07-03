@@ -12,16 +12,17 @@ To get started clone the git repository and all the submodules:
   cd in-silico-trial
   git submodule update --init --recursive
 
-The next step is creating the docker containers for the various software
-packages:
+
+We have included some scripts to automatically construct and run the workflow,
+the only requirement is having docker installed!
 
 ::
   
-  #Do this for each software module
-  cd software/place_clot
-  docker build .
+  #Build all available modules
+  ./scripts/create_containers.sh
 
-.. todo::
-  Make a docker container for the whole trial as well so that we can finish
-  writing this documentation
-   
+
+::
+
+  #Run the pipeline
+  ./scripts/run_in_silico_trial.sh scripts/variables.xml trial 1
