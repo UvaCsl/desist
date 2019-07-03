@@ -29,6 +29,7 @@ if __name__ == '__main__':
     queued_events = []
     parsed_events = []
     config = etree.parse(config);
+
     events = config.find("Patient/events")
 
     for event in events:

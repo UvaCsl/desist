@@ -26,11 +26,18 @@ from glob import glob
 patients = glob(patients_folder + "*/")
 
 for patient in patients:
+  try:
+    patient_file = open(patient+"/config.xml", "rb")
+  except IOError:
+    print("File open error")
+    exit(1)
+  patient_config = etree.parse(patient_file);
+  print("Handling patient: " + patient_config.find("Patient/Name").text)
+  sys.stdout.flush()
+    
   parse_event = subprocess.run(['python3',dir_path + "/parse_events.py",patient +"/config.xml"], stdout=subprocess.PIPE, check=True)
   events = parse_event.stdout.decode().split('\n')[:-1]
   events = [(x.split(' ')[0],x.split(' ')[1]) for x in events] 
-  print("Handling patient: " + patient)
-  sys.stdout.flush()
   
   for event in events:
     if not event[0] in images:
