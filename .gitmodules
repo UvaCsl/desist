@@ -4,8 +4,8 @@
 [submodule "software/virtual_patient_generation"]
 	path = software/virtual_patient_generation
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/virtual_patient_generation.git
-[submodule "software/thrombectomy_python_rs"]
-	path = software/thrombectomy_python_rs
+[submodule "software/thrombectomy"]
+	path = software/thrombectomy
 	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombectomy_python_rs.git
 [submodule "software/darcy_multi-comp"]
 	path = software/darcy_multi-comp
