@@ -1,0 +1,21 @@
+[submodule "software/1d-blood-flow"]
+	path = software/1d-blood-flow
+	url = https://gitlab.computationalscience.nl/insist/1d-blood-flow.git/
+[submodule "software/virtual_patient_generation"]
+	path = software/virtual_patient_generation
+	url = https://gitlab.computationalscience.nl/insist/virtual_patient_generation.git/
+[submodule "software/thrombectomy_python_rs"]
+	path = software/thrombectomy_python_rs
+	url = https://gitlab.computationalscience.nl/insist/thrombectomy_python_rs.git/
+[submodule "software/darcy_multi-comp"]
+	path = software/darcy_multi-comp
+	url = https://gitlab.computationalscience.nl/insist/darcy_multi-comp.git/
+[submodule "software/cell_death_model"]
+	path = software/cell_death_model
+	url = https://gitlab.computationalscience.nl/insist/cell_death_model.git/
+[submodule "software/thrombo-sis-lysis"]
+	path = software/thrombo-sis-lysis
+	url = https://gitlab.computationalscience.nl/insist/thrombo-sis-lysis.git/
+[submodule "software/place_clot"]
+	path = software/place_clot
+	url = https://gitlab.computationalscience.nl/insist/place_clot.git/

@@ -1,3 +1,19 @@
+#!/bin/bash
+
+realpath() {   
+  OURPWD=$PWD;
+  cd "$(dirname "$1")";
+  LINK=$(readlink "$(basename "$1")");
+  while [ "$LINK" ]; do
+    cd "$(dirname "$LINK")";     LINK=$(readlink "$(basename "$1")");
+  done;
+  REALPATH="$PWD/$(basename "$1")";
+  cd "$OURPWD";
+  echo "$REALPATH";
+}
+
+set -e
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd ${DIR}
 docker_image_list="../workflow/docker_image_list"
