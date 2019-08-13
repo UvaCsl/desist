@@ -32,7 +32,7 @@ for patient in patients:
     print("File open error")
     exit(1)
   patient_config = etree.parse(patient_file);
-  print("Handling patient: " + patient_config.find("Patient/Name").text)
+  print("\033[4m\033[95mHandling patient: " + patient_config.find("Patient/Name").text + "\033[0m\033[0m")
   sys.stdout.flush()
     
   parse_event = subprocess.run(['python3',dir_path + "/parse_events.py",patient +"/config.xml"], stdout=subprocess.PIPE, check=True)
@@ -41,11 +41,11 @@ for patient in patients:
   
   for event in events:
     if not event[0] in images:
-      print (event[0] + " is not available as docker container, skipping")
+      print ("\033[91m" + event[0] + " is not available as docker container, skipping\033[0m")
       sys.stdout.flush()
     else:
     # call the docker container of every event 
-      print ("executing docker container of: " + event[0])
+      print ("\033[92mexecuting docker container of: " + event[0] + "\033[0m")
       sys.stdout.flush()
       subprocess.run(['docker','run','-v',mount_location+"/"+patient.split('/')[-2]+":/patient",event[0],"handle_event","--patient=/patient/config.xml","--event="+event[1]])
       sys.stdout.flush()
