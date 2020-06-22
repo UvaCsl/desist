@@ -1,0 +1,18 @@
+stages:
+  - build
+  - test
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+cache:
+  paths:
+    - patient/
+  key: "$CI_PIPELINE_ID"
+
+build_images:
+  stage: build
+  script:
+    -./scripts/create_containers.sh
+
+verification:
+  script:
+    -./scripts/run_in_silico_trial.sh scripts/variables.xml trial 1
