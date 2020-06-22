@@ -1,21 +1,21 @@
 [submodule "software/1d-blood-flow"]
 	path = software/1d-blood-flow
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/1d-blood-flow.git
+	url = ../1d-blood-flow.git
 [submodule "software/virtual_patient_generation"]
 	path = software/virtual_patient_generation
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/virtual_patient_generation.git
+	url = ../virtual_patient_generation.git
 [submodule "software/thrombectomy"]
 	path = software/thrombectomy
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombectomy_python_rs.git
+	url = ../thrombectomy_python_rs.git
 [submodule "software/darcy_multi-comp"]
 	path = software/darcy_multi-comp
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/darcy_multi-comp.git
+	url = ../darcy_multi-comp.git
 [submodule "software/cell_death_model"]
 	path = software/cell_death_model
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/cell_death_model.git
+	url = ../cell_death_model.git
 [submodule "software/thrombo-sis-lysis"]
 	path = software/thrombo-sis-lysis
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/thrombo-sis-lysis.git
+	url = ../thrombo-sis-lysis.git
 [submodule "software/place_clot"]
 	path = software/place_clot
-	url = ssh://git@gitlab.computationalscience.nl:1022/insist/place_clot.git
+	url = ../place_clot.git
