@@ -1,21 +1,21 @@
-[submodule 1d-blood-flow]
+[submodule "1d-blood-flow"]
 	path = software/1d-blood-flow
 	url = ../1d-blood-flow.git
-[submodule virtual_patient_generation]
+[submodule "virtual_patient_generation"]
 	path = software/virtual_patient_generation
 	url = ../virtual_patient_generation.git
-[submodule thrombectomy]
+[submodule "thrombectomy"]
 	path = software/thrombectomy
 	url = ../thrombectomy_python_rs.git
-[submodule darcy_multi-comp]
+[submodule "darcy_multi-comp"]
 	path = software/darcy_multi-comp
 	url = ../darcy_multi-comp.git
-[submodule cell_death_model]
+[submodule "cell_death_model"]
 	path = software/cell_death_model
 	url = ../cell_death_model.git
-[submodule thrombo-sis-lysis]
+[submodule "thrombo-sis-lysis"]
 	path = software/thrombo-sis-lysis
 	url = ../thrombo-sis-lysis.git
-[submodule place_clot]
+[submodule "place_clot"]
 	path = software/place_clot
 	url = ../place_clot.git
