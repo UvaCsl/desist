@@ -38,5 +38,6 @@ cp $1 $2/config.xml
 
 sudo docker run -v `realpath $2`:/patients virtual_patient_generation $3
 sudo docker run -v /var/run/docker.sock:/var/run/docker.sock -v `realpath $2`:/patients in_silico_trial /patients/config.xml `realpath $2`
+sudo docker run -v `realpath $2`:/patients in-silico-trial-outcome
 
 sudo chown -R `whoami`:`whoami` $2
