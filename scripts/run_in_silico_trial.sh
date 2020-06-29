@@ -14,6 +14,19 @@ realpath() {
 
 set -e
 
+# extract "-x" option to only echo the commands
+trace='false'
+while getopts "x" opt
+do
+        case $opt in
+                x ) trace="true"
+                        ;;
+                * ) echo "ello"
+                        ;;
+        esac
+done
+shift $(($OPTIND - 1))
+
 function usage {
   echo "Usage: $0 <variables.xml> <working_folder> <number_of_patients>"
   exit 1
@@ -33,11 +46,16 @@ if [ -e $2 ]; then
   rm -rf $2
 fi
 
-mkdir $2
+mkdir -p $2
 cp $1 $2/config.xml
 
-sudo docker run -v `realpath $2`:/patients virtual_patient_generation $3
-sudo docker run -v /var/run/docker.sock:/var/run/docker.sock -v `realpath $2`:/patients in_silico_trial /patients/config.xml `realpath $2`
-sudo docker run -v `realpath $2`:/patients in-silico-trial-outcome
+if $trace; then
+        echo "-x set, only echo commands"
+        echo "docker run -v `realpath $2`:/patients virtual_patient_generation $3"
+        echo "docker run -v /var/run/docker.sock:/var/run/docker.sock -v `realpath $2`:/patients in_silico_trial /patients/config.xml `realpath $2`"
+        echo "docker run -v `realpath $2`:/patients in-silico-trial-outcome"
+        exit 0
+fi
+
 
 sudo chown -R `whoami`:`whoami` $2
