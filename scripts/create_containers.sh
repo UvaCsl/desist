@@ -33,7 +33,7 @@ for dir in *; do
         echo "Directory '${dir}' contains spaces, to tag the image no space is allowed, exiting"
         exit 1
       fi
-      sudo docker build . -t "${dir}"
+      docker build . -t "${dir}"
       echo "${dir}" >> "${docker_image_list}"
     fi
     cd ../
@@ -43,4 +43,4 @@ done
 # Last but not least, create the container that runs the workflow
 
 cd ../
-sudo docker build  . -t "in_silico_trial"
+docker build  . -t "in_silico_trial"

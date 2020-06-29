@@ -3,6 +3,7 @@ stages:
   - test
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  GIT_STRATEGY: clone
 cache:
   paths:
     - patient/
@@ -11,8 +12,15 @@ cache:
 build_images:
   stage: build
   script:
-    -./scripts/create_containers.sh
+    - ./scripts/create_containers.sh
+    - rm ./workflow/docker_image_list
+
+build_trial_directory: 
+  stage: build 
+  script: 
+    - mkdir trial
+    - chmod 777 trial
 
 verification:
   script:
-    -./scripts/run_in_silico_trial.sh scripts/variables.xml trial 1
+    - ./scripts/run_in_silico_trial.sh -x scripts/variables.xml trial 1
