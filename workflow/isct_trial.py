@@ -141,13 +141,24 @@ def trial():
     with open(path.joinpath("trial.yml"), "w") as outfile:
         yaml.dump(config, outfile)
 
-    # create patients
+    # create patients configuration files
     for i in range(num_patients):
-        cmd = ['python3', 'isct.py', 'patient', 'create', str(path.absolute()), '--id', str(i)]
+        cmd = ['python3', 'isct.py', 'patient', 'create', str(path.absolute()), '--id', str(i), '--seed', str(seed), '--config-only']
         if verbose:
             print(" ".join(cmd))
 
         call(cmd)
+
+    # batch generate all configuration files
+    # this runs through docker only once; and not for every patient
+    dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
+    dirs.sort()
+    cmd = ["docker", "run", "-v", f"{path.absolute()}:/patients/", "virtual_patient_generation"] + dirs
+    if verbose:
+        print(" ".join(cmd))
+
+    call(cmd)
+
 
 if __name__ == "__main__":
     exit(trial())
