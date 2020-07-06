@@ -1,6 +1,6 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv]
+  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
   isct trial plot TRIAL
 
 Arguments:
@@ -14,6 +14,7 @@ Options:
     -n=NUM              The number of patients to generate [default: 1].
     -f                  Force overwrite existing trial directory.
     -v                  Set verbose output.
+    --seed=SEED         Random seed for the trial generation [default: 1].
 """
 
 from docopt import docopt
@@ -90,6 +91,7 @@ def trial():
                 '-f': Use(bool),
                 '-v': Use(bool),
                 '--prefix': Use(str, error='Only string prefixes are allowed'),
+                '--seed': Use(int, error='Only integer random seeds allowed'),
                 str: object, # all other inputs doesnt  matter yet
                 }
     )
@@ -107,6 +109,7 @@ def trial():
     prefix = args['--prefix'].replace(" ", "_") # prevents spaces in paths
     num_patients = args['-n']
     verbose = args['-v']
+    seed = args['--seed']
 
     # switch operations based on commands
     if args['plot']:
