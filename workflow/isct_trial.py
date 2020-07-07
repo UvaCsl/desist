@@ -1,7 +1,7 @@
 """
 Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
-  isct trial plot TRIAL
+  isct trial plot TRIAL [--show]
 
 Arguments:
     PATH        A path on the file system.
@@ -15,6 +15,7 @@ Options:
     -f                  Force overwrite existing trial directory.
     -v                  Set verbose output.
     --seed=SEED         Random seed for the trial generation [default: 1].
+    --show              Directly show the resulting figure [default: false].
 """
 
 from docopt import docopt
@@ -29,7 +30,9 @@ from subprocess import call
 
 from schema import Schema, Use, Or, And, SchemaError
 
-def plot_trial(path):
+from workflow.isct_patient import patient as patient_cmd
+
+def plot_trial(path, args):
     """Generate a graph-like visualisation of the trial directory."""
 
     if not os.path.isdir(path):
@@ -76,13 +79,14 @@ def plot_trial(path):
     # write `graph.gv`, `graph.gv.pdf` and show pdf immediately
     # FIXME: prevent direct visualisation by default, breaks if no screen is
     # attached to the current session
-    g.view()
+    #g.view()
+    g.render(view=args['--show'])
 
 
-def trial():
+def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
     # parse command-line arguments
-    args = docopt(__doc__)
+    args = docopt(__doc__, argv=argv)
 
     # schema for argument validation
     schema = Schema(
@@ -106,14 +110,20 @@ def trial():
     # extract variables
     path = Path(args['TRIAL'])
     overwrite = args['-f']
-    prefix = args['--prefix'].replace(" ", "_") # prevents spaces in paths
+
+    # prevent spaces in directories, set to default for empty
+    prefix = args['--prefix'].replace(" ", "_")
+    if prefix == "''":
+        prefix = "patient"
+
     num_patients = args['-n']
     verbose = args['-v']
     seed = args['--seed']
 
     # switch operations based on commands
     if args['plot']:
-        exit(plot_trial(path.absolute()))
+        plot_trial(path.absolute(), args)
+        return
 
     # require explicit -f to overwrite existing directories
     if os.path.isdir(path) and not overwrite:
@@ -125,10 +135,7 @@ def trial():
         shutil.rmtree(path)
 
     # setup trial folder
-    try:
-        os.makedirs(path)
-    except OSerror as e:
-        exit(f"Creation of the directory '{path}' failed: '{e}'")
+    os.makedirs(path, exist_ok=True)
 
     # populate configuration file
     config = {
@@ -143,11 +150,8 @@ def trial():
 
     # create patients configuration files
     for i in range(num_patients):
-        cmd = ['python3', 'isct.py', 'patient', 'create', str(path.absolute()), '--id', str(i), '--seed', str(seed), '--config-only']
-        if verbose:
-            print(" ".join(cmd))
-
-        call(cmd)
+        cmd = ['patient', 'create', str(path.absolute()), '--id', str(i), '--seed', str(seed), '--config-only']
+        patient_cmd(cmd)
 
     # batch generate all configuration files
     # this runs through docker only once; and not for every patient
@@ -159,21 +163,5 @@ def trial():
 
     call(cmd)
 
-
 if __name__ == "__main__":
-    exit(trial())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    exit(trial(sys.argv[1:]))
