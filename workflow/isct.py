@@ -15,12 +15,22 @@ See `isct help <command>` for more information on a specific command.
 """
 
 from subprocess import call
-
 from docopt import docopt
-
+import importlib
 import sys
 
-if __name__ == "__main__":
+# TODO: beforehand it is unkown which command is requested by the user.
+# Therefore, the command we should run is unknown when this module is called.
+# To overcome that, we dynamically load the module (which works as long as all
+# the commands adhere to `workflow.isct_<command>.py`) and request the
+# corresponding function name through `getattr`. Then, we simply invoke that
+# script to continue operation.
+def load_module(cmd):
+    """Loads the module corresponding to `cmd`."""
+    module = importlib.import_module(f"workflow.isct_{cmd}")
+    return getattr(module, cmd)
+
+def main(argv=None):
     # show help if no arguments are provided
     if len(sys.argv) == 1:
         sys.argv.append('-h')
@@ -38,14 +48,20 @@ if __name__ == "__main__":
 
     # run specific command's interface
     if args['<command>'] in valid_commands:
-        exit(call(['python3', 'isct_%s.py' % args['<command>']] + argv))
+        f = load_module(args['<command>'])
+        return f(argv)
 
     # report help for isct or specific command if given
     if args['<command>'] in ['help']:
         if len(args['<args>']) > 0:
-            exit(call(['python3', 'isct_%s.py' % args['<args>'][0], "-h"]))
+            f = load_module(args['<args>'][0])
+            return f(['-h'])
         else:
             exit(__doc__)
 
     # otherwise: invalid command
     exit("%r is not a isct command. See './isct help'." % args['<command>'])
+
+if __name__ == "__main__":
+    exit(main(sys.argv[1:]))
+
