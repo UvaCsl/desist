@@ -11,7 +11,8 @@ Options:
     --id=ID         Identifier of the patient [default: 0].
     -f              Force overwrite exist patient directory.
     --seed=SEED     Random seed for the patient generation [default: 1].
-    --config-only   Only generate a patient configuration.
+    --config-only   Only generate a patient configuration file, and do not
+                    invoke the `virtual_patient_generation` module.
 """
 
 from docopt import docopt
