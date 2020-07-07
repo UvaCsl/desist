@@ -16,7 +16,7 @@ Options:
 """
 
 from docopt import docopt
-from schema import Schema, Use
+from schema import Schema, Use, SchemaError
 from pathlib import Path
 from subprocess import call
 import yaml
@@ -24,10 +24,10 @@ import os
 import sys
 import random
 
-def patient():
+def patient(argv):
     """Provides commands for interaction with virtual patients."""
     # parse command-line arguments
-    args = docopt(__doc__)
+    args = docopt(__doc__, argv=argv)
 
     # schema for argument validation
     schema = Schema(
@@ -62,7 +62,8 @@ def patient():
 
     # construct patient directory
     patient_prefix = trial_config['prefix']
-    patient = path.joinpath(f"{patient_prefix}_{patient_id:03}")
+    patient_postfix = f"{patient_id:03}"
+    patient = path.joinpath(f"{patient_prefix}_{patient_postfix}")
 
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient) and not overwrite:
@@ -75,10 +76,7 @@ def patient():
         shutil.rmtree(patient)
 
     # setup patient directory and fill
-    try:
-        os.makedirs(patient)
-    except OSError as e:
-        exit(f"Creation of patient directory '{patient}': '{e}'")
+    os.makedirs(patient, exist_ok=True)
 
     # seed the random generator with the provided seed
     random.seed(seed)
@@ -104,10 +102,10 @@ def patient():
                 "docker",
                 "run", "-v", f"{path.absolute()}:/patients/",
                 "virtual_patient_generation",
-                f"/patients/{patient_prefix}_{patient_id:03}"
+                f"/patients/{patient_prefix}_{patient_postfix}"
         ]
 
         call(cmd)
 
 if __name__ == "__main__":
-    exit(patient())
+    exit(patient(sys.argv[1:]))
