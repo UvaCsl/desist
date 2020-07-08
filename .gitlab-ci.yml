@@ -1,26 +1,35 @@
-stages:
-  - build
-  - test
+image: "python:3.7"
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_STRATEGY: clone
+
 cache:
   paths:
     - patient/
   key: "$CI_PIPELINE_ID"
 
-build_images:
-  stage: build
-  script:
-    - ./scripts/create_containers.sh
-    - rm ./workflow/docker_image_list
+stages: 
+  - build 
+  - test 
 
-build_trial_directory: 
+before_script: 
+  - python --version
+
+build_isct: 
   stage: build 
   script: 
-    - mkdir trial
-    - chmod 777 trial
+    - pip install -e . 
+    - pip install -r requirements.txt
 
-verification:
-  script:
-    - ./scripts/run_in_silico_trial.sh -x scripts/variables.xml trial 1
+build_containers: 
+  stage: build
+  script: 
+    - docker build . -t "in-silico-trial"
+    - ./scripts/create_containers.sh  
+    - rm ./workflow/docker_image_list 
+
+test_isct: 
+  stage: test
+  script: 
+    - pytest 

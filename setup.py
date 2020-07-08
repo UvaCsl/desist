@@ -12,4 +12,9 @@ setup(
                 'isct = workflow.isct:main',
             ],
         },
+        install_requires=[
+            'docopt',
+            'PyYAML',
+            'schema',
+        ],
 )
