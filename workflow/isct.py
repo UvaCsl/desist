@@ -15,30 +15,31 @@ See `isct help <command>` for more information on a specific command.
 """
 
 from subprocess import call
-from docopt import docopt
+from docopt import docopt, DocoptExit
 import importlib
 import sys
 
-# TODO: beforehand it is unkown which command is requested by the user.
-# Therefore, the command we should run is unknown when this module is called.
-# To overcome that, we dynamically load the module (which works as long as all
-# the commands adhere to `workflow.isct_<command>.py`) and request the
-# corresponding function name through `getattr`. Then, we simply invoke that
-# script to continue operation.
+# Beforehand it is unkown which command is requested by the user. Therefore,
+# the command we should run is unknown when this module is called. To overcome
+# that, we dynamically load the module (which works as long as all the commands
+# adhere to `workflow.isct_<command>.py`) and request the corresponding
+# function name through `getattr`. Then, we simply invoke that script to
+# continue operation.
 def load_module(cmd):
     """Loads the module corresponding to `cmd`."""
     module = importlib.import_module(f"workflow.isct_{cmd}")
     return getattr(module, cmd)
 
 def main(argv=None):
-    # show help if no arguments are provided
-    if len(sys.argv) == 1:
-        sys.argv.append('-h')
+    argv = sys.argv[1:] if argv is None else argv
+    if len(argv) == 0:
+        argv.append('-h')
 
     # parse the command-line arguments
     args = docopt(__doc__,
                   version="isct 0.0.1",
-                  options_first=True)
+                  options_first=True,
+                  argv=argv)
 
     # supported commands
     valid_commands = ['trial', 'patient']
