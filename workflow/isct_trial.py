@@ -55,33 +55,27 @@ def plot_trial(path, args):
     g.attr(rankdir = "LR")
 
     # populate graph from trial -> patient ->  status
-    for patient, dirs, files in os.walk(path):
+    for trial, patients, files in os.walk(path):
 
-        # sort by name, such that the graph is orded as well
-        dirs.sort()
+        # patients are sorted, such that output graph is sorted as well
+        patients.sort()
 
-        # skip top directory
-        if patient == str(path.absolute()):
-            continue
+        for patient in patients:
 
-        # directory name
-        p_dir = os.path.basename(patient)
+            # patient parameters from configuration file
+            p_dir = Path(trial).joinpath(patient)
+            with open(p_dir.joinpath("patient.yml"), "r") as configfile:
+                c = yaml.load(configfile, yaml.SafeLoader)
 
-        # patient parameters from configuration file
-        with open(Path(patient).joinpath("patient.yml"), "r") as configfile:
-            c = yaml.load(configfile, yaml.SafeLoader)
+            # setup label and attach to graph
+            label = f"{patient}/ | id: {c['id']} | done: {c['status']}"
+            g.node(patient, shape="record", label=label)
+            g.edge(trial_name, patient)
 
-        # setup label and attach to graph
-        label = f"{p_dir}/ | id: {c['id']} | done: {c['status']}"
-        g.node(p_dir, shape="record", label=label)
-        g.edge(trial_name, p_dir)
+        break # prevent recursion of `os.walk()`
 
-    # write `graph.gv`, `graph.gv.pdf` and show pdf immediately
-    # FIXME: prevent direct visualisation by default, breaks if no screen is
-    # attached to the current session
-    #g.view()
+    # write `graph.gv`, `graph.gv.pdf` and option to show pdf
     g.render(view=args['--show'])
-
 
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
