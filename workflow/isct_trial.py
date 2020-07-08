@@ -36,18 +36,18 @@ def plot_trial(path, args):
     """Generate a graph-like visualisation of the trial directory."""
 
     if not os.path.isdir(path):
-        exit(f"Cannot make plot of non-existing directory '{path}'")
+        sys.exit(f"Cannot make plot of non-existing directory '{path}'")
 
     # import graphviz here, as only `plot_trial` depends on it.
     try:
         from graphviz import Digraph
     except ImportError:
-        exit(f"Cannot import 'graphviz' package")
+        sys.exit(f"Cannot import 'graphviz' package")
 
     # check if `dot` is present, cannot generate graph without it
     # FIXME: if `dot` is not present, simply write out the plain `.dot` file.
     if shutil.which("dot") is None:
-        exit(f"'dot' from graphviz seems not available'")
+        sys.exit(f"'dot' from graphviz seems not available'")
 
     # create graph instance of trial
     trial_name = os.path.basename(path)
@@ -105,7 +105,7 @@ def trial(argv):
         args = schema.validate(args)
     except SchemaError as e:
         print(e)
-        exit(__doc__)
+        sys.exit(__doc__)
 
     # extract variables
     path = Path(args['TRIAL'])
@@ -128,7 +128,7 @@ def trial(argv):
     # require explicit -f to overwrite existing directories
     if os.path.isdir(path) and not overwrite:
         print(f"Trial '{path}' already exist. Provide -f to overwrite")
-        exit(__doc__)
+        sys.exit(__doc__)
 
     # clear out old, existing path
     if os.path.isdir(path):
@@ -164,4 +164,4 @@ def trial(argv):
     call(cmd)
 
 if __name__ == "__main__":
-    exit(trial(sys.argv[1:]))
+    sys.exit(trial(sys.argv[1:]))

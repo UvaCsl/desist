@@ -43,7 +43,7 @@ def patient(argv):
         args = schema.validate(args)
     except SchemaError as e:
         print(e)
-        exit(__doc__)
+        sys.exit(__doc__)
 
     # find the configuration file
     path = Path(args['TRIAL'])
@@ -54,7 +54,7 @@ def patient(argv):
 
     # ensure configuration file exists
     if not os.path.isfile(yml):
-        exit(f"No trial configuration is found in '{path}'")
+        sys.exit(f"No trial configuration is found in '{path}'")
 
     # load trial configuration
     with open(yml, "r") as outfile:
@@ -68,7 +68,7 @@ def patient(argv):
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient) and not overwrite:
         print(f"Patient '{patient}' already exist. Provide -f to overwrite")
-        exit(__doc__)
+        sys.exit(__doc__)
 
     # clear out old, existing path
     if os.path.isdir(patient):
@@ -108,4 +108,4 @@ def patient(argv):
         call(cmd)
 
 if __name__ == "__main__":
-    exit(patient(sys.argv[1:]))
+    sys.exit(patient(sys.argv[1:]))

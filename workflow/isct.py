@@ -57,11 +57,11 @@ def main(argv=None):
             f = load_module(args['<args>'][0])
             return f(['-h'])
         else:
-            exit(__doc__)
+            sys.exit(__doc__)
 
     # otherwise: invalid command
-    exit("%r is not a isct command. See './isct help'." % args['<command>'])
+    sys.exit("%r is not a isct command. See './isct help'." % args['<command>'])
 
 if __name__ == "__main__":
-    exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:]))
 
