@@ -10,7 +10,8 @@ cache:
   key: "$CI_PIPELINE_ID"
 
 stages: 
-  - build 
+  - build
+  - containers
   - test 
 
 before_script: 
@@ -23,7 +24,7 @@ build_isct:
     - pip install -r requirements.txt
 
 build_containers: 
-  stage: build
+  stage: containers
   script: 
     - docker build . -t "in-silico-trial"
     - ./scripts/create_containers.sh  
