@@ -26,6 +26,3 @@ def test_patient_already_exist(trial_directory):
 
     # overwrite should work
     patient_cmd(f"patient create {path} -f".split())
-
-
-
