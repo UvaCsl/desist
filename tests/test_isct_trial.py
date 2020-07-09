@@ -1,6 +1,7 @@
 import pytest
 import os
 import shutil
+from importlib import util as importlib_util
 
 from workflow.isct_trial import trial
 
@@ -75,6 +76,8 @@ def test_trial_number_of_patients(trial_directory, t_n, n):
         with pytest.raises(SystemExit):
             trial(f"trial create {path} -n ".split() + [t_n])
 
+@pytest.mark.skipif(importlib_util.find_spec('graphviz') is None,
+        reason="requires `graphviz` to be present")
 def test_trial_plot(trial_directory):
     path = trial_directory
     trial(f"trial create {path}".split())
@@ -84,6 +87,8 @@ def test_trial_plot(trial_directory):
     assert os.path.isfile(path.joinpath("graph.gv"))
     assert os.path.isfile(path.joinpath("graph.gv.pdf"))
 
+@pytest.mark.skipif(importlib_util.find_spec('graphviz') is None,
+        reason="requires `graphviz` to be present")
 def test_trail_plot_invalid_directory(trial_directory):
     path = trial_directory
     with pytest.raises(SystemExit):
