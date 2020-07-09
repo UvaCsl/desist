@@ -4,14 +4,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_STRATEGY: clone
 
-cache:
-  paths:
-    - patient/
-  key: "$CI_PIPELINE_ID"
-
 stages: 
   - build
-  - containers
   - test 
 
 before_script: 
@@ -22,13 +16,6 @@ build_isct:
   script: 
     - pip install -e . 
     - pip install -r requirements.txt
-
-build_containers: 
-  stage: containers
-  script: 
-    - docker build . -t "in-silico-trial"
-    - ./scripts/create_containers.sh  
-    - rm ./workflow/docker_image_list 
 
 test_isct: 
   stage: test
