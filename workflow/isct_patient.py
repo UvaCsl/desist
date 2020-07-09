@@ -83,7 +83,7 @@ def patient(argv):
 
     # pull the n-th random number, for the n-th patient
     for i in range(patient_id+1):
-       p_seed = random.randrange(sys.maxsize)
+       p_seed = random.randrange(2<<31 - 1)
 
     # TODO: this is to be filled by the `virtual_patient_generation` module
     config = {
