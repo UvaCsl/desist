@@ -45,9 +45,10 @@ def plot_trial(path, args):
         sys.exit(f"Cannot import 'graphviz' package")
 
     # check if `dot` is present, cannot generate graph without it
-    # FIXME: if `dot` is not present, simply write out the plain `.dot` file.
+    renderPlot = True
     if shutil.which("dot") is None:
-        sys.exit(f"'dot' from graphviz seems not available'")
+        renderPlot = False
+        print("The `dot` from graphviz is not present: no figure is rendered.")
 
     # create graph instance of trial
     trial_name = os.path.basename(path)
@@ -74,8 +75,12 @@ def plot_trial(path, args):
 
         break # prevent recursion of `os.walk()`
 
-    # write `graph.gv`, `graph.gv.pdf` and option to show pdf
-    g.render(view=args['--show'])
+    # write `graph.gv`, this can run without `dot` as it does not render yet
+    g.save()
+
+    if renderPlot:
+        # write `graph.gv.pdf`, this requires `dot` executable
+        g.render(view=args['--show'])
 
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
