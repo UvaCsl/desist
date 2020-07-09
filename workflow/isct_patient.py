@@ -105,6 +105,11 @@ def patient(argv):
                 f"/patients/{patient_prefix}_{patient_postfix}"
         ]
 
+        # only call into Docker when available on the system
+        if shutil.which("docker") is None:
+            print("Cannot reach Docker.")
+            return
+
         call(cmd)
 
 if __name__ == "__main__":

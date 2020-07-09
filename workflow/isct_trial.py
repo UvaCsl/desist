@@ -155,6 +155,11 @@ def trial(argv):
     if verbose:
         print(" ".join(cmd))
 
+    # only call into Docker when Docker is present on a system
+    if shutil.which("docker") is None:
+        print("Cannot reach Docker.")
+        return
+
     call(cmd)
 
 if __name__ == "__main__":
