@@ -42,7 +42,7 @@ def main(argv=None):
                   argv=argv)
 
     # supported commands
-    valid_commands = ['trial', 'patient']
+    valid_commands = ['trial', 'patient', 'container']
 
     # complete arguments to pass
     argv = [args['<command>']] + args['<args>']
