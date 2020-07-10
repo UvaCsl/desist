@@ -24,7 +24,7 @@ import sys
 import os
 import shutil
 import yaml
-from pathlib import Path
+import pathlib
 
 from subprocess import call
 
@@ -64,7 +64,7 @@ def plot_trial(path, args):
         for patient in patients:
 
             # patient parameters from configuration file
-            p_dir = Path(trial).joinpath(patient)
+            p_dir = pathlib.Path(trial).joinpath(patient)
             with open(p_dir.joinpath("patient.yml"), "r") as configfile:
                 c = yaml.load(configfile, yaml.SafeLoader)
 
@@ -81,6 +81,24 @@ def plot_trial(path, args):
     if renderPlot:
         # write `graph.gv.pdf`, this requires `dot` executable
         g.render(view=args['--show'])
+
+
+def create_trial_config(path, prefix, num_patients):
+    """Initialise a dictionary as trial configuration."""
+
+    # to easily get its absolute path
+    assert isinstance(path, pathlib.Path)
+
+    return {
+            'patients_directory': str(path.absolute()),
+            'prefix': prefix,
+            'number': num_patients,
+            'preprocessed': False,
+    }
+
+def add_events(patient):
+    """Add list of events to a patient configuration file."""
+
 
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
@@ -107,7 +125,7 @@ def trial(argv):
         sys.exit(__doc__)
 
     # extract variables
-    path = Path(args['TRIAL'])
+    path = pathlib.Path(args['TRIAL'])
     overwrite = args['-f']
 
     # prevent spaces in directories, set to default for empty
@@ -137,11 +155,7 @@ def trial(argv):
     os.makedirs(path, exist_ok=True)
 
     # populate configuration file
-    config = {
-            'patients_directory': str(path.absolute()),
-            'prefix': prefix,
-            'number': num_patients,
-    }
+    config = create_trial_config(path, prefix, num_patients)
 
     # dump trial configuration to disk
     with open(path.joinpath("trial.yml"), "w") as outfile:
@@ -165,6 +179,7 @@ def trial(argv):
         print("Cannot reach Docker.")
         return
 
+    # evaluate `virtual-patient-generation` model to fill config files
     call(cmd)
 
 if __name__ == "__main__":

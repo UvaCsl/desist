@@ -3,7 +3,7 @@ import os
 import shutil
 from importlib import util as importlib_util
 
-from workflow.isct_trial import trial
+from workflow.isct_trial import trial, create_trial_config
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -37,6 +37,19 @@ def test_create_trial_configuration(trial_directory):
     yml = path.joinpath("trial.yml")
     assert os.path.isfile(yml)
 
+def test_trial_add_event_configuration(trial_directory):
+    """Ensure create_config provides the expected defaults."""
+    path = trial_directory
+    number = 1
+    prefix = "patient"
+
+    config = create_trial_config(path, prefix, number)
+
+    assert config['number'] == number
+    assert config['prefix'] == prefix
+    assert config['patients_directory'] == str(path.absolute())
+    assert config['preprocessed'] == False
+
 @pytest.mark.parametrize("t_prefix, prefix",
         [
             ("''", "patient"),
@@ -59,6 +72,7 @@ def test_trial_patient_prefix(trial_directory, t_prefix, prefix):
     assert config['number'] == 1
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path)
+    assert config['preprocessed'] == False
 
 @pytest.mark.parametrize("t_n, n", [("1", 1), ("5", 5), ("", SystemExit)])
 def test_trial_number_of_patients(trial_directory, t_n, n):
@@ -106,4 +120,3 @@ def test_trail_plot_invalid_directory(trial_directory):
     path = trial_directory
     with pytest.raises(SystemExit):
         trial(f"trial plot {path}".split())
-
