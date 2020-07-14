@@ -32,8 +32,8 @@ from subprocess import call
 
 import schema
 
+from workflow.patient import Patient
 from workflow.isct_patient import patient as patient_cmd
-from workflow.isct_patient import config_yaml_to_xml
 
 def trail_plot(args):
     """Generate a graph-like visualisation of the trial directory."""
@@ -187,25 +187,8 @@ def trial_create(args):
     call(cmd)
 
     # TODO: remove this once transitioned towards YAML
-    import xml.etree.ElementTree as ET
-    import xml.dom.minidom
-
-    dirs = [d[0] for d in os.walk(path)][1:]
-    for d in dirs:
-        # get the resulting patient configuration in yaml
-        p = pathlib.Path(d).joinpath("patient.yml")
-        with open(p.absolute(), "r") as configfile:
-            config = yaml.load(configfile, yaml.SafeLoader)
-
-        # create an xml version
-        config_xml = config_yaml_to_xml(config)
-
-        # write xml version to disk
-        p = pathlib.Path(d).joinpath("config.xml")
-        with open(p.absolute(), "w") as outfile:
-            xml_string = ET.tostring(config_xml, encoding="unicode")
-            dom = xml.dom.minidom.parseString(xml_string)
-            outfile.write(dom.toprettyxml())
+    for d in [d[0] for d in os.walk(path)][1:]:
+        Patient.from_yaml(d).to_xml()
 
 def trial_run(args):
     # validate run arguments
@@ -235,17 +218,17 @@ def trial_run(args):
     for trial, patients, files in os.walk(path):
         patients.sort()
 
-        for patient in patients:
-            p_dir = pathlib.Path(trial).joinpath(patient).absolute()
+        for p_dir in patients:
+            patient = Patient(pathlib.Path(trial).joinpath(p_dir))
 
-            cmd = ["patient", "run", f"{p_dir}"]
+            cmd = ["patient", "run", f"{patient.dir}"]
 
             if dry_run:
                 cmd += ["-x"]
 
             if verbose:
                 cmd += ["-v"]
-                print(f"\n + Evaluating patient '{os.path.basename(p_dir)}'...")
+                print(f"\n + Evaluating patient '{os.path.basename(patient.dir)}'...")
                 print(f' + isct {" ".join(cmd)}\n')
 
             patient_cmd(cmd)
