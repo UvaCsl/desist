@@ -1,9 +1,11 @@
 """
 Usage:
     isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
+    isct patient run PATIENT [-x] [-v]
 
 Arguments:
     TRIAL       Path to trial directory.
+    PATIENT     Path to a patient's directory.
 
 Options:
     -h, --help      Show this screen.
@@ -13,16 +15,22 @@ Options:
     --seed=SEED     Random seed for the patient generation [default: 1].
     --config-only   Only generate a patient configuration file, and do not
                     invoke the `virtual_patient_generation` module.
+    -x              Perform a dry run: show commands to be executed without
+                    executing these commands.
+    -v              Set output verbosity.
 """
 
 from docopt import docopt
 from schema import Schema, Use, SchemaError
-from pathlib import Path
 from subprocess import call
+import pathlib
+import schema
 import yaml
 import os
 import sys
 import random
+
+from workflow.isct_container import container as container_cmd
 
 def create_patient_config(pid, seed):
     """Create the default patient configuration.
@@ -40,6 +48,11 @@ def create_patient_config(pid, seed):
             'id': pid,
             'status': False,
             'random_seed': seed,
+            'HeartRate': 60,
+            'SystolePressure': 17300,
+            'DiastolePressure': 10100,
+            'MeanRightAtrialPressure': 0,
+            'StrokeVolume': 70,
     }
 
 def add_events_to_config(config, overwrite=False):
@@ -80,7 +93,7 @@ def add_events_to_config(config, overwrite=False):
                 "time_start": 18622.47003804366,
                 "time_end": 22222.47003804366,
                 }),
-            ("patient_outcome", {}),
+            ("patient-outcome-model", {}),
     ]
 
     # ensure we do not overwrite existing event specifications
@@ -90,7 +103,6 @@ def add_events_to_config(config, overwrite=False):
         msg = f"Patient: 'id: {pid}, name: {pname}' already contains events.\n"
         msg += "Provide '-f' to overwrite"
         sys.exit(msg)
-        return
 
     # initialise events to empty list
     config['events'] = []
@@ -157,11 +169,8 @@ def config_yaml_to_xml(config):
     # return the full XML root
     return root
 
-def patient(argv):
-    """Provides commands for interaction with virtual patients."""
-    # parse command-line arguments
-    args = docopt(__doc__, argv=argv)
-
+def patient_create(args):
+    """Provides `patient create` to creating individual patients."""
     # schema for argument validation
     schema = Schema(
             {
@@ -179,7 +188,7 @@ def patient(argv):
         sys.exit(__doc__)
 
     # find the configuration file
-    path = Path(args['TRIAL'])
+    path = pathlib.Path(args['TRIAL'])
     yml = path.joinpath("trial.yml")
     patient_id = args['--id']
     overwrite = args['-f']
@@ -269,6 +278,60 @@ def patient(argv):
         xml_string = ET.tostring(config_xml, encoding="unicode")
         dom = xml.dom.minidom.parseString(xml_string)
         outfile.write(dom.toprettyxml())
+
+def patient_run(argv):
+    """Evaluate `patient run` to process the patient's events."""
+
+    # validate the provided path exists
+    s = schema.Schema(
+            {
+                'PATIENT': schema.And(schema.Use(str), os.path.isdir),
+                str: object,
+            }
+        )
+    try:
+        args = s.validate(argv)
+    except schema.SchemaError as e:
+        print(e)
+        sys.exit(__doc__)
+
+    # obtain patient configuration
+    path = pathlib.Path(args['PATIENT'])
+    with open(path.joinpath("patient.yml"), "r") as configfile:
+        config = yaml.load(configfile, yaml.SafeLoader)
+
+    dry_run = args['-x']
+    verbose = True if dry_run else args['-v']
+
+    # run through all events
+    for i, event in enumerate(config['events']):
+
+        # ensure we traverse events in the correct order
+        assert i == event['id']
+
+        cmd = ["container", "run", event['event'], str(path.absolute()), str(event['id'])]
+
+        if dry_run:
+            cmd += ["-x"]
+
+        if verbose:
+            cmd += ["-v"]
+
+        container_cmd(cmd)
+
+    return
+
+def patient(argv):
+    """Provides commands for interaction with virtual patients."""
+    # parse command-line arguments
+    args = docopt(__doc__, argv=argv)
+
+    if args['create']:
+        return patient_create(args)
+
+    if args['run']:
+        return patient_run(args)
+
 
 if __name__ == "__main__":
     sys.exit(patient(sys.argv[1:]))

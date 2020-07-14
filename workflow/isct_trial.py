@@ -2,6 +2,7 @@
 Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
   isct trial plot TRIAL [--show]
+  isct trial run TRIAL [-x] [-v]
 
 Arguments:
     PATH        A path on the file system.
@@ -16,6 +17,7 @@ Options:
     -v                  Set verbose output.
     --seed=SEED         Random seed for the trial generation [default: 1].
     --show              Directly show the resulting figure [default: false].
+    -x                  Dry run: only log the command without evaluating.
 """
 
 from docopt import docopt
@@ -28,17 +30,27 @@ import pathlib
 
 from subprocess import call
 
-from schema import Schema, Use, Or, And, SchemaError
+import schema
 
 from workflow.isct_patient import patient as patient_cmd
+from workflow.isct_patient import config_yaml_to_xml
 
-def plot_trial(path, args):
+def trail_plot(args):
     """Generate a graph-like visualisation of the trial directory."""
 
-    if not os.path.isdir(path):
-        sys.exit(f"Cannot make plot of non-existing directory '{path}'")
+    s = schema.Schema(
+            {
+                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+                str: object
+            }
+    )
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        print(e)
+        sys.exit(__doc__)
 
-    # import graphviz here, as only `plot_trial` depends on it.
+    # import graphviz here, as only `trail_plot` depends on it.
     try:
         from graphviz import Digraph
     except ImportError:
@@ -51,6 +63,7 @@ def plot_trial(path, args):
         print("The `dot` from graphviz is not present: no figure is rendered.")
 
     # create graph instance of trial
+    path = pathlib.Path(args['TRIAL'])
     trial_name = os.path.basename(path)
     g = Digraph(trial_name, filename=path.joinpath("graph.gv").absolute())
     g.attr(rankdir = "LR")
@@ -99,28 +112,23 @@ def create_trial_config(path, prefix, num_patients):
 def add_events(patient):
     """Add list of events to a patient configuration file."""
 
-
-def trial(argv):
-    """Provides comamnds for interaction with in-silico trials."""
-    # parse command-line arguments
-    args = docopt(__doc__, argv=argv)
-
+def trial_create(args):
     # schema for argument validation
-    schema = Schema(
+    s = schema.Schema(
             {
-                '-n': Use(int, error='Only integer number of patients'),
-                '-f': Use(bool),
-                '-v': Use(bool),
-                '--prefix': Use(str, error='Only string prefixes are allowed'),
-                '--seed': Use(int, error='Only integer random seeds allowed'),
+                '-n': schema.Use(int, error='Only integer number of patients'),
+                '-f': schema.Use(bool),
+                '-v': schema.Use(bool),
+                '--prefix': schema.Use(str, error='Only string prefixes are allowed'),
+                '--seed': schema.Use(int, error='Only integer random seeds allowed'),
                 str: object, # all other inputs doesnt  matter yet
                 }
     )
 
     # validate arguments
     try:
-        args = schema.validate(args)
-    except SchemaError as e:
+        args = s.validate(args)
+    except schema.SchemaError as e:
         print(e)
         sys.exit(__doc__)
 
@@ -136,11 +144,6 @@ def trial(argv):
     num_patients = args['-n']
     verbose = args['-v']
     seed = args['--seed']
-
-    # switch operations based on commands
-    if args['plot']:
-        plot_trial(path.absolute(), args)
-        return
 
     # require explicit -f to overwrite existing directories
     if os.path.isdir(path) and not overwrite:
@@ -171,6 +174,7 @@ def trial(argv):
     dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
     cmd = ["docker", "run", "-v", f"{path.absolute()}:/patients/", "virtual_patient_generation"] + dirs
+
     if verbose:
         print(" ".join(cmd))
 
@@ -181,6 +185,88 @@ def trial(argv):
 
     # evaluate `virtual-patient-generation` model to fill config files
     call(cmd)
+
+    # TODO: remove this once transitioned towards YAML
+    import xml.etree.ElementTree as ET
+    import xml.dom.minidom
+
+    dirs = [d[0] for d in os.walk(path)][1:]
+    for d in dirs:
+        # get the resulting patient configuration in yaml
+        p = pathlib.Path(d).joinpath("patient.yml")
+        with open(p.absolute(), "r") as configfile:
+            config = yaml.load(configfile, yaml.SafeLoader)
+
+        # create an xml version
+        config_xml = config_yaml_to_xml(config)
+
+        # write xml version to disk
+        p = pathlib.Path(d).joinpath("config.xml")
+        with open(p.absolute(), "w") as outfile:
+            xml_string = ET.tostring(config_xml, encoding="unicode")
+            dom = xml.dom.minidom.parseString(xml_string)
+            outfile.write(dom.toprettyxml())
+
+def trial_run(args):
+    # validate run arguments
+    s = schema.Schema(
+            {
+                '-x': bool,
+                '-v': bool,
+                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+                str: object,
+            }
+    )
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        print(e)
+        sys.exit(__doc__)
+
+    # setup arguments
+    dry_run = args['-x']
+    verbose = True if dry_run else args['-v']
+    path = pathlib.Path(args['TRIAL'])
+
+    if verbose:
+        print(f" + Evaluating all patients for trial '{path}'")
+
+    # process patients in sorted order
+    for trial, patients, files in os.walk(path):
+        patients.sort()
+
+        for patient in patients:
+            p_dir = pathlib.Path(trial).joinpath(patient).absolute()
+
+            cmd = ["patient", "run", f"{p_dir}"]
+
+            if dry_run:
+                cmd += ["-x"]
+
+            if verbose:
+                cmd += ["-v"]
+                print(f"\n + Evaluating patient '{os.path.basename(p_dir)}'...")
+                print(f' + isct {" ".join(cmd)}\n')
+
+            patient_cmd(cmd)
+
+        break # prevent recursion of `os.walk()`
+
+    return
+
+def trial(argv):
+    """Provides comamnds for interaction with in-silico trials."""
+    # parse command-line arguments
+    args = docopt(__doc__, argv=argv)
+
+    if args['create']:
+        return trial_create(args)
+
+    if args['plot']:
+        return trail_plot(args)
+
+    if args['run']:
+        return trial_run(args)
 
 if __name__ == "__main__":
     sys.exit(trial(sys.argv[1:]))
