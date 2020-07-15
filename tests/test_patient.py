@@ -174,10 +174,18 @@ def test_convert_config_yaml_to_xml(tmp_path):
         assert element is not None
         assert len(element) == 1
 
+def test_patient_status_string(tmp_path):
+    patient = Patient(tmp_path)
+    patient.set_events()
 
+    status = patient.status()
+    assert len(status.split()) == len(patient.events()) + 2 # +2 for the braces
 
+    # only "x" after initialise
+    for flag in status.split()[1:-1]:
+        assert flag == "x"
 
-
-
-
-
+    # assert we obtain 'o' for a passed event
+    patient['events'][0]['status'] = True
+    status = patient.status()
+    assert status.split()[1] == "o"
