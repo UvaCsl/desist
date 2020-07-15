@@ -29,6 +29,14 @@ def test_patient_already_exist(trial_directory):
     # overwrite should work
     patient_cmd(f"patient create {path} -f".split())
 
+def test_patient_create_yaml_additional_patient(trial_directory):
+    path = trial_directory
+    trial(f"trial create {path} -n 1".split())
+    assert os.path.isdir(path)
+
+    patient_cmd(f"patient create {path} -f --id=1".split())
+    assert os.path.isfile(path.joinpath("patient_001/patient.yml"))
+
 def test_patient_create_yaml_no_docker(trial_directory, mocker):
     path = trial_directory
     trial(f"trial create {path}".split())
@@ -37,7 +45,6 @@ def test_patient_create_yaml_no_docker(trial_directory, mocker):
     mocker.patch('shutil.which', return_value=None)
     patient_cmd(f"patient create {path} -f".split())
     assert os.path.isfile(path.joinpath("patient_000/patient.yml"))
-
 
 def test_patient_run_dry(trial_directory, mocker):
     path = trial_directory

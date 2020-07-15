@@ -29,6 +29,7 @@ import yaml
 import os
 import sys
 import random
+import shutil
 
 from workflow.isct_container import container as container_cmd
 from workflow.patient import Patient
@@ -80,7 +81,6 @@ def patient_create(args):
 
     # clear out old, existing path
     if os.path.isdir(patient.dir):
-        import shutil
         shutil.rmtree(patient.dir)
 
     # setup patient directory and fill
