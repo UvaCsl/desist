@@ -6,7 +6,7 @@ from importlib import util as importlib_util
 from mock import patch
 
 from workflow.isct_trial import trial, create_trial_config
-from workflow.utilities import get_git_hash, isct_module_path
+from workflow.utilities import get_git_hash, isct_module_path, inner_tree
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -166,6 +166,63 @@ def test_trial_run_invalid_path(trial_directory):
     with pytest.raises(SystemExit):
         trial(f"trial run {path} -x".split())
 
+@pytest.mark.parametrize("patient_only", (True, False))
+@pytest.mark.parametrize("recurse", (True, False))
+def test_trial_status_log(trial_directory, recurse, patient_only):
+    path = trial_directory
+    num = 10
+    trial(f"trial create {path} -n {num}".split())
+
+    lines = list(inner_tree(path, recurse=recurse, patient_only=patient_only))
+
+    if recurse:
+        if patient_only:
+            # only the main patient directories
+            assert len(lines) == num
+        else:
+            # includes patient directores + patient.yml + config.xml + trial.yml
+            assert len(lines) == 3 * num + 1
+    else:
+        if patient_only:
+            # only the main patient directories
+            assert len(lines) == num
+        else:
+            # includes the trial.yml
+            assert len(lines) == num + 1
+
+def test_trial_status_cmd(trial_directory):
+    path = trial_directory
+    num = 10
+    trial(f"trial create {path} -n {num}".split())
+    trial(f"trial status {path}".split())
+
+    # invalid directory
+    path = path.joinpath("not_exist")
+    with pytest.raises(SystemExit):
+        trial(f"trial status {path}".split())
+
+    # invalid arguments
+    with pytest.raises(SystemExit):
+        trial(f"trial status {path} --does-not-exist-flag".split())
+
+    # path with directory without a patient config file
+    os.makedirs(path.joinpath("patient_000").joinpath("not_existing_dir"))
+    trial(f"trial status {path}".split())
+
+def test_trial_ls_cmd(trial_directory):
+    path = trial_directory
+    num = 10
+    trial(f"trial create {path} -n {num}".split())
+    trial(f"trial ls {path} -r".split())
+
+    # invalid directory
+    path = path.joinpath("not_exist")
+    with pytest.raises(SystemExit):
+        trial(f"trial ls {path}".split())
+
+    # invalid arguments
+    with pytest.raises(SystemExit):
+        trial(f"trial ls {path} --does-not-exist-flag".split())
 
 
 

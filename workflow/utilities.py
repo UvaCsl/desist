@@ -36,3 +36,62 @@ def get_git_hash(path):
 
     return label
 
+def tree(path, prefix="", recurse=False, patient_only=True, report=None):
+    """Tree recursively generates a visual tree structure line by line.
+
+    Tree prints the provided path and subsequently exhausts its inner_tree
+    routine to provide a line-by-line output of the subdirectories contents.
+
+    Keyword arguments:
+    prefix:     A string to be prefixed before every line-by-line output.
+    recurse:    If True recurses in all subdirectories of path.
+    patient_only:     If True allows to report status of directories that represent
+                patients.
+
+    Reference: https://stackoverflow.com/a/59109706
+    """
+
+    # show the top directory before recursing into all subdirectories
+    print(prefix + f"{os.path.basename(path)}/")
+    for line in inner_tree(path, prefix=prefix, recurse=recurse, report=report, patient_only=patient_only):
+        print(line)
+
+def inner_tree(path, prefix="", recurse=True, patient_only=True, report=None):
+    """Recursive routine of tree. Yields line-by-line output."""
+
+    # prefix components:
+    space =  '    '
+    branch = '│   '
+
+    # pointers:
+    tee =    '├── '
+    last =   '└── '
+
+    # contents of the directories, including files
+    contents = list(path.iterdir())
+
+    # filter any content that does not equal a patient's directory
+    if patient_only:
+        contents = list(filter(lambda x: os.path.isdir(x), contents))
+
+    # alfabetical order
+    contents.sort()
+
+    # setup the right number of indicators
+    pointers = [tee] * (len(contents) - 1) + [last]
+
+    # traverse the content
+    for pointer, path in zip(pointers, contents):
+
+        status_str = ""
+
+        # append the status of the patient when reporting
+        if path.is_dir() and report is not None:
+            status_str += report(path)
+
+        yield prefix + pointer + path.name + status_str
+
+        # recurse into directories if desired
+        if path.is_dir() and recurse:
+            extension = branch if pointer == tee else space
+            yield from inner_tree(path, prefix=prefix+extension, recurse=recurse, patient_only=patient_only, report=report)

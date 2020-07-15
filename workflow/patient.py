@@ -161,6 +161,12 @@ class Patient(dict):
         """Returns a list of events of the current patient."""
         return self.get('events', [])
 
+    def status(self):
+        """Returns a string indicating the event status: o: True, x: False."""
+        status = ["o" if event['status'] else "x" for event in self.events()]
+        status = " ".join(status)
+        return f" [ {status} ]"
+
 def dict_to_xml(config):
     """Helper routine to convert a dictionary towards a XML formation."""
     import xml.etree.ElementTree as ET
