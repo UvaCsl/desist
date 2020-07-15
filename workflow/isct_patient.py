@@ -141,21 +141,18 @@ def patient_run(argv):
         print(e)
         sys.exit(__doc__)
 
-    # obtain patient configuration
-    path = pathlib.Path(args['PATIENT'])
-    with open(path.joinpath("patient.yml"), "r") as configfile:
-        config = yaml.load(configfile, yaml.SafeLoader)
-
+    # process arguments
+    patient = Patient.from_yaml(args['PATIENT'])
     dry_run = args['-x']
     verbose = True if dry_run else args['-v']
 
     # run through all events
-    for i, event in enumerate(config['events']):
+    for i, event in enumerate(patient.events()):
 
         # ensure we traverse events in the correct order
         assert i == event['id']
 
-        cmd = ["container", "run", event['event'], str(path.absolute()), str(event['id'])]
+        cmd = ["container", "run", event['event'], str(patient.dir), str(event['id'])]
 
         if dry_run:
             cmd += ["-x"]
