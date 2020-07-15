@@ -4,7 +4,10 @@ import pathlib
 import os
 import yaml
 
+from mock import patch
+
 from workflow.patient import Patient, dict_to_xml
+from workflow.utilities import get_git_hash, isct_module_path
 
 @pytest.mark.parametrize("path", ["", "/home", pathlib.Path("/home")])
 def test_init_patient_paths(path):
@@ -79,9 +82,11 @@ def test_patient_set_defaults(tmp_path, pid, seed):
     assert patient['id'] == pid
     assert patient['status'] == False
     assert patient['random_seed'] == seed
+    assert patient['git_sha'] == get_git_hash(isct_module_path())
 
     # validate the following keys are present: required for submodules
     required = [
+            'git_sha',
             'id',
             'status',
             'random_seed',
@@ -94,6 +99,12 @@ def test_patient_set_defaults(tmp_path, pid, seed):
 
     for req in required:
         assert req in patient
+
+@patch('workflow.utilities.isct_module_path', return_value="/")
+def test_patient_set_defaults(tmp_path):
+    patient = Patient(tmp_path)
+    patient.set_defaults(1, 1)
+    assert patient['git_sha'] == "not_found"
 
 @pytest.mark.parametrize("pid, seed", [(-1, -1), (-1, 1), (1, -1), (0.0, 1), (1, 0.0)])
 def test_patient_set_defaults_invalid(tmp_path, pid, seed):

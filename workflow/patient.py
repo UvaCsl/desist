@@ -3,6 +3,8 @@ import pathlib
 import yaml
 import sys
 
+import workflow.utilities as utilities
+
 class Patient(dict):
     """Representation of a patient."""
 
@@ -74,7 +76,12 @@ class Patient(dict):
         assert type(pid) == int and pid >= 0
         assert type(seed) == int and seed >= 0
 
+        git_sha = utilities.get_git_hash(utilities.isct_module_path())
+        if git_sha == "":
+            git_sha = "not_found"
+
         defaults = {
+            'git_sha': git_sha,
             'id': pid,
             'status': False,
             'random_seed': seed,
