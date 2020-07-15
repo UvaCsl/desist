@@ -190,6 +190,39 @@ def test_trial_status_log(trial_directory, recurse, patient_only):
             # includes the trial.yml
             assert len(lines) == num + 1
 
+def test_trial_status_cmd(trial_directory):
+    path = trial_directory
+    num = 10
+    trial(f"trial create {path} -n {num}".split())
+    trial(f"trial status {path}".split())
+
+    # invalid directory
+    path = path.joinpath("not_exist")
+    with pytest.raises(SystemExit):
+        trial(f"trial status {path}".split())
+
+    # invalid arguments
+    with pytest.raises(SystemExit):
+        trial(f"trial status {path} --does-not-exist-flag".split())
+
+    # path with directory without a patient config file
+    os.makedirs(path.joinpath("patient_000").joinpath("not_existing_dir"))
+    trial(f"trial status {path}".split())
+
+def test_trial_ls_cmd(trial_directory):
+    path = trial_directory
+    num = 10
+    trial(f"trial create {path} -n {num}".split())
+    trial(f"trial ls {path} -r".split())
+
+    # invalid directory
+    path = path.joinpath("not_exist")
+    with pytest.raises(SystemExit):
+        trial(f"trial ls {path}".split())
+
+    # invalid arguments
+    with pytest.raises(SystemExit):
+        trial(f"trial ls {path} --does-not-exist-flag".split())
 
 
 

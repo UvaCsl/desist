@@ -1,8 +1,10 @@
 """
 Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
+  isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
   isct trial run TRIAL [-x] [-v]
+  isct trial status TRIAL
 
 Arguments:
     PATH        A path on the file system.
@@ -18,6 +20,7 @@ Options:
     --seed=SEED         Random seed for the trial generation [default: 1].
     --show              Directly show the resulting figure [default: false].
     -x                  Dry run: only log the command without evaluating.
+    -r, --recurse       Recursivly show content of trial directory.
 """
 
 from docopt import docopt
@@ -244,6 +247,59 @@ def trial_run(args):
 
     return
 
+def trial_list(args):
+    # validate run arguments
+    s = schema.Schema(
+            {
+                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+                '--recurse': bool,
+                str: object,
+            }
+    )
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        print(e)
+        sys.exit(__doc__)
+
+    # setup arguments
+    path = pathlib.Path(args['TRIAL'])
+    recurse = args['--recurse']
+
+    # traverse the directory
+    utilities.tree(path, recurse=recurse, patient_only=False)
+
+def trial_status(args):
+    # validate run arguments
+    s = schema.Schema(
+            {
+                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+                str: object,
+            }
+    )
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        print(e)
+        sys.exit(__doc__)
+
+    # setup arguments
+    path = pathlib.Path(args['TRIAL'])
+
+    # report function how to report on the patient's status for the tree()
+    def report(patient):
+        """Appends the patients status when a patient's directory."""
+
+        msg = ""
+        try:
+            msg += Patient.from_yaml(patient).status()
+        except FileNotFoundError:
+            pass
+
+        return msg
+
+    utilities.tree(path, recurse=True, patient_only=True, report=report)
+
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
     # parse command-line arguments
@@ -257,6 +313,12 @@ def trial(argv):
 
     if args['run']:
         return trial_run(args)
+
+    if args['status']:
+        return trial_status(args)
+
+    if args['ls']:
+        return trial_list(args)
 
 if __name__ == "__main__":
     sys.exit(trial(sys.argv[1:]))
