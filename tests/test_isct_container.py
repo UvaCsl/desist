@@ -6,7 +6,7 @@ import yaml
 
 from mock import patch
 
-
+from workflow.patient import Patient
 from workflow.isct_container import container
 from tests.test_isct_trial import trial_directory
 from workflow.isct_container import form_container_command
@@ -90,3 +90,25 @@ def test_run_container_valid_path(trial_directory, mocker):
         yaml.dump(config, configfile)
 
     container(f"container run tag {patient} 1 -x".split())
+
+@patch('shutil.which', return_value="/mocker/bin/docker")
+@patch('subprocess.check_output', return_value="")
+@patch('subprocess.call', return_value=True)
+def test_run_container_marks_event_as_complete(mock_which, mock_call, mock_check_output, trial_directory):
+    # create config
+    path = trial_directory
+    patient = Patient(path.joinpath("patient_000"))
+    os.makedirs(patient.dir)
+    patient.set_events()
+    patient.to_yaml()
+
+    # run the first dummy event (note: subprocess.call mocks the docker call)
+    event = patient.events()[0]
+    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+
+    # make sure patient config still exist
+    assert Patient.path_is_patient(patient.dir)
+
+    # ensure the first status is now set to true
+    patient = Patient.from_yaml(patient.dir)
+    assert patient.events()[0]['status']

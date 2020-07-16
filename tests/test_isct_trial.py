@@ -5,6 +5,7 @@ from importlib import util as importlib_util
 
 from mock import patch
 
+from workflow.patient import Patient
 from workflow.isct_trial import trial, create_trial_config
 from workflow.utilities import get_git_hash, isct_module_path, inner_tree
 
@@ -166,24 +167,24 @@ def test_trial_run_invalid_path(trial_directory):
     with pytest.raises(SystemExit):
         trial(f"trial run {path} -x".split())
 
-@pytest.mark.parametrize("patient_only", (True, False))
+@pytest.mark.parametrize("dir_filter", (None, Patient.path_is_patient))
 @pytest.mark.parametrize("recurse", (True, False))
-def test_trial_status_log(trial_directory, recurse, patient_only):
+def test_trial_status_log(trial_directory, recurse, dir_filter):
     path = trial_directory
     num = 10
     trial(f"trial create {path} -n {num}".split())
 
-    lines = list(inner_tree(path, recurse=recurse, patient_only=patient_only))
+    lines = list(inner_tree(path, recurse=recurse, dir_filter=dir_filter))
 
     if recurse:
-        if patient_only:
+        if dir_filter is not None:
             # only the main patient directories
             assert len(lines) == num
         else:
             # includes patient directores + patient.yml + config.xml + trial.yml
             assert len(lines) == 3 * num + 1
     else:
-        if patient_only:
+        if dir_filter is not None:
             # only the main patient directories
             assert len(lines) == num
         else:
@@ -207,6 +208,7 @@ def test_trial_status_cmd(trial_directory):
 
     # path with directory without a patient config file
     os.makedirs(path.joinpath("patient_000").joinpath("not_existing_dir"))
+    os.makedirs(path.joinpath("not_existing_dir"))
     trial(f"trial status {path}".split())
 
 def test_trial_ls_cmd(trial_directory):

@@ -167,6 +167,23 @@ class Patient(dict):
         status = " ".join(status)
         return f" [ {status} ]"
 
+    def completed_event(self, event_id):
+        """Marks the status of event with id = `event_id` to True."""
+        for event in self.events():
+            if event['id'] == event_id:
+                event['status'] = True
+
+    @staticmethod
+    def path_is_patient(path):
+        """Returns true if the dictory contains a patient config file."""
+        path = pathlib.Path(path)
+        try:
+            Patient.from_yaml(path)
+            return True
+        except FileNotFoundError:
+            return False
+
+
 def dict_to_xml(config):
     """Helper routine to convert a dictionary towards a XML formation."""
     import xml.etree.ElementTree as ET

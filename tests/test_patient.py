@@ -189,3 +189,30 @@ def test_patient_status_string(tmp_path):
     patient['events'][0]['status'] = True
     status = patient.status()
     assert status.split()[1] == "o"
+
+    # assert same result for `completed_event`
+    patient.set_events(overwrite=True)
+    patient.completed_event(0)
+    status = patient.status()
+    assert status.split()[1] == "o"
+
+def test_patient_is_patient(tmp_path):
+    assert Patient.path_is_patient(tmp_path) == False
+    patient = Patient(tmp_path).set_events().to_yaml()
+    assert Patient.path_is_patient(tmp_path)
+
+def test_patient_completed_event(tmp_path):
+    patient = Patient(tmp_path)
+    patient.set_events()
+
+    # mark one complete
+    patient.completed_event(0)
+    assert patient['events'][0]['status']
+
+    # mark all complete
+    for event in patient.events():
+        patient.completed_event(event['id'])
+
+    # verify all are complete
+    for event in patient.events():
+        assert event['status']
