@@ -36,27 +36,32 @@ def get_git_hash(path):
 
     return label
 
-def tree(path, prefix="", recurse=False, patient_only=True, report=None):
+def tree(path, prefix="", recurse=False, dir_filter=None, report=None):
     """Tree recursively generates a visual tree structure line by line.
 
     Tree prints the provided path and subsequently exhausts its inner_tree
     routine to provide a line-by-line output of the subdirectories contents.
 
     Keyword arguments:
-    prefix:     A string to be prefixed before every line-by-line output.
-    recurse:    If True recurses in all subdirectories of path.
-    patient_only:     If True allows to report status of directories that represent
-                patients.
+    prefix:         A string to be prefixed before every line-by-line output.
+    recurse:        If True recurses in all subdirectories of path.
+    dir_filter:     A function to filter directories. The function should
+                    receive a path and return either True/False.
+    report:         A function to report additional information on a directory.
+                    Any valid path is passed into this function, which is
+                    expected to return a string.
+
 
     Reference: https://stackoverflow.com/a/59109706
     """
 
     # show the top directory before recursing into all subdirectories
     print(prefix + f"{os.path.basename(path)}/")
-    for line in inner_tree(path, prefix=prefix, recurse=recurse, report=report, patient_only=patient_only):
+    for line in inner_tree(path, prefix=prefix, recurse=recurse,
+                           report=report, dir_filter=dir_filter):
         print(line)
 
-def inner_tree(path, prefix="", recurse=True, patient_only=True, report=None):
+def inner_tree(path, prefix="", recurse=True, dir_filter=None, report=None):
     """Recursive routine of tree. Yields line-by-line output."""
 
     # prefix components:
@@ -70,9 +75,12 @@ def inner_tree(path, prefix="", recurse=True, patient_only=True, report=None):
     # contents of the directories, including files
     contents = list(path.iterdir())
 
-    # filter any content that does not equal a patient's directory
-    if patient_only:
+    # filter any content on:
+    # - being a valid directory (os.path.isdir())
+    # - the provided dir_filter argument
+    if dir_filter is not None:
         contents = list(filter(lambda x: os.path.isdir(x), contents))
+        contents = list(filter(lambda x: dir_filter(x), contents))
 
     # alfabetical order
     contents.sort()
@@ -94,4 +102,7 @@ def inner_tree(path, prefix="", recurse=True, patient_only=True, report=None):
         # recurse into directories if desired
         if path.is_dir() and recurse:
             extension = branch if pointer == tee else space
-            yield from inner_tree(path, prefix=prefix+extension, recurse=recurse, patient_only=patient_only, report=report)
+
+            yield from inner_tree(path, prefix=prefix+extension,
+                                  recurse=recurse, dir_filter=dir_filter,
+                                  report=report)

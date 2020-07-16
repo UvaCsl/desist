@@ -267,7 +267,7 @@ def trial_list(args):
     recurse = args['--recurse']
 
     # traverse the directory
-    utilities.tree(path, recurse=recurse, patient_only=False)
+    utilities.tree(path, recurse=recurse)
 
 def trial_status(args):
     # validate run arguments
@@ -286,19 +286,8 @@ def trial_status(args):
     # setup arguments
     path = pathlib.Path(args['TRIAL'])
 
-    # report function how to report on the patient's status for the tree()
-    def report(patient):
-        """Appends the patients status when a patient's directory."""
-
-        msg = ""
-        try:
-            msg += Patient.from_yaml(patient).status()
-        except FileNotFoundError:
-            pass
-
-        return msg
-
-    utilities.tree(path, recurse=True, patient_only=True, report=report)
+    utilities.tree(path, recurse=False, dir_filter=Patient.path_is_patient,
+                   report=lambda p : Patient.from_yaml(p).status())
 
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
