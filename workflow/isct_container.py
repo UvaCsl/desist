@@ -26,6 +26,8 @@ import shutil
 import subprocess
 import yaml
 
+from workflow.patient import Patient
+
 def get_definition_file(path):
     return path.joinpath("Dockerfile")
 
@@ -135,7 +137,7 @@ def run_container(args):
 
     # ensure the container exists
     tag = args['CONTAINER']
-    patient = args['PATIENT']
+    p_dir = args['PATIENT']
     event_id = args['ID']
     cmd = form_container_exists_command(tag)
 
@@ -150,11 +152,10 @@ def run_container(args):
             return
 
     # assert tag and event match: an event exists with the provided ID
-    with open(pathlib.Path(patient).joinpath("patient.yml"), "r") as configfile:
-        config = yaml.load(configfile, yaml.SafeLoader)
+    patient = Patient.from_yaml(p_dir)
 
     match_event_id = False
-    for event in config['events']:
+    for event in patient.events():
         if event['event'] == tag and event['id'] == event_id:
             match_event_id = True
 
@@ -162,7 +163,7 @@ def run_container(args):
     assert match_event_id, msg
 
     # evaluate the docker of that tag with the files
-    cmd = form_container_command(tag, args['PATIENT'], args['ID'])
+    cmd = form_container_command(tag, patient.dir, args['ID'])
 
     # logging
     if verbose:
@@ -171,6 +172,11 @@ def run_container(args):
     # evaluation
     if not dry_run:
         subprocess.call(cmd)
+
+        # mark event as complete and update config file on disk
+        patient.completed_event(event_id)
+        patient.to_yaml()
+
 
 def container(argv=None):
     """Provides commands for interaction with building containers."""

@@ -229,7 +229,7 @@ def trial_run(args):
         patients.sort()
 
         for p_dir in patients:
-            patient = Patient(pathlib.Path(trial).joinpath(p_dir))
+            patient = Patient.from_yaml(pathlib.Path(trial).joinpath(p_dir))
 
             cmd = ["patient", "run", f"{patient.dir}"]
 
