@@ -189,3 +189,8 @@ def test_patient_status_string(tmp_path):
     patient['events'][0]['status'] = True
     status = patient.status()
     assert status.split()[1] == "o"
+
+def test_patient_is_patient(tmp_path):
+    assert Patient.path_is_patient(tmp_path) == False
+    patient = Patient(tmp_path).set_events().to_yaml()
+    assert Patient.path_is_patient(tmp_path)

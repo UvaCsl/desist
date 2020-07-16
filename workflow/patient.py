@@ -167,6 +167,16 @@ class Patient(dict):
         status = " ".join(status)
         return f" [ {status} ]"
 
+    @staticmethod
+    def path_is_patient(path):
+        """Returns true if the dictory contains a patient config file."""
+        path = pathlib.Path(path)
+        try:
+            Patient.from_yaml(path)
+            return True
+        except FileNotFoundError:
+            return False
+
 def dict_to_xml(config):
     """Helper routine to convert a dictionary towards a XML formation."""
     import xml.etree.ElementTree as ET
