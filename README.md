@@ -17,18 +17,52 @@ ssh://git@gitlab.computationalscience.nl:1022/insist/in-silico-trial.git
 ```
 Then recursively update the submodules: 
 ``` 
-git submodule update --init --recursive
+git submodule update --init --recursive --progress
 ```
-Locally install the `isct` package and its requirements. Note: `-e` can be 
-omitted if you do not intend to modify the package. 
+The package can be installed either in the global Python environment or within
+a local, virtual environment. To (optionally) install the virtual environment, 
+first run 
+```
+python3 -m pip install virtualenv
+python3 -m virtualenv venv 
+source venv/bin/activate 
+```
+This creates the virtual environment in which `isct` will be installed. This 
+keeps the `isct` environment completely separate from any other Python 
+environments. Note, you need to ensure the virtual environment is active
+before you can run any of the following command. Typing `deactivate` leaves the
+virtual environment. 
+
+Now, we can locally install the `isct` package and its requirements. Run the
+following steps within the `venv` if you desire to use the virtual environment. 
+Note: `-e` (or `--editable`) allows to edit the package and have its changes
+be reflected in `isct`. Otherwise we are required to reinstall the package 
+after any change. If you do not intent to edit the package `-e` can be omitted. 
+
+From within `in-silico-trial/` the package and the (most) essential requirements
+are installed by: 
 ```
 pip install -e . 
+```
+This installs `isct` with the bare minimum requirements, which disables some
+non-essential functionalities of the `isct` command with the benefit of 
+installing (slightly) less dependencies. However, it is recommended to install
+all its requirements as given in `requirements.txt` to enable all features
+of `isct` by evaluating: 
+```
 pip install -r requirements.txt
 ```
-You can now use `isct` to manage the trials. To show its usage: 
+This provides the `isct` command to manage the in-silico trials. To check the 
+command is present, run 
 ```
 isct --help 
 ```
+to show it usage. If you installed all requirements and want to perform a more
+throurough verification, you can evaluate the tests: 
+```
+pytest --cov=workflow 
+```
+
 
 ## Usage 
 ```
