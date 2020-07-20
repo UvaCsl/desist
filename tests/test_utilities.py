@@ -1,6 +1,7 @@
 import pytest
 import pathlib
 import os
+import subprocess
 
 from mock import patch
 
@@ -10,7 +11,8 @@ def test_isct_module_path():
     import workflow as wf
     assert isct_module_path().samefile(os.path.split(wf.__file__)[0])
 
-@patch('subprocess.check_output', return_value="myhash")
+@patch('subprocess.run',
+        return_value=subprocess.CompletedProcess(["git", "rev-parse", "HEAD"], returncode=0, stdout="myhash"))
 def test_get_git_hash(mock_check_output, tmp_path):
     # output is mocked, we do not know the current hash
     h = get_git_hash(tmp_path)

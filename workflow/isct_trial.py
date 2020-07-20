@@ -32,9 +32,7 @@ import os
 import shutil
 import yaml
 import pathlib
-
-from subprocess import call
-
+import subprocess
 import schema
 
 import workflow.utilities as utilities
@@ -196,7 +194,7 @@ def trial_create(args):
         return
 
     # evaluate `virtual-patient-generation` model to fill config files
-    call(cmd)
+    subprocess.run(cmd)
 
     # TODO: remove this once transitioned towards YAML
     for d in [d[0] for d in os.walk(path)][1:]:

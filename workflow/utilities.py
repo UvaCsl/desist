@@ -27,10 +27,14 @@ def get_git_hash(path):
 
     try:
         # with universal_newlines=True returns a string
-        label = subprocess.check_output(
+        label = subprocess.run(
                     ["git", "rev-parse", "HEAD"],
                     universal_newlines=True,
-                    cwd=path).strip()
+                    cwd=path,
+                    capture_output=True,
+                    check=True,
+                    )
+        label = label.stdout.strip()
     except subprocess.CalledProcessError:
         label = ""
 

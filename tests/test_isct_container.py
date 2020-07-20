@@ -92,9 +92,8 @@ def test_run_container_valid_path(trial_directory, mocker):
     container(f"container run tag {patient} 1 -x".split())
 
 @patch('shutil.which', return_value="/mocker/bin/docker")
-@patch('subprocess.check_output', return_value="")
-@patch('subprocess.call', return_value=True)
-def test_run_container_marks_event_as_complete(mock_which, mock_call, mock_check_output, trial_directory):
+@patch('subprocess.run', return_value=True)
+def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_directory):
     # create config
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
@@ -102,8 +101,9 @@ def test_run_container_marks_event_as_complete(mock_which, mock_call, mock_check
     patient.set_events()
     patient.to_yaml()
 
-    # run the first dummy event (note: subprocess.call mocks the docker call)
+    # run the first dummy event (note: subprocess.run mocks the docker call)
     event = patient.events()[0]
+    print(f"container run {event['event']} {patient.dir} {event['id']}".split())
     container(f"container run {event['event']} {patient.dir} {event['id']}".split())
 
     # make sure patient config still exist
