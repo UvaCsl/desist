@@ -162,6 +162,9 @@ def test_trial_run(trial_directory, mocker):
     # just a dry run, mock the docker executable path
     trial(f"trial run {path} -x".split())
 
+    # run dry run with --gnu-parallel
+    trial(f"trial run {path} -x --gnu-parallel".split())
+
 def test_trial_run_invalid_path(trial_directory):
     path = trial_directory.joinpath("not_existing")
     with pytest.raises(SystemExit):
@@ -225,6 +228,3 @@ def test_trial_ls_cmd(trial_directory):
     # invalid arguments
     with pytest.raises(SystemExit):
         trial(f"trial ls {path} --does-not-exist-flag".split())
-
-
-

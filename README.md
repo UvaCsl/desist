@@ -105,6 +105,22 @@ Options:
     --show              Directly show the resulting figure [default: false].
 ```
 
+### Parallel execution
+The `isct` command currently supports only basic parallelism using GNU 
+`parallel`. The `--gnu-parallel` flag enables that output from `isct trial run`
+can be piped into `parallel`, which will control the parallel execution of the
+different patients. Note, this runs the chain of events per patient on a single 
+thread. This form of parallelism requires that `parallel` is available on 
+the system (linux `apt install parallel`, mac `brew install parallel`).
+
+Running on two cores: 
+```
+isct trial create newtrial -n 20
+isct trial run newtrial -v --gnu-parallel | parallel -j2 
+```
+To use all available cores, change `j2` to `j+0`. More advanced settings are
+described in `parallel`'s [manual](https://www.gnu.org/software/parallel/parallel_tutorial.html). 
+
 ### Documentation 
 More in depth documentation can be found at: https://insilicostroketrial.eu/insist_docs/. 
 
