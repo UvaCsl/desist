@@ -3,7 +3,7 @@ Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
   isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
-  isct trial run TRIAL [-x] [-v]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel]
   isct trial status TRIAL
 
 Arguments:
@@ -21,6 +21,8 @@ Options:
     --show              Directly show the resulting figure [default: false].
     -x                  Dry run: only log the command without evaluating.
     -r, --recurse       Recursivly show content of trial directory.
+    --gnu-parallel      Forms the outputs to be piped into gnu parallel, e.g.
+                        `isct trial run TRIAL --gnu-parallel | parallel -j+0`
 """
 
 from docopt import docopt
@@ -207,6 +209,7 @@ def trial_run(args):
                 '-x': bool,
                 '-v': bool,
                 'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+                '--gnu-parallel': bool,
                 str: object,
             }
     )
@@ -220,9 +223,12 @@ def trial_run(args):
     dry_run = args['-x']
     verbose = True if dry_run else args['-v']
     path = pathlib.Path(args['TRIAL'])
+    gnu_parallel = args['--gnu-parallel']
+
+    prefix = "#" if gnu_parallel else ""
 
     if verbose:
-        print(f" + Evaluating all patients for trial '{path}'")
+        print(f"{prefix} + Evaluating all patients for trial '{path}'")
 
     # process patients in sorted order
     for trial, patients, files in os.walk(path):
@@ -238,10 +244,13 @@ def trial_run(args):
 
             if verbose:
                 cmd += ["-v"]
-                print(f"\n + Evaluating patient '{os.path.basename(patient.dir)}'...")
-                print(f' + isct {" ".join(cmd)}\n')
+                print(f"\n{prefix} + Evaluating patient '{os.path.basename(patient.dir)}'...")
+                print(f'{prefix} + isct {" ".join(cmd)}\n')
 
-            patient_cmd(cmd)
+            if not gnu_parallel:
+                patient_cmd(cmd)
+            else:
+                print("isct " + " ".join(cmd))
 
         break # prevent recursion of `os.walk()`
 
