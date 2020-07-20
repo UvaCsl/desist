@@ -22,7 +22,7 @@ Options:
 
 from docopt import docopt
 from schema import Schema, Use, SchemaError
-from subprocess import call
+import subprocess
 import pathlib
 import schema
 import yaml
@@ -113,7 +113,7 @@ def patient_create(args):
             print("Cannot reach Docker.")
             return
 
-        call(cmd)
+        subprocess.run(cmd)
 
     # events are added _after_ `virtrual_patient_generation` to allow for the
     # possibility of adding logic in the events, e.g. if age > criteria then

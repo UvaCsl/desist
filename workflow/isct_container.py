@@ -103,7 +103,7 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
-            subprocess.call(cmd)
+            subprocess.run(cmd)
 
 def run_container(args):
     """Runs the container of the provided tag for the given patient."""
@@ -146,7 +146,7 @@ def run_container(args):
 
     if not dry_run:
         try:
-            subprocess.check_output(cmd)
+            subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e :
             print(f'Container does not exit: "{e}"')
             return
@@ -171,7 +171,7 @@ def run_container(args):
 
     # evaluation
     if not dry_run:
-        subprocess.call(cmd)
+        subprocess.run(cmd)
 
         # mark event as complete and update config file on disk
         patient.completed_event(event_id)

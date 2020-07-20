@@ -14,7 +14,6 @@ The most commonly used isct commands are:
 See `isct help <command>` for more information on a specific command.
 """
 
-from subprocess import call
 from docopt import docopt, DocoptExit
 import importlib
 import sys
