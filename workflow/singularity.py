@@ -6,10 +6,15 @@ from workflow.container import Container, ContainerType
 import workflow.utilities as utilities
 
 class Singularity(Container):
-    def __init__(self):
+    def __init__(self, path=None):
         super().__init__()
         self.type = ContainerType.SINGULARITY
-        self.bind_flag = '-b '
+        self.bind_flag = '-B '
+
+        self.image_path = "." if path is None else path
+        self.image_path = pathlib.Path(self.image_path).absolute()
+
+        assert os.path.isdir(self.image_path), "Singularity path must exist."
 
     def dry_build(self):
 
@@ -23,7 +28,8 @@ class Singularity(Container):
         return not self.executable_present()
 
     def image(self, path):
-        assert False, "not implemented"
+        path = self.image_path.joinpath(path)
+        return f"{pathlib.Path(path).absolute()}.sif"
 
     def build_image(self, path):
         """Builds the `image.sif` container image using Singularity."""
@@ -32,7 +38,8 @@ class Singularity(Container):
 
         # images are build in the local directory of definition file
         chdir = f"cd {path.absolute()}"
-        cmd = f"sudo {self.type} build --force {base}.sif {base}.def"
+        cmd = f"""sudo {self.type} build --force {base}.sif singularity.def &&
+        mv {base}/{base}.sif {self.image_path}/{base}.sif"""
 
         if self.os == utilities.OS.LINUX:
             return f"{chdir} && {cmd}".split()
@@ -42,14 +49,13 @@ class Singularity(Container):
         # containing all submodules, therefore `cd` into the path's basename.
         chdir = f"cd /vagrant/{os.path.basename(path)}"
 
-        # `vagrant` accepts singularity commands over ssh
-        return ["vagrant", "ssh", "-c", " ".join(f"{chdir} && {cmd}".split())]
-
-    def image_exist(self, path):
-        assert False, "not implemented"
-
-    def run_image(self, path, patient, event_id):
-        assert False, "not implemented"
+        # `vagrant` accepts singularity commands over ssh and move the resulting
+        # image file `singularity.sif` to the desired directory.
+        res = ["vagrant", "ssh", "-c", f'"{" ".join(f"{chdir} && {cmd}".split())}"']
+        res += ["&&", "mv", f"{base}/{base}.sif", f"{self.image_path}/{base}.sif"]
+        return res
 
     def check_image(self, path):
-        assert False, "not implemented"
+        """Returns a command to test if the `.sif` file of the path exists."""
+        path = self.image(path)
+        return f"test -i {path}".split()

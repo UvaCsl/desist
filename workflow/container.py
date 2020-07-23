@@ -7,11 +7,11 @@ import os
 
 import workflow.utilities as utilities
 
-def new_container(singularity=False):
+def new_container(singularity_path=None):
     """Generates a specific container instance based on input arguments."""
-    if singularity:
+    if singularity_path is not None:
         from workflow.singularity import Singularity
-        return Singularity()
+        return Singularity(singularity_path)
     else:
         from workflow.docker import Docker
         return Docker()
@@ -29,6 +29,7 @@ class Container(abc.ABC):
         self.type = None
         self.volumes = []
         self.os = utilities.OS.from_platform(sys.platform)
+        self.sudo = ''
 
     def bind_volume(self, host, local):
         """Binds a volume to the current container"""
