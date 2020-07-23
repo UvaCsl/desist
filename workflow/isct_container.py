@@ -32,8 +32,6 @@ from workflow.utilities import OS
 from workflow.container import new_container
 from workflow.patient import Patient
 
-def get_definition_file(path):
-    return path.joinpath("Dockerfile")
 
 # TODO: support alternative containers in addition to Docker.
 def form_container_command(tag, patient, event_id):

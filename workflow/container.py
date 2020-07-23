@@ -56,17 +56,14 @@ class Container(abc.ABC):
     @abc.abstractmethod
     def image(self, path):
         """Returns the representation of the image for the specic container."""
-        pass
 
     @abc.abstractmethod
     def build_image(self, image):
         """Returns the command as list of strings that builds the image."""
-        pass
 
     @abc.abstractmethod
     def check_image(self, path):
         """Returns the command to verify the image exists on the host."""
-        pass
 
     def run_image(self, tag, args):
         """Returns the command to run the image corresponding to `tag` where

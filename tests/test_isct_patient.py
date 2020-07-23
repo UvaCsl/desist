@@ -54,7 +54,7 @@ def test_patient_run_dry(trial_directory, mocker):
     mocker.patch("shutil.which", return_value="/mocker/bin/docker")
 
     # only runs it, does not really assert anything
-    patient_cmd(f"patient run {patient} -x".split())
+    patient_cmd(f"patient run {patient} -x --singularity .".split())
 
 def test_patient_run_invalid_path(trial_directory):
     path = trial_directory.joinpath("not_existing")
