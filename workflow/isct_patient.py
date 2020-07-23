@@ -31,6 +31,7 @@ import sys
 import random
 import shutil
 
+from workflow.container import new_container
 from workflow.isct_container import container as container_cmd
 from workflow.patient import Patient
 
@@ -76,7 +77,7 @@ def patient_create(args):
 
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient.dir) and not overwrite:
-        print(f"Patient '{patient}' already exist. Provide -f to overwrite")
+        print(f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
         sys.exit(__doc__)
 
     # clear out old, existing path
@@ -99,18 +100,19 @@ def patient_create(args):
     # write patient configuration to disk
     patient.to_yaml()
 
+    c = new_container(False)
+
     # only call docker to fill the patients data when not set
     if not args['--config-only']:
-        cmd = [
-                "docker",
-                "run", "-v", f"{path.absolute()}:/patients/",
-                "virtual_patient_generation",
-                f"/patients/{patient_prefix}_{patient_postfix}"
-        ]
+        tag = "virtual_patient_generation"
+        arg = f"/patients/{patient_prefix}_{patient_postfix}"
+
+        c.bind_volume(path.absolute(), "/patients/")
+        cmd = c.run_image(tag, arg)
 
         # only call into Docker when available on the system
-        if shutil.which("docker") is None:
-            print("Cannot reach Docker.")
+        if not c.executable_present():
+            print(f"Cannot reach {c.type}.")
             return
 
         subprocess.run(cmd)

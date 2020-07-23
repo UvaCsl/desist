@@ -3,9 +3,11 @@ import pathlib
 import os
 import subprocess
 
-from mock import patch
+
+from mock import patch, MagicMock
 
 from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
+from workflow.utilities import OS
 
 def test_isct_module_path():
     import workflow as wf
@@ -51,3 +53,20 @@ def test_inner_tree(tmp_path, dirs, recurse, report):
 
     # run through full command and make sure it doesn't crash.
     tree(tmp_path)
+
+def test_OS_enum_values():
+    assert OS.LINUX.value == "linux"
+    assert OS.MACOS.value == "darwin"
+
+@pytest.mark.parametrize("platform, os", [
+        ("linux", OS.LINUX),
+        ("linux2", OS.LINUX),
+        ("darwin", OS.MACOS),
+    ])
+def test_OS_enum_init(platform, os):
+    assert OS.from_platform(platform) == os
+
+def test_OS_enum_exit_windows():
+    # ensure windows fails
+    with pytest.raises(SystemExit):
+        OS.from_platform("win32")

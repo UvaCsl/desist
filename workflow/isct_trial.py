@@ -35,6 +35,7 @@ import pathlib
 import subprocess
 import schema
 
+from workflow.container import new_container
 import workflow.utilities as utilities
 from workflow.patient import Patient
 from workflow.isct_patient import patient as patient_cmd
@@ -183,14 +184,19 @@ def trial_create(args):
     # this runs through docker only once; and not for every patient
     dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
-    cmd = ["docker", "run", "-v", f"{path.absolute()}:/patients/", "virtual_patient_generation"] + dirs
+
+    c = new_container(False)
+    tag = "virtual_patient_generation"
+
+    c.bind_volume(path.absolute(), "/patients/")
+    cmd = c.run_image(tag, " ".join(dirs))
 
     if verbose:
         print(" ".join(cmd))
 
     # only call into Docker when Docker is present on a system
-    if shutil.which("docker") is None:
-        print("Cannot reach Docker.")
+    if not c.executable_present():
+        print(f"Cannot reach {c.type}.")
         return
 
     # evaluate `virtual-patient-generation` model to fill config files

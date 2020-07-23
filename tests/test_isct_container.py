@@ -10,7 +10,6 @@ from workflow.patient import Patient
 from workflow.isct_container import container
 from tests.test_isct_trial import trial_directory
 from workflow.isct_container import form_container_command
-from workflow.isct_container import form_container_exists_command
 from workflow.isct_trial import trial as trial_cmd
 
 @pytest.mark.parametrize("arg", ([1, 1.0, "/novalidpath", None]))
@@ -44,15 +43,6 @@ def test_form_docker_command(trial_directory):
     assert len(cmd) == len(res)
 
     # identical command contents
-    for (c, r) in zip(cmd, res):
-        assert c == r
-
-def test_form_container_exists_command():
-    tag = "docker_tag"
-    cmd = form_container_exists_command(tag)
-    res = ["docker", "image", "inspect", f"{tag}"]
-
-    assert len(cmd) == len(res)
     for (c, r) in zip(cmd, res):
         assert c == r
 
