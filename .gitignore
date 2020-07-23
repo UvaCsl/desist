@@ -8,3 +8,5 @@ _build
 
 # local installation
 *.egg*
+
+.vagrant/
