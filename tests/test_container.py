@@ -10,7 +10,7 @@ from workflow.docker import Docker
 from workflow.singularity import Singularity
 from workflow.container import ContainerType
 
-@pytest.mark.parametrize("singularity, cls", [(True, Singularity), (False, Docker)])
+@pytest.mark.parametrize("singularity, cls", [(".", Singularity), (None, Docker)])
 def test_new_container_instance(singularity, cls):
     c = new_container(singularity)
     assert isinstance(c, cls)
@@ -23,7 +23,7 @@ def test_string_container_type(enum, string):
     assert str(enum) == string
 
 @pytest.mark.parametrize("os_str, os", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
-@pytest.mark.parametrize("container_type", [True, False])
+@pytest.mark.parametrize("container_type", [".", None])
 def test_container_instance_defaults(os_str, os, container_type, mocker):
     mocker.patch("sys.platform", os_str)
     c = new_container(container_type)
@@ -43,7 +43,7 @@ def test_container_bind_flags():
     c = Docker()
     assert c.bind_flag == "-v "
     c = Singularity()
-    assert c.bind_flag == "-b "
+    assert c.bind_flag == "-B "
 
 @pytest.mark.parametrize("host, local", [
         ("/home/folder", "/patient"),
@@ -53,7 +53,7 @@ def test_container_bind_flags():
         (pathlib.Path("/home/folder"),  pathlib.Path("/patient")),
         (pathlib.Path("/home/folder/"), pathlib.Path("/patient/")),
     ])
-@pytest.mark.parametrize("container_type", [True, False])
+@pytest.mark.parametrize("container_type", [".", None])
 def test_container_bind_volume(host, local, container_type):
     c = new_container(container_type)
     assert c.volumes == []
@@ -63,7 +63,7 @@ def test_container_bind_volume(host, local, container_type):
         assert len(c.volumes) == i + 1
         assert c.volumes[i] == "/home/folder:/patient"
 
-@pytest.mark.parametrize("container_type", [True, False])
+@pytest.mark.parametrize("container_type", [".", None])
 def test_container_detect_executable(container_type, mocker):
     mocker.patch("shutil.which", return_value=None)
     c = new_container(container_type)
@@ -106,6 +106,10 @@ def test_container_dry_build_with_executable(mock_executable_present, mocker):
 def test_docker_container_image_tag(tmp_path):
     c = Docker()
     assert os.path.basename(tmp_path) == c.image(tmp_path)
+
+def test_singularity_container_image_tag(tmp_path):
+    c = Singularity(tmp_path)
+    assert f"{tmp_path}.sif" == c.image(tmp_path)
 
 @pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
 def test_docker_check_image_command(os_str, OS, mocker, tmp_path):
@@ -152,8 +156,32 @@ def test_docker_run_image_command(os_str, OS, mocker, tmp_path):
     for k in ['run', 'docker', 'host', 'local', ':', c.bind_flag, os.path.basename(tmp_path), arg]:
         assert k in cmd
 
+def test_create_singularity_container_invalid_path(tmp_path):
+    with pytest.raises(AssertionError):
+        c = Singularity(tmp_path.joinpath("not_existing"))
 
+@pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
+def test_singularity_check_image_command(os_str, OS, mocker, tmp_path):
+    # loosely test if contains the right contents
+    mocker.patch("sys.platform", os_str)
 
+    c = Singularity(tmp_path)
+    cmd = " ".join(c.check_image(tmp_path))
 
+    for k in ['test', '-i', os.path.basename(tmp_path)]:
+        assert k in cmd
 
+@pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
+def test_singularity_build_image_command(os_str, OS, mocker, tmp_path):
+    # loosely test if contains the right contents
+    mocker.patch("sys.platform", os_str)
 
+    c = Singularity(tmp_path)
+    cmd = " ".join(c.build_image(tmp_path))
+
+    if OS == OS.MACOS:
+        for k in ['vagrant', 'ssh', '-c']:
+            assert k in cmd
+
+    for k in ['cd', 'mv', os.path.basename(tmp_path)]:
+        assert k in cmd
