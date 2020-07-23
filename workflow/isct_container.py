@@ -1,20 +1,21 @@
 """
 Usage:
-    isct container build DIR... [-v] [-x] [--singularity]
-    isct container run CONTAINER PATIENT ID [-v] [-x]
+    isct container build DIR... [-v] [-x] [--singularity=PATH]
+    isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
 
 Arguments:
     DIR             Directory of the container to construct
     CONTAINER       Tag of the container to run
     PATIENT         Run the container for this patient directory.
     ID              The ID of the event to be evaluated.
+    PATH            The path containing the singularity images.
 
 Options:
-    -h, --help          Show this screen
-    --version           Show the version.
-    -v                  Set verbose
-    -x                  Dry run: only show the commands
-    -s, --singularity   Use `singularity` to build the containers
+    -h, --help                  Show this screen
+    --version                   Show the version.
+    -v                          Set verbose
+    -x                          Dry run: only show the commands
+    -s, --singularity=PATH      Use `singularity` to build the containers
 """
 
 from docopt import docopt
@@ -65,7 +66,6 @@ def build_container(args):
             {
                 # directly validate the path
                 'DIR': [schema.And(schema.Use(str), os.path.isdir)],
-                '--singularity': bool,
                 str: object,
                 }
         )
@@ -94,7 +94,7 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
-            subprocess.run(cmd)
+            subprocess.run(" ".join(cmd), shell=True)
 
 def run_container(args):
     """Runs the container of the provided tag for the given patient."""

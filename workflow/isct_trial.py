@@ -1,28 +1,30 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
+  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED] [--singularity=DIR]
   isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
-  isct trial run TRIAL [-x] [-v] [--gnu-parallel]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
   isct trial status TRIAL
 
 Arguments:
     PATH        A path on the file system.
     TRIAL       Path to trial directory.
+    DIR         A path on the file system containing the singularity images.
 
 Options:
-    -h, --help          Show this screen.
-    --version           Show version.
-    --prefix=PATIENT    The prefix for the patient directory [default: patient].
-    -n=NUM              The number of patients to generate [default: 1].
-    -f                  Force overwrite existing trial directory.
-    -v                  Set verbose output.
-    --seed=SEED         Random seed for the trial generation [default: 1].
-    --show              Directly show the resulting figure [default: false].
-    -x                  Dry run: only log the command without evaluating.
-    -r, --recurse       Recursivly show content of trial directory.
-    --gnu-parallel      Forms the outputs to be piped into gnu parallel, e.g.
-                        `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -h, --help              Show this screen.
+    --version               Show version.
+    --prefix=PATIENT        The prefix for the patient directory [default: patient].
+    -n=NUM                  The number of patients to generate [default: 1].
+    -f                      Force overwrite existing trial directory.
+    -v                      Set verbose output.
+    --seed=SEED             Random seed for the trial generation [default: 1].
+    --show                  Directly show the resulting figure [default: false].
+    -x                      Dry run: only log the command without evaluating.
+    -r, --recurse           Recursivly show content of trial directory.
+    --gnu-parallel          Forms the outputs to be piped into gnu parallel, e.g.
+                            `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -s, --singularity=DIR   Use singularity as containers.
 """
 
 from docopt import docopt
@@ -185,7 +187,7 @@ def trial_create(args):
     dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
 
-    c = new_container(False)
+    c = new_container(args['--singularity'])
     tag = "virtual_patient_generation"
 
     c.bind_volume(path.absolute(), "/patients/")
@@ -245,6 +247,9 @@ def trial_run(args):
 
             if dry_run:
                 cmd += ["-x"]
+
+            if args['--singularity'] is not None:
+                cmd += ["--singularity", args['--singularity']]
 
             if verbose:
                 cmd += ["-v"]

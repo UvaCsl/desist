@@ -1,23 +1,25 @@
 """
 Usage:
-    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
-    isct patient run PATIENT [-x] [-v]
+    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only] [--singularity=DIR]
+    isct patient run PATIENT [-x] [-v] [--singularity=DIR]
 
 Arguments:
     TRIAL       Path to trial directory.
     PATIENT     Path to a patient's directory.
+    DIR         Path to a directory containing the singularity images.
 
 Options:
-    -h, --help      Show this screen.
-    --version       Show version.
-    --id=ID         Identifier of the patient [default: 0].
-    -f              Force overwrite exist patient directory.
-    --seed=SEED     Random seed for the patient generation [default: 1].
-    --config-only   Only generate a patient configuration file, and do not
-                    invoke the `virtual_patient_generation` module.
-    -x              Perform a dry run: show commands to be executed without
-                    executing these commands.
-    -v              Set output verbosity.
+    -h, --help                  Show this screen.
+    --version                   Show version.
+    --id=ID                     Identifier of the patient [default: 0].
+    -f                          Force overwrite exist patient directory.
+    --seed=SEED                 Random seed for the patient generation [default: 1].
+    --config-only               Only generate a patient configuration file, and do not
+                                invoke the `virtual_patient_generation` module.
+    -x                          Perform a dry run: show commands to be executed without
+                                executing these commands.
+    -v                          Set output verbosity.
+    -s, --singularity=DIR       Using singularity as container rather than Docker
 """
 
 from docopt import docopt
@@ -100,7 +102,7 @@ def patient_create(args):
     # write patient configuration to disk
     patient.to_yaml()
 
-    c = new_container(False)
+    c = new_container(args['--singularity'])
 
     # only call docker to fill the patients data when not set
     if not args['--config-only']:
@@ -161,6 +163,9 @@ def patient_run(argv):
 
         if verbose:
             cmd += ["-v"]
+
+        if args['--singularity'] is not None:
+            cmd += ["--singularity", args['--singularity']]
 
         container_cmd(cmd)
 
