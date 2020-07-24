@@ -134,6 +134,7 @@ def trial_create(args):
                 '-v': schema.Use(bool),
                 '--prefix': schema.Use(str, error='Only string prefixes are allowed'),
                 '--seed': schema.Use(int, error='Only integer random seeds allowed'),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object, # all other inputs doesnt  matter yet
                 }
     )
@@ -216,6 +217,7 @@ def trial_run(args):
                 '-v': bool,
                 'TRIAL': schema.And(schema.Use(str), os.path.isdir),
                 '--gnu-parallel': bool,
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
     )

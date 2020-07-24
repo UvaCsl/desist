@@ -23,7 +23,6 @@ Options:
 """
 
 from docopt import docopt
-from schema import Schema, Use, SchemaError
 import subprocess
 import pathlib
 import schema
@@ -40,18 +39,19 @@ from workflow.patient import Patient
 def patient_create(args):
     """Provides `patient create` to creating individual patients."""
     # schema for argument validation
-    schema = Schema(
+    s = schema.Schema(
             {
-                '--id': Use(int, error='Only integer patient ID allowed'),
-                '--seed': Use(int, error='Only integer random seeds allowed'),
+                '--id': schema.Use(int, error='Only integer patient ID allowed'),
+                '--seed': schema.Use(int, error='Only integer random seeds allowed'),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
                 }
             )
 
     # validate arguments
     try:
-        args = schema.validate(args)
-    except SchemaError as e:
+        args = s.validate(args)
+    except schema.SchemaError as e:
         print(e)
         sys.exit(__doc__)
 
@@ -136,6 +136,7 @@ def patient_run(argv):
     s = schema.Schema(
             {
                 'PATIENT': schema.And(schema.Use(str), os.path.isdir),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
         )

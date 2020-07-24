@@ -64,6 +64,7 @@ def build_container(args):
             {
                 # directly validate the path
                 'DIR': [schema.And(schema.Use(str), os.path.isdir)],
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
                 }
         )
@@ -106,6 +107,7 @@ def run_container(args):
                 'CONTAINER': schema.Use(str),
                 'PATIENT': schema.And(schema.Use(str), os.path.isdir),
                 'ID': schema.And(schema.Use(int), lambda n: n >= 0),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
         )
