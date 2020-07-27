@@ -38,11 +38,11 @@ class Singularity(Container):
 
         # images are build in the local directory of definition file
         chdir = f"cd {path.absolute()}"
-        cmd = f"""sudo {self.type} build --force {base}.sif singularity.def &&
-        mv {base}/{base}.sif {self.image_path}/{base}.sif"""
+        cmd = f"sudo {self.type} build --force {base}.sif singularity.def"
+        mv = f"mv {path}/{base}.sif {self.image_path}/{base}.sif"
 
         if self.os == utilities.OS.LINUX:
-            return f"{chdir} && {cmd}".split()
+            return f"{chdir} && {cmd} && {mv}".split()
 
         # On `macos` we require to evaluate the singularity build command inside
         # a `vagrant` VM. This machine shares `/vagrant/` with the directory
@@ -51,9 +51,7 @@ class Singularity(Container):
 
         # `vagrant` accepts singularity commands over ssh and move the resulting
         # image file `singularity.sif` to the desired directory.
-        res = ["vagrant", "ssh", "-c", f'"{" ".join(f"{chdir} && {cmd}".split())}"']
-        res += ["&&", "mv", f"{base}/{base}.sif", f"{self.image_path}/{base}.sif"]
-        return res
+        return f'vagrant ssh -c "{chdir} && {cmd}" && {mv}'.split()
 
     def check_image(self, path):
         """Returns a command to test if the `.sif` file of the path exists."""

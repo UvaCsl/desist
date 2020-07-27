@@ -81,7 +81,7 @@ def build_container(args):
     verbose = True if dry_run else args['-v']
 
     # create path
-    dirs = [pathlib.Path(d) for d in args['DIR']]
+    dirs = [pathlib.Path(d).absolute() for d in args['DIR']]
 
     for d in dirs:
         # obtain the command to build the container
