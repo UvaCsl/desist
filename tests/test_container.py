@@ -168,7 +168,7 @@ def test_singularity_check_image_command(os_str, OS, mocker, tmp_path):
     c = Singularity(tmp_path)
     cmd = " ".join(c.check_image(tmp_path))
 
-    for k in ['test', '-i', os.path.basename(tmp_path)]:
+    for k in ['test', '-e', os.path.basename(tmp_path)]:
         assert k in cmd
 
 @pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])

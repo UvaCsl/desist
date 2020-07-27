@@ -58,4 +58,4 @@ class Singularity(Container):
     def check_image(self, path):
         """Returns a command to test if the `.sif` file of the path exists."""
         path = self.image(path)
-        return f"test -i {path}".split()
+        return f"test -e {path}".split()
