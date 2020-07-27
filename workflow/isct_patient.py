@@ -1,27 +1,28 @@
 """
 Usage:
-    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
-    isct patient run PATIENT [-x] [-v]
+    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only] [--singularity=DIR]
+    isct patient run PATIENT [-x] [-v] [--singularity=DIR]
 
 Arguments:
     TRIAL       Path to trial directory.
     PATIENT     Path to a patient's directory.
+    DIR         Path to a directory containing the singularity images.
 
 Options:
-    -h, --help      Show this screen.
-    --version       Show version.
-    --id=ID         Identifier of the patient [default: 0].
-    -f              Force overwrite exist patient directory.
-    --seed=SEED     Random seed for the patient generation [default: 1].
-    --config-only   Only generate a patient configuration file, and do not
-                    invoke the `virtual_patient_generation` module.
-    -x              Perform a dry run: show commands to be executed without
-                    executing these commands.
-    -v              Set output verbosity.
+    -h, --help                  Show this screen.
+    --version                   Show version.
+    --id=ID                     Identifier of the patient [default: 0].
+    -f                          Force overwrite exist patient directory.
+    --seed=SEED                 Random seed for the patient generation [default: 1].
+    --config-only               Only generate a patient configuration file, and do not
+                                invoke the `virtual_patient_generation` module.
+    -x                          Perform a dry run: show commands to be executed without
+                                executing these commands.
+    -v                          Set output verbosity.
+    -s, --singularity=DIR       Using singularity as container rather than Docker
 """
 
 from docopt import docopt
-from schema import Schema, Use, SchemaError
 import subprocess
 import pathlib
 import schema
@@ -31,24 +32,26 @@ import sys
 import random
 import shutil
 
+from workflow.container import new_container
 from workflow.isct_container import container as container_cmd
 from workflow.patient import Patient
 
 def patient_create(args):
     """Provides `patient create` to creating individual patients."""
     # schema for argument validation
-    schema = Schema(
+    s = schema.Schema(
             {
-                '--id': Use(int, error='Only integer patient ID allowed'),
-                '--seed': Use(int, error='Only integer random seeds allowed'),
+                '--id': schema.Use(int, error='Only integer patient ID allowed'),
+                '--seed': schema.Use(int, error='Only integer random seeds allowed'),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
                 }
             )
 
     # validate arguments
     try:
-        args = schema.validate(args)
-    except SchemaError as e:
+        args = s.validate(args)
+    except schema.SchemaError as e:
         print(e)
         sys.exit(__doc__)
 
@@ -76,7 +79,7 @@ def patient_create(args):
 
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient.dir) and not overwrite:
-        print(f"Patient '{patient}' already exist. Provide -f to overwrite")
+        print(f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
         sys.exit(__doc__)
 
     # clear out old, existing path
@@ -99,18 +102,19 @@ def patient_create(args):
     # write patient configuration to disk
     patient.to_yaml()
 
+    c = new_container(args['--singularity'])
+
     # only call docker to fill the patients data when not set
     if not args['--config-only']:
-        cmd = [
-                "docker",
-                "run", "-v", f"{path.absolute()}:/patients/",
-                "virtual_patient_generation",
-                f"/patients/{patient_prefix}_{patient_postfix}"
-        ]
+        tag = "virtual_patient_generation"
+        arg = f"/patients/{patient_prefix}_{patient_postfix}"
+
+        c.bind_volume(path.absolute(), "/patients/")
+        cmd = c.run_image(tag, arg)
 
         # only call into Docker when available on the system
-        if shutil.which("docker") is None:
-            print("Cannot reach Docker.")
+        if not c.executable_present():
+            print(f"Cannot reach {c.type}.")
             return
 
         subprocess.run(cmd)
@@ -132,6 +136,7 @@ def patient_run(argv):
     s = schema.Schema(
             {
                 'PATIENT': schema.And(schema.Use(str), os.path.isdir),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
         )
@@ -159,6 +164,9 @@ def patient_run(argv):
 
         if verbose:
             cmd += ["-v"]
+
+        if args['--singularity'] is not None:
+            cmd += ["--singularity", args['--singularity']]
 
         container_cmd(cmd)
 

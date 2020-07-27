@@ -165,6 +165,10 @@ def test_trial_run(trial_directory, mocker):
     # run dry run with --gnu-parallel
     trial(f"trial run {path} -x --gnu-parallel".split())
 
+    # run dry with singularity
+    trial(f"trial run {path} -x --singularity .".split())
+    trial(f"trial run {path} -x --gnu-parallel --singularity .".split())
+
 def test_trial_run_invalid_path(trial_directory):
     path = trial_directory.joinpath("not_existing")
     with pytest.raises(SystemExit):

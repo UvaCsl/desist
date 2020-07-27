@@ -1,28 +1,30 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
+  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED] [--singularity=DIR]
   isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
-  isct trial run TRIAL [-x] [-v] [--gnu-parallel]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
   isct trial status TRIAL
 
 Arguments:
     PATH        A path on the file system.
     TRIAL       Path to trial directory.
+    DIR         A path on the file system containing the singularity images.
 
 Options:
-    -h, --help          Show this screen.
-    --version           Show version.
-    --prefix=PATIENT    The prefix for the patient directory [default: patient].
-    -n=NUM              The number of patients to generate [default: 1].
-    -f                  Force overwrite existing trial directory.
-    -v                  Set verbose output.
-    --seed=SEED         Random seed for the trial generation [default: 1].
-    --show              Directly show the resulting figure [default: false].
-    -x                  Dry run: only log the command without evaluating.
-    -r, --recurse       Recursivly show content of trial directory.
-    --gnu-parallel      Forms the outputs to be piped into gnu parallel, e.g.
-                        `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -h, --help              Show this screen.
+    --version               Show version.
+    --prefix=PATIENT        The prefix for the patient directory [default: patient].
+    -n=NUM                  The number of patients to generate [default: 1].
+    -f                      Force overwrite existing trial directory.
+    -v                      Set verbose output.
+    --seed=SEED             Random seed for the trial generation [default: 1].
+    --show                  Directly show the resulting figure [default: false].
+    -x                      Dry run: only log the command without evaluating.
+    -r, --recurse           Recursivly show content of trial directory.
+    --gnu-parallel          Forms the outputs to be piped into gnu parallel, e.g.
+                            `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -s, --singularity=DIR   Use singularity as containers.
 """
 
 from docopt import docopt
@@ -35,6 +37,7 @@ import pathlib
 import subprocess
 import schema
 
+from workflow.container import new_container
 import workflow.utilities as utilities
 from workflow.patient import Patient
 from workflow.isct_patient import patient as patient_cmd
@@ -131,6 +134,7 @@ def trial_create(args):
                 '-v': schema.Use(bool),
                 '--prefix': schema.Use(str, error='Only string prefixes are allowed'),
                 '--seed': schema.Use(int, error='Only integer random seeds allowed'),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object, # all other inputs doesnt  matter yet
                 }
     )
@@ -183,14 +187,19 @@ def trial_create(args):
     # this runs through docker only once; and not for every patient
     dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
-    cmd = ["docker", "run", "-v", f"{path.absolute()}:/patients/", "virtual_patient_generation"] + dirs
+
+    c = new_container(args['--singularity'])
+    tag = "virtual_patient_generation"
+
+    c.bind_volume(path.absolute(), "/patients/")
+    cmd = c.run_image(tag, " ".join(dirs))
 
     if verbose:
         print(" ".join(cmd))
 
     # only call into Docker when Docker is present on a system
-    if shutil.which("docker") is None:
-        print("Cannot reach Docker.")
+    if not c.executable_present():
+        print(f"Cannot reach {c.type}.")
         return
 
     # evaluate `virtual-patient-generation` model to fill config files
@@ -208,6 +217,7 @@ def trial_run(args):
                 '-v': bool,
                 'TRIAL': schema.And(schema.Use(str), os.path.isdir),
                 '--gnu-parallel': bool,
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
     )
@@ -239,6 +249,9 @@ def trial_run(args):
 
             if dry_run:
                 cmd += ["-x"]
+
+            if args['--singularity'] is not None:
+                cmd += ["--singularity", args['--singularity']]
 
             if verbose:
                 cmd += ["-v"]

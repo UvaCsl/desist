@@ -1,19 +1,21 @@
 """
 Usage:
-    isct container build DIR... [-v] [-x]
-    isct container run CONTAINER PATIENT ID [-v] [-x]
+    isct container build DIR... [-v] [-x] [--singularity=PATH]
+    isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
 
 Arguments:
-    DIR     Directory of the container to construct
+    DIR             Directory of the container to construct
     CONTAINER       Tag of the container to run
     PATIENT         Run the container for this patient directory.
-    ID           The ID of the event to be evaluated.
+    ID              The ID of the event to be evaluated.
+    PATH            The path containing the singularity images.
 
 Options:
-    -h, --help      Show this screen
-    --version       Show the version.
-    -v              Set verbose
-    -x              Dry run: only show the commands
+    -h, --help                  Show this screen
+    --version                   Show the version.
+    -v                          Set verbose
+    -x                          Dry run: only show the commands
+    -s, --singularity=PATH      Use `singularity` to build the containers
 """
 
 from docopt import docopt
@@ -26,14 +28,10 @@ import shutil
 import subprocess
 import yaml
 
+from workflow.utilities import OS
+from workflow.container import new_container
 from workflow.patient import Patient
 
-def get_definition_file(path):
-    return path.joinpath("Dockerfile")
-
-def form_container_exists_command(tag):
-    """Returns command to evaluate to test if container with tag exists."""
-    return ["docker", "image", "inspect", f"{tag}"]
 
 # TODO: support alternative containers in addition to Docker.
 def form_container_command(tag, patient, event_id):
@@ -66,6 +64,7 @@ def build_container(args):
             {
                 # directly validate the path
                 'DIR': [schema.And(schema.Use(str), os.path.isdir)],
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
                 }
         )
@@ -77,25 +76,16 @@ def build_container(args):
         sys.exit(__doc__)
 
     # verbosity
-    dry_run = args['-x']
+    c = new_container(args['--singularity'])
+    dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
 
-    # if docker is not present, perform a dry drun
-    if shutil.which("docker") is None:
-        print("Docker executable is not present. Performs a dry run.")
-        verbose = True
-        dry_run = True
-
     # create path
-    dirs = [pathlib.Path(d) for d in args['DIR']]
+    dirs = [pathlib.Path(d).absolute() for d in args['DIR']]
 
     for d in dirs:
-        # FIXME: not explicitly required at the moment
-        definition = get_definition_file(d)
-
-        # container name equal to its directory
-        tag = os.path.basename(d)
-        cmd = ["docker", "build", str(d.absolute()), "-t", tag]
+        # obtain the command to build the container
+        cmd = c.build_image(d)
 
         # show the command
         if verbose:
@@ -103,7 +93,7 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
-            subprocess.run(cmd)
+            subprocess.run(" ".join(cmd), shell=True)
 
 def run_container(args):
     """Runs the container of the provided tag for the given patient."""
@@ -117,6 +107,7 @@ def run_container(args):
                 'CONTAINER': schema.Use(str),
                 'PATIENT': schema.And(schema.Use(str), os.path.isdir),
                 'ID': schema.And(schema.Use(int), lambda n: n >= 0),
+                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 str: object,
             }
         )
@@ -126,29 +117,31 @@ def run_container(args):
         print(e)
         sys.exit(__doc__)
 
-    # test if docker exists
-    if shutil.which("docker") is None:
-        print("Docker executable not present.")
-        sys.exit(__doc__)
-
-    # verbosity and/or dry run
-    dry_run = args['-x']
+    # create container and set verbosity
+    c = new_container(args['--singularity'])
+    dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
 
     # ensure the container exists
     tag = args['CONTAINER']
     p_dir = args['PATIENT']
     event_id = args['ID']
-    cmd = form_container_exists_command(tag)
+
+    # assert the considered container exists
+    if not c.executable_present():
+        sys.exit(__doc__)
+
+    cmd = c.check_image(tag)
 
     if verbose:
         print(" + " + " ".join(cmd))
 
     if not dry_run:
         try:
-            subprocess.run(cmd, check=True)
+            # redirects output to `DEVNULL` to hide info on success
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e :
-            print(f'Container does not exit: "{e}"')
+            print(f'Container does not exist: "{e}"')
             return
 
     # assert tag and event match: an event exists with the provided ID
@@ -162,8 +155,12 @@ def run_container(args):
     msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
     assert match_event_id, msg
 
-    # evaluate the docker of that tag with the files
-    cmd = form_container_command(tag, patient.dir, args['ID'])
+    # bind the patient directory to the container
+    c.bind_volume(patient.dir, "/patient")
+
+    # construct the container command with the desired arguments
+    inp = f"handle_event --patient=/patient/config.xml --event {args['ID']}"
+    cmd = c.run_image(tag, inp)
 
     # logging
     if verbose:
@@ -198,4 +195,6 @@ def container(argv=None):
 
 if __name__ == "__main__":
     sys.exit(container(sys.argv[1:]))
+
+
 

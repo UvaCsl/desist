@@ -8,8 +8,9 @@ options:
    --version  Shows the version number.
 
 The most commonly used isct commands are:
-    trial     Interact with trials.
+    container Interact with Docker/Singularity containers of event modules.
     patient   Interact with individual virtual patients.
+    trial     Interact with trials.
 
 See `isct help <command>` for more information on a specific command.
 """

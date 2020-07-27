@@ -2,6 +2,25 @@ import pathlib
 import shutil
 import subprocess
 import os
+import enum
+import sys
+
+@enum.unique
+class OS(enum.Enum):
+    LINUX = "linux"
+    MACOS = "darwin"
+
+    @classmethod
+    def from_platform(cls, platform):
+        if platform == "darwin":
+            return cls.MACOS
+        elif platform == "linux" or platform == "linux2":
+            return cls.LINUX
+        else:
+            sys.exit("Windows not yet supported.")
+
+def executable_exists(executabler):
+    return shutil.which(executable) is not None
 
 def isct_module_path():
     """Retruns the path to the isct module. """
