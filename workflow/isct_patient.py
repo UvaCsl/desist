@@ -23,6 +23,7 @@ Options:
 """
 
 from docopt import docopt
+import logging
 import subprocess
 import pathlib
 import schema
@@ -52,7 +53,7 @@ def patient_create(args):
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # find the configuration file
@@ -79,7 +80,7 @@ def patient_create(args):
 
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient.dir) and not overwrite:
-        print(f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
+        logging.critical(f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
         sys.exit(__doc__)
 
     # clear out old, existing path
@@ -114,7 +115,7 @@ def patient_create(args):
 
         # only call into Docker when available on the system
         if not c.executable_present():
-            print(f"Cannot reach {c.type}.")
+            logging.warning(f"Cannot reach {c.type}.")
             return
 
         subprocess.run(cmd)
@@ -143,7 +144,7 @@ def patient_run(argv):
     try:
         args = s.validate(argv)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # process arguments

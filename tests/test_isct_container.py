@@ -1,6 +1,7 @@
 import docopt
 import pytest
 import schema
+import subprocess
 import os
 import yaml
 
@@ -20,10 +21,13 @@ def test_container_invalid_arguments(arg):
         else:
             container(f"container build {arg}".split())
 
-@pytest.mark.parametrize("arg", (["-vx"]))
-def test_container_valid_path(trial_directory, arg):
+@pytest.mark.parametrize("arg", (["-vx", "--gnu-parallel", "-v"]))
+def test_container_valid_path(trial_directory, arg, mocker):
     path = trial_directory.absolute()
     os.mkdir(path.absolute())
+
+    # mock the runner to prevent attempting to build actual images during tests
+    mocker.patch("subprocess.run", return_value=subprocess.run(['ls'], capture_output=True))
 
     assert os.path.isdir(path.absolute())
     container(f"container build {path} {arg}".split())
@@ -61,6 +65,15 @@ def test_run_container_exit_without_docker(tmp_path, mocker):
     mocker.patch('shutil.which', return_value=None)
     with pytest.raises(SystemExit):
         container(f"container run tag {tmp_path} 1 -x".split())
+
+@patch('shutil.which', return_value='/bin/mocker/')
+@patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, cmd='cmd'))
+def test_run_missing_container_exit(mocker_which, mocker_run, trial_directory):
+    path = trial_directory.joinpath("patient_000")
+    os.makedirs(path)
+    p = Patient(path, **{"name": "name", "id": "id"})
+    p.to_yaml()
+    container(f"container run tag {path} 1 -v".split())
 
 def test_run_container_valid_path(trial_directory, mocker):
     # create config file
