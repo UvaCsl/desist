@@ -36,6 +36,7 @@ import yaml
 import pathlib
 import subprocess
 import schema
+import logging
 
 from workflow.container import new_container
 import workflow.utilities as utilities
@@ -129,7 +130,8 @@ def trial_create(args):
     # schema for argument validation
     s = schema.Schema(
             {
-                '-n': schema.Use(int, error='Only integer number of patients'),
+                '-n': schema.And(schema.Use(int, error='Only integer number of patients'), lambda n: n > 0,
+                    error="Argument `-n` requires a postive non-zero integer number of patients"),
                 '-f': schema.Use(bool),
                 '-v': schema.Use(bool),
                 '--prefix': schema.Use(str, error='Only string prefixes are allowed'),
@@ -194,16 +196,19 @@ def trial_create(args):
     c.bind_volume(path.absolute(), "/patients/")
     cmd = c.run_image(tag, " ".join(dirs))
 
-    if verbose:
-        print(" ".join(cmd))
+    # log command to be executed
+    logging.info(f' + {" ".join(cmd)}')
 
-    # only call into Docker when Docker is present on a system
+    # only call into the container when its executable is present on a system
     if not c.executable_present():
-        print(f"Cannot reach {c.type}.")
+        logging.critical(f"Cannot reach {c.type}.")
         return
 
     # evaluate `virtual-patient-generation` model to fill config files
-    subprocess.run(cmd)
+    log = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8")
+
+    # echo all output to the log
+    for line in log.stdout.splitlines(): logging.debug(line)
 
     # TODO: remove this once transitioned towards YAML
     for d in [d[0] for d in os.walk(path)][1:]:
@@ -224,44 +229,54 @@ def trial_run(args):
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # setup arguments
+    path = pathlib.Path(args['TRIAL'])
     dry_run = args['-x']
     verbose = True if dry_run else args['-v']
-    path = pathlib.Path(args['TRIAL'])
     gnu_parallel = args['--gnu-parallel']
 
-    prefix = "#" if gnu_parallel else ""
-
     if verbose:
-        print(f"{prefix} + Evaluating all patients for trial '{path}'")
+        # print all info levels for user
+        logging.getLogger().setLevel(logging.INFO)
 
-    # process patients in sorted order
+    logging.info(f"Evaluating all patients for trial '{path}'")
+
+    # process all encountered patients in sorted order
     for trial, patients, files in os.walk(path):
         patients.sort()
 
         for p_dir in patients:
             patient = Patient.from_yaml(pathlib.Path(trial).joinpath(p_dir))
 
+            logging.info(f"Evaluating patient '{os.path.basename(patient.dir)}'...")
+
+            # form the command
             cmd = ["patient", "run", f"{patient.dir}"]
 
             if dry_run:
                 cmd += ["-x"]
 
+            if verbose:
+                cmd += ["-v"]
+
             if args['--singularity'] is not None:
                 cmd += ["--singularity", args['--singularity']]
 
-            if verbose:
-                cmd += ["-v"]
-                print(f"\n{prefix} + Evaluating patient '{os.path.basename(patient.dir)}'...")
-                print(f'{prefix} + isct {" ".join(cmd)}\n')
+            # log the command
+            logging.info(f' + isct {" ".join(cmd)}')
 
-            if not gnu_parallel:
-                patient_cmd(cmd)
-            else:
-                print("isct " + " ".join(cmd))
+            if gnu_parallel:
+                # write the command to `stdout` for `parallel` to read
+                # assign a separate log file for each task
+                logfile = patient.dir.joinpath('isct.log').absolute()
+                sys.stdout.write(f'isct --log {logfile} {" ".join(cmd)} \n')
+                continue
+
+            # evaluate the patient command
+            patient_cmd(cmd)
 
         break # prevent recursion of `os.walk()`
 
@@ -279,7 +294,7 @@ def trial_list(args):
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # setup arguments
@@ -300,7 +315,7 @@ def trial_status(args):
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # setup arguments

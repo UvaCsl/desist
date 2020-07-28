@@ -74,6 +74,12 @@ def test_trial_add_event_congifuration_no_git(mock_isct_module_path, trial_direc
     config = create_trial_config(path, prefix, number)
     assert config['git_sha'] == "not_found"
 
+
+@patch("shutil.which", return_value=None)
+def test_trial_create_without_container_executable(mocker_which, trial_directory):
+    path = trial_directory
+    trial(f"trial create {path} -n 1 -v".split())
+
 @pytest.mark.parametrize("t_prefix, prefix",
         [
             ("''", "patient"),

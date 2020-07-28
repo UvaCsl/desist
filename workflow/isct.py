@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 """
-usage: isct [--version] [--help] <command> [<args>...]
+usage: isct [--version] [--help] [--log=<path>] <command> [<args>...]
 
 options:
-   -h, --help  Shows the usage.
-   --version  Shows the version number.
+   -h, --help       Shows the usage.
+   --version        Shows the version number.
+   --log=<path>     Path to store the logfile [default: /tmp/isct.log].
 
 The most commonly used isct commands are:
     container Interact with Docker/Singularity containers of event modules.
@@ -17,7 +18,11 @@ See `isct help <command>` for more information on a specific command.
 
 from docopt import docopt, DocoptExit
 import importlib
+import logging, logging.handlers
+import pathlib
+import os
 import sys
+import schema
 
 # Beforehand it is unkown which command is requested by the user. Therefore,
 # the command we should run is unknown when this module is called. To overcome
@@ -31,6 +36,14 @@ def load_module(cmd):
     return getattr(module, cmd)
 
 def main(argv=None):
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+
+    # create a console handler logging from warning and higher
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) == 0:
         argv.append('-h')
@@ -40,6 +53,29 @@ def main(argv=None):
                   version="isct 0.0.1",
                   options_first=True,
                   argv=argv)
+
+    # ensure the path for the log file (`--log`) is an existing directory
+    s = schema.Schema(
+            {'--log': schema.And(
+                schema.Use(str),
+                lambda p: os.path.isdir(pathlib.Path(p).parent) is True,
+                error='Invalid path for logfile.'),
+            str: object,
+                })
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        exit(__doc__)
+
+    # Setup a rotating file handler at the indicated log file location. The
+    # logfile is given a maximum size of ~1MB before it rotates.
+    fh = logging.handlers.RotatingFileHandler(args['--log'], maxBytes=1000000, backupCount=5)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(fh)
+
+    # store the invoked, validated arguments
+    logging.debug(f'Invoked `isct` with args: {args}')
 
     # supported commands
     valid_commands = ['trial', 'patient', 'container']

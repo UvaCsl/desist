@@ -12,6 +12,10 @@ def test_isct_invalid_arguments(cmd):
     with pytest.raises(docopt.DocoptExit) as e_info:
         main([f"{cmd}"])
 
+def test_isct_invalid_log_path():
+    with pytest.raises(SystemExit):
+        main(f"--log /non/log.file patient help".split())
+
 def test_isct_no_args():
     with pytest.raises(SystemExit) as e_info:
         main([])
@@ -39,8 +43,4 @@ def test_isct_entry_point(cmd):
 def test_load_module(cmd, func):
     """Assert we obtain the right command on input."""
     assert load_module(cmd) == func
-
-
-
-
 

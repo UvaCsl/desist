@@ -1,6 +1,6 @@
 """
 Usage:
-    isct container build DIR... [-v] [-x] [--singularity=PATH]
+    isct container build DIR... [-v] [-x] [--singularity=PATH] [--gnu-parallel]
     isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
 
 Arguments:
@@ -16,10 +16,13 @@ Options:
     -v                          Set verbose
     -x                          Dry run: only show the commands
     -s, --singularity=PATH      Use `singularity` to build the containers
+    --gnu-parallel              Forms the outputs to be piped into gnu
+                                parallel, e.g. `isct trial run TRIAL --gnu-parallel | parallel -j+0`
 """
 
 from docopt import docopt
 
+import logging
 import pathlib
 import os
 import sys
@@ -65,6 +68,7 @@ def build_container(args):
                 # directly validate the path
                 'DIR': [schema.And(schema.Use(str), os.path.isdir)],
                 '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+                '--gnu-parallel': bool,
                 str: object,
                 }
         )
@@ -72,28 +76,40 @@ def build_container(args):
         args = s.validate(args)
     except schema.SchemaError as e:
         # report validation errors before exiting
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # verbosity
     c = new_container(args['--singularity'])
     dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
+    gnu_parallel = args['--gnu-parallel']
+
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
 
     # create path
     dirs = [pathlib.Path(d).absolute() for d in args['DIR']]
 
     for d in dirs:
         # obtain the command to build the container
-        cmd = c.build_image(d)
+        cmd = " ".join(c.build_image(d))
 
         # show the command
-        if verbose:
-            print(" + " + " ".join(cmd))
+        logging.info(" + " + cmd)
+
+        # only pipe the command into `stdout` for parallel evaluation
+        if gnu_parallel:
+            sys.stdout.write(f'{cmd}\n')
+            continue
 
         # evaluate the command
         if not dry_run:
-            subprocess.run(" ".join(cmd), shell=True)
+            log = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, encoding="utf-8")
+
+            # echo all output to logs
+            for line in log.stdout.splitlines(): logging.info(line)
 
 def run_container(args):
     """Runs the container of the provided tag for the given patient."""
@@ -114,13 +130,15 @@ def run_container(args):
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
-        print(e)
+        logging.critical(e)
         sys.exit(__doc__)
 
     # create container and set verbosity
     c = new_container(args['--singularity'])
     dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
 
     # ensure the container exists
     tag = args['CONTAINER']
@@ -133,15 +151,14 @@ def run_container(args):
 
     cmd = c.check_image(tag)
 
-    if verbose:
-        print(" + " + " ".join(cmd))
+    logging.info(" + " + " ".join(cmd))
 
     if not dry_run:
         try:
             # redirects output to `DEVNULL` to hide info on success
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e :
-            print(f'Container does not exist: "{e}"')
+            logging.critical(f'Container does not exist: "{e}"')
             return
 
     # assert tag and event match: an event exists with the provided ID
@@ -162,9 +179,7 @@ def run_container(args):
     inp = f"handle_event --patient=/patient/config.xml --event {args['ID']}"
     cmd = c.run_image(tag, inp)
 
-    # logging
-    if verbose:
-        print(" + " + " ".join(cmd))
+    logging.info(" + " + " ".join(cmd))
 
     # evaluation
     if not dry_run:
