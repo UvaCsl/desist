@@ -253,8 +253,9 @@ def trial_run(args):
 
             logging.info(f"Evaluating patient '{os.path.basename(patient.dir)}'...")
 
-            # form the command
-            cmd = ["patient", "run", f"{patient.dir}"]
+            # form the command; a relative path is sufficient in this case
+            patient_path = path.joinpath(os.path.basename(patient.dir))
+            cmd = ["patient", "run", f"{patient_path}"]
 
             if dry_run:
                 cmd += ["-x"]
@@ -271,7 +272,7 @@ def trial_run(args):
             if gnu_parallel:
                 # write the command to `stdout` for `parallel` to read
                 # assign a separate log file for each task
-                logfile = patient.dir.joinpath('isct.log').absolute()
+                logfile = patient_path.joinpath('isct.log')
                 sys.stdout.write(f'isct --log {logfile} {" ".join(cmd)} \n')
                 continue
 

@@ -5,6 +5,13 @@ _build
 
 # output
 *.pdf
+*.log
+*.gz 
+*.tar.gz 
+*.coverage
+
+# containers
+*.sif 
 
 # local installation
 *.egg*

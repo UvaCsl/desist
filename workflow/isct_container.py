@@ -66,7 +66,7 @@ def build_container(args):
     s = schema.Schema(
             {
                 # directly validate the path
-                'DIR': [schema.And(schema.Use(str), os.path.isdir)],
+                'DIR': [schema.And(schema.Use(str), os.path.exists)],
                 '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
                 '--gnu-parallel': bool,
                 str: object,
@@ -88,8 +88,9 @@ def build_container(args):
     if verbose:
         logging.getLogger().setLevel(logging.INFO)
 
-    # create path
-    dirs = [pathlib.Path(d).absolute() for d in args['DIR']]
+    # get the absolute path of the containers and filter out any non-directory
+    paths = map(lambda p: pathlib.Path(p).absolute(), args['DIR'])
+    dirs = list(filter(os.path.isdir, paths))
 
     for d in dirs:
         # obtain the command to build the container

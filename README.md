@@ -63,6 +63,33 @@ throurough verification, you can evaluate the tests:
 pytest --cov=workflow 
 ```
 
+### Building container images 
+The individual simulations of the event-based simulation chain are performed 
+within their own containerised environment. The `isct` command supports both
+Docker and Singularity images to be used. Roughly each submodule has its own
+container image based on a `Dockerfile` or `singularity.def` definitions file
+for Docker and Singularity, respectively. These files describe the details
+of the container images which we are going to build. 
+
+To build these containers either Docker or Singularity need to be present on 
+the local system. Note, in the future the Singularity images can be downloaded
+directly from Gitlab (after issue #37 is merged). To build a container we 
+simply pass a directory of the submodule to the `isct container build` 
+command, such as 
+```
+isct container build $CONTAINER -v
+```
+To build the Singularity containers we need to provide a location where to 
+store the resulting image files by passing the `-s` or `--singularity` file
+followed by the container path `$CONTAINERPATH`
+```
+isct container build $CONTAINER -v -s $CONTAINERPATH
+```
+Note, multiple container paths can be provided to build multiple containers 
+directly, or even in parallel using `--gnu-parallel`, such as 
+```
+isct container build software/* -v -s $CONTAINERPATH --gnu-parallel | parallel -j+0
+```
 
 ## Usage 
 ```
@@ -106,20 +133,87 @@ Options:
 ```
 
 ### Parallel execution
-The `isct` command currently supports only basic parallelism using GNU 
-`parallel`. The `--gnu-parallel` flag enables that output from `isct trial run`
-can be piped into `parallel`, which will control the parallel execution of the
-different patients. Note, this runs the chain of events per patient on a single 
-thread. This form of parallelism requires that `parallel` is available on 
-the system (linux `apt install parallel`, mac `brew install parallel`).
+The `isct` command currently supports basic parallel execution of patient 
+simulations by evaluating each patient in paralle using [GNU 
+`parallel`](https://www.gnu.org/software/parallel/parallel_tutorial.html). 
+For `isct container build` and `isct trial run` the `--gnu-parallel` flag 
+enables that `isct` writes the commands to `stdout`, rather then evaluating
+the commands directly. This allows to pipe these commands into `parallel` 
+and let `paralllel` control the parallel execution of the commands that 
+are streamed over `stdout`. The `parallel` command can be installed on a 
+system using `apt install parallel` for Linux and `brew install parallel` 
+on macOS. 
 
-Running on two cores: 
+The following examples consider `parallel` for running small to intermediate
+sized batches of patient simulations on either local machines or on smaller
+remote systems. Support for running these jobs on larger HPC-like systems is 
+to be added later. The following examples assume both `isct` and `parallel` 
+are installed on both the local and remote systems, where both commands are
+also available on the current `path` for simplicity (i.e. the commands 
+`isct` and `parallel` can be evaluated from any directory without explicitly
+providing the paths as `/usr/bin/parallel`). 
+
+For illustration, we consider a batch of 20 patients for the `newtrial` 
+trial. The directory structure of the trial can be build using Docker: 
 ```
-isct trial create newtrial -n 20
-isct trial run newtrial -v --gnu-parallel | parallel -j2 
+isct trial create newtrial -n 20 -v
+``` 
+or by Singularity where the Singularity containers are stored in a path 
+`$CONTAINERS` on the relevant system: 
 ```
-To use all available cores, change `j2` to `j+0`. More advanced settings are
-described in `parallel`'s [manual](https://www.gnu.org/software/parallel/parallel_tutorial.html). 
+isct trial create newtrial -n 20 -v -s $CONTAINERS
+``` 
+There are multiple approaches to running such a batch of patient 
+simulations. The simplest being the sequential evaluation of all required
+simulations:
+```
+isct trial run newtrial -v -s $CONTAINERS
+```
+This traverses the `newtrial` directory and evaluates each simulation 
+sequentially, where the overal progress can be monitored with 
+`isct trial status newtrial`. The `isct` command evaluates each set 
+of patient simulations individually. To parallelise this operation, 
+we can pipe these commands into `parallel` as follows: 
+```
+isct trial run newtrial -v -s $CONTAINERS --gnu-parallel | parallel -j2 
+```
+The first part writes each individual patient command over `stdout`, 
+which is read by `parallel`. Then, it is up to `parallel` to evaluate
+the commands in parallel. This command accepts many parameters, as
+outlined in its [manual](https://www.gnu.org/software/parallel/parallel_tutorial.html).
+When running this command directly on a local or remote system, we can
+supply `j+0` to use the same number of threads as (detected) CPUs, or 
+we can be a bit more specific and provide `-jn` with `n` simultaneous 
+allowed threads. 
+
+Alternatively, `parallel` provides means to distribute the computations 
+directly from a local machine over `ssh` to any available remote servers. 
+In this case `parallel` is in charge of distributing the patient 
+directories towards the remote machine and starting all simulations. For
+example, we can attempt to distribute the 20 patient simulations over
+a known machine on `ssh`, for now indicated as `$SERVER1`. The simulation is
+started as 
+```
+isct trial run $TRIAL -v --gnu-parallel -s containers/ | parallel -S 2/$SERVER1 --basefile $TRIAL --workdir $WORKDIR --ungroup -j2 
+```
+with the following flags and settings
+- `$TRIAL`: a trial directory, in this example equal to `newtrial`;
+- `WORKDIR`: the working directory on the remote machine. It is assumed this 
+directory contains a folder (or symbolic link) to a folder named `containers`
+(note: for now this has to be identical to the local machine) such that `isct` 
+can find the Singularity containers;
+- `2/$SERVER1`: provides the server to use and indicates to use 2 CPUs;
+- `-j2`: allow two simulataneous jobs on the remote machine 
+- `--basefile $TRIAL`: indicate to `parallel` to copy the generated virtual 
+patients from `$TRIAL` towards the working directory `$WORKDIR` on the remote
+machine. 
+
+This command requires an open connection until all jobs are finalised and is 
+most suited for shorter jobs to distribute. Note, the `parallel` does not 
+clean up all directories and the results of the simulation remain present on 
+the remote system for now. 
+
+
 
 ### Documentation 
 More in depth documentation can be found at: https://insilicostroketrial.eu/insist_docs/. 
