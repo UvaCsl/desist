@@ -5,13 +5,35 @@ import subprocess
 import os
 import yaml
 
-from mock import patch
+from subprocess import Popen
+
+from mock import patch, MagicMock
 
 from workflow.patient import Patient
 from workflow.isct_container import container
 from tests.test_isct_trial import trial_directory
 from workflow.isct_container import form_container_command
 from workflow.isct_trial import trial as trial_cmd
+
+
+# This newpopen mocks a popen object that holds some data inside its .stdout
+# attribute. This is to mock statements as `with subprocess.Popen` and of which
+# the `.stdout` attribute is afterwards emtied towards the log. This class
+# provides the required functions to mimic the same behaviour, where the command
+# is something meaningless rather than a call to Docker/Singularity
+class newpopen(object):
+    def __init__(self):
+        # evaluate some silly process to mock the output
+        proc = subprocess.Popen(['echo', 'hello'], stdout=subprocess.PIPE,
+                encoding='utf-8', universal_newlines=True)
+        proc.wait()
+        self.stdout = proc.stdout
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, a, b, c):
+        pass
 
 @pytest.mark.parametrize("arg", ([1, 1.0, "/novalidpath", None]))
 def test_container_invalid_arguments(arg):
@@ -27,7 +49,7 @@ def test_container_valid_path(trial_directory, arg, mocker):
     os.mkdir(path.absolute())
 
     # mock the runner to prevent attempting to build actual images during tests
-    mocker.patch("subprocess.run", return_value=subprocess.run(['ls'], capture_output=True))
+    mocker.patch('subprocess.Popen', return_value=newpopen())
 
     assert os.path.isdir(path.absolute())
     container(f"container build {path} {arg}".split())
@@ -96,7 +118,7 @@ def test_run_container_valid_path(trial_directory, mocker):
 
 @patch('shutil.which', return_value="/mocker/bin/docker")
 @patch('subprocess.run', return_value=True)
-def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_directory):
+def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_directory, mocker):
     # create config
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
@@ -104,9 +126,11 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
     patient.set_events()
     patient.to_yaml()
 
+    # mock the subprocess popen by some dummy command
+    mocker.patch('subprocess.Popen', return_value=newpopen())
+
     # run the first dummy event (note: subprocess.run mocks the docker call)
     event = patient.events()[0]
-    print(f"container run {event['event']} {patient.dir} {event['id']}".split())
     container(f"container run {event['event']} {patient.dir} {event['id']}".split())
 
     # make sure patient config still exist
