@@ -19,9 +19,6 @@ class OS(enum.Enum):
         else:
             sys.exit("Windows not yet supported.")
 
-def executable_exists(executabler):
-    return shutil.which(executable) is not None
-
 def isct_module_path():
     """Retruns the path to the isct module. """
     import workflow as wf
