@@ -106,11 +106,17 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
-            log = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT, encoding="utf-8")
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, encoding="utf-8",
+                    universal_newlines=True)
 
-            # echo all output to logs
-            for line in log.stdout.splitlines(): logging.info(line)
+            # capture all output
+            with proc.stdout:
+                for line in iter(proc.stdout.readline, ''):
+                    logging.info(f'{line.strip()}\r')
+
+            # wait until done
+            proc.wait()
 
 def run_container(args):
     """Runs the container of the provided tag for the given patient."""
@@ -184,7 +190,19 @@ def run_container(args):
 
     # evaluation
     if not dry_run:
-        subprocess.run(cmd)
+
+        # start command and capture output for logging
+        proc = subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, encoding="utf-8",
+                universal_newlines=True)
+
+        # capture all output
+        with proc.stdout:
+            for line in iter(proc.stdout.readline, ''):
+                logging.info(f'{line.strip()}\r')
+
+        # wait until done
+        proc.wait()
 
         # mark event as complete and update config file on disk
         patient.completed_event(event_id)
