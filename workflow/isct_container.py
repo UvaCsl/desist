@@ -4,20 +4,20 @@ Usage:
     isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
 
 Arguments:
-    DIR             Directory of the container to construct
-    CONTAINER       Tag of the container to run
+    DIR             Directory of the container to construct.
+    CONTAINER       Tag of the container to run.
     PATIENT         Run the container for this patient directory.
     ID              The ID of the event to be evaluated.
     PATH            The path containing the singularity images.
 
 Options:
-    -h, --help                  Show this screen
-    --version                   Show the version.
-    -v                          Set verbose
-    -x                          Dry run: only show the commands
-    -s, --singularity=PATH      Use `singularity` to build the containers
-    --gnu-parallel              Forms the outputs to be piped into gnu
-                                parallel, e.g. `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -h, --help                  Show the usage of `isct container`.
+    --version                   Show the version number.
+    -v                          Set verbose output.
+    -x                          Dry run: only show the commands without evaluating.
+    -s, --singularity=PATH      Use `Singularity` to build the containers.
+    --gnu-parallel              Output commands over `stdout` to be piped into
+                                `GNU parallel`, e.g. `isct trial run TRIAL --gnu-parallel | parallel -j+0`.
 """
 
 from docopt import docopt

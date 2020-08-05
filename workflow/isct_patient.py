@@ -4,13 +4,13 @@ Usage:
     isct patient run PATIENT [-x] [-v] [--singularity=DIR]
 
 Arguments:
-    TRIAL       Path to trial directory.
-    PATIENT     Path to a patient's directory.
-    DIR         Path to a directory containing the singularity images.
+    TRIAL       Path to a trial directory.
+    PATIENT     Path to a patient directory.
+    DIR         Path to a directory containing the Singularity images.
 
 Options:
-    -h, --help                  Show this screen.
-    --version                   Show version.
+    -h, --help                  Shows the usage of `isct patient`.
+    --version                   Show the version number.
     --id=ID                     Identifier of the patient [default: 0].
     -f                          Force overwrite exist patient directory.
     --seed=SEED                 Random seed for the patient generation [default: 1].
@@ -19,7 +19,8 @@ Options:
     -x                          Perform a dry run: show commands to be executed without
                                 executing these commands.
     -v                          Set output verbosity.
-    -s, --singularity=DIR       Using singularity as container rather than Docker
+    -s, --singularity=DIR       Use Singularity rather than Docker by providing the
+                                directory `DIR` containing the Singularity images.
 """
 
 from docopt import docopt

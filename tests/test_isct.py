@@ -29,6 +29,8 @@ def test_isct_no_args():
             ("trial"),
             ("patient"),
             ("container"),
+            ("not_existing_cmd"),
+            ("help not_existing_cmd"),
         ])
 def test_isct_entry_point(cmd):
     with pytest.raises(SystemExit) as e_info:
