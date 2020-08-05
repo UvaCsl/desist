@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
 """
-usage: isct [--version] [--help] [--log=<path>] <command> [<args>...]
+Usage: isct [--version] [--help] [--log=<path>] <command> [<args>...]
 
-options:
-   -h, --help       Shows the usage.
+Options:
+   -h, --help       Shows the usage of the `isct` command.
    --version        Shows the version number.
    --log=<path>     Path to store the logfile [default: /tmp/isct.log].
 
-The most commonly used isct commands are:
-    container Interact with Docker/Singularity containers of event modules.
-    patient   Interact with individual virtual patients.
-    trial     Interact with trials.
+The most commonly used `isct` commands are:
+    container   Interact with Docker/Singularity containers of event modules.
+    help        Show help for any of the commands.
+    patient     Interact with individual virtual patients.
+    trial       Interact with trials.
 
 See `isct help <command>` for more information on a specific command.
 """
@@ -80,24 +81,33 @@ def main(argv=None):
     # supported commands
     valid_commands = ['trial', 'patient', 'container']
 
-    # complete arguments to pass
-    argv = [args['<command>']] + args['<args>']
+    # extract command and arguments
+    cmd = args['<command>']
+    arg = args['<args>']
 
-    # run specific command's interface
-    if args['<command>'] in valid_commands:
-        f = load_module(args['<command>'])
-        return f(argv)
+    # command is valid: call the `cmd` module with arguments `cmd + arg`
+    if cmd in valid_commands:
+        return load_module(cmd)([cmd] + arg)
 
-    # report help for isct or specific command if given
-    if args['<command>'] in ['help']:
-        if len(args['<args>']) > 0:
-            f = load_module(args['<args>'][0])
-            return f(['-h'])
-        else:
-            sys.exit(__doc__)
+    # format for error message
+    err_msg = "The command `{}...` is not an isct command. See `isct help`."
 
-    # otherwise: invalid command
-    sys.exit("%r is not a isct command. See './isct help'." % args['<command>'])
+    # command is neither a valid command nor `help`: exit
+    if cmd not in ['help']:
+        logging.critical(err_msg.format(cmd))
+        sys.exit()
+
+    # help requested with any specific command / argument
+    if len(arg) == 0 or arg[0] in ['help']:
+        sys.exit(__doc__)
+
+    # help requested with a specific valid command: show help of that command
+    if arg[0] in valid_commands:
+        return load_module(arg[0])(['-h'])
+
+    # requested help with invalid command
+    logging.critical(err_msg.format(arg[0]))
+    sys.exit()
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

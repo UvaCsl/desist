@@ -55,7 +55,7 @@ pip install -r requirements.txt
 This provides the `isct` command to manage the in-silico trials. To check the 
 command is present, run 
 ```
-isct --help 
+isct help 
 ```
 to show it usage. If you installed all requirements and want to perform a more
 throurough verification, you can evaluate the tests: 
@@ -93,17 +93,20 @@ isct container build software/* -v -s $CONTAINERPATH --gnu-parallel | parallel -
 
 ## Usage 
 ```
-isct --help 
+$ isct 
 
-usage: isct [--version] [--help] <command> [<args>...]
+Usage: isct [--version] [--help] [--log=<path>] <command> [<args>...]
 
-options:
-   -h, --help  Shows the usage.
-   --version  Shows the version number.
+Options:
+   -h, --help       Shows the usage of the `isct` command.
+   --version        Shows the version number.
+   --log=<path>     Path to store the logfile [default: /tmp/isct.log].
 
-The most commonly used isct commands are:
-    trial     Interact with trials.
-    patient   Interact with individual virtual patients.
+The most commonly used `isct` commands are:
+    container   Interact with Docker/Singularity containers of event modules.
+    help        Show help for any of the commands.
+    patient     Interact with individual virtual patients.
+    trial       Interact with trials.
 
 See `isct help <command>` for more information on a specific command.
 ```
@@ -111,25 +114,33 @@ The package provides subcommands to manage the in silico trials.
 
 ### Trial
 ```
-isct help trial 
+$ isct help trial 
 
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
+  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED] [--singularity=DIR]
+  isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
+  isct trial status TRIAL
 
 Arguments:
     PATH        A path on the file system.
     TRIAL       Path to trial directory.
+    DIR         A path on the file system containing the singularity images.
 
 Options:
-    -h, --help          Show this screen.
-    --version           Show version.
-    --prefix=PATIENT    The prefix for the patient directory [default: patient].
-    -n=NUM              The number of patients to generate [default: 1].
-    -f                  Force overwrite existing trial directory.
-    -v                  Set verbose output.
-    --seed=SEED         Random seed for the trial generation [default: 1].
-    --show              Directly show the resulting figure [default: false].
+    -h, --help              Shows the usage of `isct trial`.
+    --version               Shows the version number.
+    --prefix=PATIENT        The prefix for the patient directory [default: patient].
+    -n=NUM                  The number of patients to generate [default: 1].
+    -f                      Force overwrite existing trial directory.
+    -v                      Set verbose output.
+    --seed=SEED             Random seed for the trial generation [default: 1].
+    --show                  Directly show the resulting figure [default: false].
+    -x                      Dry run: only log the command without evaluating.
+    -r, --recurse           Recursivly show content of trial directory.
+    --gnu-parallel          Forms the outputs to be piped into gnu parallel, e.g. `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    -s, --singularity=DIR   Use singularity as containers by providing the directory `DIR` of the Singularity containers.
 ```
 
 ### Parallel execution
@@ -212,8 +223,6 @@ This command requires an open connection until all jobs are finalised and is
 most suited for shorter jobs to distribute. Note, the `parallel` does not 
 clean up all directories and the results of the simulation remain present on 
 the remote system for now. 
-
-
 
 ### Documentation 
 More in depth documentation can be found at: https://insilicostroketrial.eu/insist_docs/. 

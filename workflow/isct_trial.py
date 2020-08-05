@@ -12,8 +12,8 @@ Arguments:
     DIR         A path on the file system containing the singularity images.
 
 Options:
-    -h, --help              Show this screen.
-    --version               Show version.
+    -h, --help              Shows the usage of `isct trial`.
+    --version               Shows the version number.
     --prefix=PATIENT        The prefix for the patient directory [default: patient].
     -n=NUM                  The number of patients to generate [default: 1].
     -f                      Force overwrite existing trial directory.
@@ -24,7 +24,8 @@ Options:
     -r, --recurse           Recursivly show content of trial directory.
     --gnu-parallel          Forms the outputs to be piped into gnu parallel, e.g.
                             `isct trial run TRIAL --gnu-parallel | parallel -j+0`
-    -s, --singularity=DIR   Use singularity as containers.
+    -s, --singularity=DIR   Use singularity as containers by providing the
+                            directory `DIR` of the Singularity containers.
 """
 
 from docopt import docopt
