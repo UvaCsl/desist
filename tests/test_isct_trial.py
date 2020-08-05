@@ -180,6 +180,16 @@ def test_trial_run_invalid_path(trial_directory):
     with pytest.raises(SystemExit):
         trial(f"trial run {path} -x".split())
 
+def test_trial_run_invalid_config_file(trial_directory, mocker):
+    path = trial_directory
+    trial(f"trial create {path} -n 1".split())
+    mocker.patch("shutil.which", return_value="/mocker/bin/docker")
+
+    # it should exit as the provided config YAML file does not satisfy the
+    # full requirements
+    with pytest.raises(SystemExit):
+        trial(f"trial run {path} -x --validate")
+
 @pytest.mark.parametrize("dir_filter", (None, Patient.path_is_patient))
 @pytest.mark.parametrize("recurse", (True, False))
 def test_trial_status_log(trial_directory, recurse, dir_filter):

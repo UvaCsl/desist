@@ -2,10 +2,12 @@
 Usage:
     isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only] [--singularity=DIR]
     isct patient run PATIENT [-x] [-v] [--singularity=DIR]
+    isct patient validate PATIENTS...
 
 Arguments:
     TRIAL       Path to a trial directory.
     PATIENT     Path to a patient directory.
+    PATIENTS    One or multiple PATIENT paths.
     DIR         Path to a directory containing the Singularity images.
 
 Options:
@@ -174,17 +176,54 @@ def patient_run(argv):
 
     return
 
+def patient_validate(argv):
+    """Evaluate `patient validate` to validate a patient config file.
+
+    Prints the outcome towards `stdout` and provides a zipped list of the
+    patient directory and True/False if invalid/valid.
+    """
+    # basic validation on the provided patient path
+    s = schema.Schema({
+        'PATIENTS': [schema.And(schema.Use(str), os.path.exists)],
+        str: object,
+    })
+    try:
+        args = s.validate(argv)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # prepare patients and list to store valid/invalid (True/False) and
+    # remove any non-directory that was passed as argument
+    patients = list(map(lambda p: Patient.from_yaml(p), filter(os.path.isdir, args['PATIENTS'])))
+    results = []
+
+    for patient in patients:
+        if not patient.validate():
+            logging.critical(f"Patient `{patient.path}` did not validate")
+            results.append(False)
+        else:
+            logging.info(f"Patient `{patient.path}` validated")
+            results.append(True)
+
+    return list(zip(patients, results))
+
 def patient(argv):
     """Provides commands for interaction with virtual patients."""
     # parse command-line arguments
     args = docopt(__doc__, argv=argv)
 
     if args['create']:
-        return patient_create(args)
+        patient_create(args)
+        return
 
     if args['run']:
-        return patient_run(args)
+        patient_run(args)
+        return
 
+    if args['validate']:
+        patient_validate(args)
+        return
 
 if __name__ == "__main__":
     sys.exit(patient(sys.argv[1:]))

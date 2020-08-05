@@ -3,7 +3,7 @@ Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED] [--singularity=DIR]
   isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
-  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR] [--validate]
   isct trial status TRIAL
 
 Arguments:
@@ -26,6 +26,7 @@ Options:
                             `isct trial run TRIAL --gnu-parallel | parallel -j+0`
     -s, --singularity=DIR   Use singularity as containers by providing the
                             directory `DIR` of the Singularity containers.
+    --validate              Validate the patient YAML configuration file.
 """
 
 from docopt import docopt
@@ -224,6 +225,7 @@ def trial_run(args):
                 'TRIAL': schema.And(schema.Use(str), os.path.isdir),
                 '--gnu-parallel': bool,
                 '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+                '--validate': bool,
                 str: object,
             }
     )
@@ -238,6 +240,7 @@ def trial_run(args):
     dry_run = args['-x']
     verbose = True if dry_run else args['-v']
     gnu_parallel = args['--gnu-parallel']
+    validate = args['--validate']
 
     if verbose:
         # print all info levels for user
@@ -253,6 +256,11 @@ def trial_run(args):
             patient = Patient.from_yaml(pathlib.Path(trial).joinpath(p_dir))
 
             logging.info(f"Evaluating patient '{os.path.basename(patient.dir)}'...")
+
+            if validate:
+                if not patient.validate():
+                    logging.critical(f"Failed to validate configuration file.")
+                    sys.exit(1)
 
             # form the command; a relative path is sufficient in this case
             patient_path = path.joinpath(os.path.basename(patient.dir))

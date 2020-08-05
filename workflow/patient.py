@@ -1,7 +1,9 @@
 import os
 import pathlib
 import yaml
+import schema
 import sys
+
 
 import workflow.utilities as utilities
 
@@ -17,11 +19,89 @@ class Patient(dict):
         # filename of the configuration file, this goes into self.path/
         self.filename = "patient.yml"
 
+        # complete path of the patient
+        self.path = self.dir.joinpath(self.filename)
+
+        # insert the keys in the dict
         self.update(*args, **kwargs)
 
     def __repr__(self):
         dictrepr = dict.__repr__(self)
         return f"{type(self).__name__}({dict.__repr__(self)})"
+
+    def validate(self):
+        """Returns True if the patient config is validated sucessfully.
+
+        For variables which have explicit types, i.e. name has to be a string,
+        the schema enforces this by assertig `str`, while for variables that
+        should end up as float or int, we just cast to the corresponding type
+        using `schema.Use(...)`. Additionally, the schema will enforce any
+        variables that are limited to an a priori known set to be limited to
+        that set. Finally, most parameters are bound to either positive
+        `n >= 0` or bigger positive and non-zero `n > 0`.
+
+        The events are validated separately. When evaluating the complete
+        config, it only concers with the presence of the keys `id`, `event`,
+        and `status`. Later, each event is validated individually to constrain
+        these keys to allowed values. Any other parameters are not enforced at
+        this moment, as it is not clearly known what their constraints are.
+        """
+
+        s = schema.Schema({
+            'events': [schema.And(lambda e: all([b in e for b in ["id", "event", "status"]]))],
+            'ASPECTS_BL': schema.And(float, lambda n: n > 0),
+            'DiastolePressure': schema.And(schema.Use(float), lambda n: n > 0),
+            'HeartRate': schema.And(schema.Use(float), lambda n: n > 0),
+            'MeanRightAtrialPressure': schema.Use(float),
+            'NIHSS_BL': schema.And(float, lambda n: n > 0),
+            'StrokeVolume': schema.Use(float),
+            'SystolePressure': schema.Use(float),
+            'age': schema.And(float, lambda n: n > 0),
+            'collaterals': schema.Use(float),
+            'dur_oer': schema.Use(float),
+            'er_iat_groin': schema.Use(float),
+            'git_sha': str,
+            'id': schema.And(int, lambda n: n >= 0),
+            'name': str,
+            'occlsegment_c_short': schema.Use(float),
+            'pipeline_length': schema.And(int, lambda n: n > 0),
+            'premrs': schema.Use(float),
+            'prev_af': schema.Use(float),
+            'prev_dm': schema.Use(float),
+            'prev_str': schema.Use(float),
+            'random_seed': schema.And(int, lambda n: n > 0),
+            'rr_syst': schema.Use(float),
+            'sex': schema.And(float, lambda s: int(s) == 0 or int(s) == 1),
+            'sex_long': schema.And(str, schema.Use(str.lower), lambda s: s in ('male', 'female')),
+            'status': bool,
+        })
+
+        try:
+            args = s.validate(dict(self))
+        except schema.SchemaError as e:
+            print(f"Validation failed with error `{e}`")
+            return False
+
+        # parse event properties individually
+        allowed_events = [
+                '1d-blood-flow', 'darcy_multi-comp', 'place_clot',
+                'cell_death_model', 'thrombectomy', 'patient-outcome-model',
+        ]
+
+        s = schema.Schema({
+            'id': schema.And(int, lambda n: n >= 0),
+            'status': bool,
+            'event': schema.And(str, schema.Use(str.lower), lambda s: s in allowed_events),
+            schema.Optional(str): object,
+        })
+        for event in dict(self)['events']:
+            try:
+                args = s.validate(event)
+            except schema.SchemaError as e:
+                print(f"Validation failed with error `{e}`")
+                return False
+
+        return True
 
     def update(self, *args, **kwargs):
         """Update the value within the Patient's dictionary."""
