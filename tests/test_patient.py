@@ -14,6 +14,7 @@ def test_init_patient_paths(path):
     p = Patient(path)
     assert p.dir == pathlib.Path(path).absolute()
     assert p.filename == "patient.yml"
+    assert p.path == pathlib.Path(path).absolute().joinpath("patient.yml")
 
 def test_patient_full_path(tmp_path):
     p = Patient(tmp_path)
@@ -216,3 +217,98 @@ def test_patient_completed_event(tmp_path):
     # verify all are complete
     for event in patient.events():
         assert event['status']
+
+# example config
+document = """
+ASPECTS_BL: 8.363497670402376
+DiastolePressure: 10100
+HeartRate: 60
+MeanRightAtrialPressure: 0
+NIHSS_BL: 12.808330560011507
+StrokeVolume: 70
+SystolePressure: 17300
+age: 81.38059637671113
+collaterals: 1.0
+dur_oer: 86.60659896539732
+er_iat_groin: 77.00683786676517
+events:
+- event: 1d-blood-flow
+  id: 0
+  status: false
+- event: darcy_multi-comp
+  healthy: true
+  id: 1
+  status: false
+- event: cell_death_model
+  id: 2
+  read_init: 0
+  state: 0
+  status: false
+  time_end: 0.0
+  time_start: -60.0
+- event: place_clot
+  id: 3
+  status: false
+  time: 0.0
+- event: 1d-blood-flow
+  id: 4
+  status: false
+- event: darcy_multi-comp
+  id: 5
+  status: false
+- event: cell_death_model
+  id: 6
+  read_init: 1
+  state: 1
+  status: false
+  time_end: 18622.47003804366
+  time_start: 0.0
+- event: thrombectomy
+  id: 7
+  status: false
+- event: 1d-blood-flow
+  id: 8
+  status: false
+- event: darcy_multi-comp
+  id: 9
+  status: false
+- event: cell_death_model
+  id: 10
+  read_init: 2
+  state: 2
+  status: false
+  time_end: 22222.47003804366
+  time_start: 18622.47003804366
+- event: patient-outcome-model
+  id: 11
+  status: false
+git_sha: 90745bc25f537cc326958ac7279c865bd0d140bb
+id: 0
+name: Lucas Jacket
+occlsegment_c_short: 2.0
+pipeline_length: 12
+premrs: 0.0
+prev_af: 0.0
+prev_dm: 0.0
+prev_str: 0.0
+random_seed: 577090037
+rr_syst: 181.3978800889115
+sex: 1.0
+sex_long: male
+status: false
+"""
+
+def test_patient_validate_config(tmp_path):
+    config = yaml.load(document, yaml.SafeLoader)
+    patient = Patient(tmp_path, **config)
+    assert patient.validate()
+
+    # with wrong event key values
+    patient['events'][0]['id'] = 'faulty_string'
+    assert not patient.validate()
+
+    # without any keys
+    patient = Patient(tmp_path)
+    assert not patient.validate()
+
+
