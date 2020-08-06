@@ -204,8 +204,8 @@ def test_trial_status_log(trial_directory, recurse, dir_filter):
             # only the main patient directories
             assert len(lines) == num
         else:
-            # includes patient directores + patient.yml + config.xml + trial.yml
-            assert len(lines) == 3 * num + 1
+            # includes patient directores + patient.yml + config.xml + trial.yml + Clots.txt
+            assert len(lines) == 4 * num + 1
     else:
         if dir_filter is not None:
             # only the main patient directories

@@ -212,8 +212,10 @@ def trial_create(args):
     # echo all output to the log
     for line in log.stdout.splitlines(): logging.debug(line)
 
-    # TODO: remove this once transitioned towards YAML
+    # create auxilary files for each patient
+    # TODO: remove the XML export once transitioned to YAML
     for d in [d[0] for d in os.walk(path)][1:]:
+        Patient.from_yaml(d).create_default_files()
         Patient.from_yaml(d).to_xml()
 
 def trial_run(args):

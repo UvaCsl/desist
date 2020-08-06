@@ -123,6 +123,9 @@ def patient_create(args):
 
         subprocess.run(cmd)
 
+        # write default auxilary files to disk
+        patient.create_default_files()
+
     # events are added _after_ `virtrual_patient_generation` to allow for the
     # possibility of adding logic in the events, e.g. if age > criteria then
     # assume a different event chain

@@ -311,4 +311,21 @@ def test_patient_validate_config(tmp_path):
     patient = Patient(tmp_path)
     assert not patient.validate()
 
+def test_patient_default_clot_file(tmp_path):
+    config = yaml.load(document, yaml.SafeLoader)
+    patient = Patient(tmp_path, **config)
+    assert patient.validate()
+
+    patient.create_default_files()
+
+    clot_file = patient.dir.joinpath("Clots.txt")
+    assert os.path.isfile(clot_file)
+
+    with open(clot_file, "r") as clot:
+        line = clot.readline().strip()
+        for c in line.split(","):
+            assert c in ['Vesselname', 'Clotlocation(mm)', 'Clotlength(mm)', 'Permeability', 'Porosity']
+
+        line = clot.readline().strip().split("\t")
+        assert len(line) == 5
 
