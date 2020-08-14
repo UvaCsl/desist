@@ -11,6 +11,9 @@ from workflow.patient import Patient
 class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
     def __init__(self, template_fname, target_filename=None):
         # template patient directory, e.g. `/path/patient_000`
+        if isinstance(template_fname, pathlib.PosixPath):
+            template_fname = str(template_fname)
+
         self.template_fname = template_fname
 
         # target patient directory, `patient_000` in `/run_000/`
