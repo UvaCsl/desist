@@ -2,6 +2,7 @@ import pathlib
 import os
 import pandas as pd
 import subprocess
+import shutil
 
 from easyvvuq.encoders import BaseEncoder
 from easyvvuq.decoders import BaseDecoder
@@ -26,6 +27,9 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
         orig = pathlib.Path(self.template_fname).absolute()
         copy = pathlib.Path(target_dir).absolute()
 
+        # TODO: replace directory copy by default functionality of EasyVVUQ by
+        # wrapping our ISCTEncoder together with a directory encoder.
+
         # add "/." to copy contents including hidden directories
         subprocess.run(["cp", "-r", f"{str(orig)}/.", copy])
 
@@ -41,6 +45,22 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
         # dump patient to yaml and xml
         patient.to_yaml()
         patient.to_xml()
+
+        # update viscosity
+        PARAM="BLOOD_VISC"
+        if PARAM in patient:
+            # read in template parameters
+            with open(copy.joinpath("tmp.txt"), "w") as outfile:
+                with open (orig.joinpath("bf_sim/Model_parameters.txt"), "r") as config:
+                    for line in config:
+                        key = line.strip().split("=")[0]
+                        if key == PARAM:
+                            outfile.write(f"{key}={patient[key]}\n")
+                        else:
+                            outfile.write(line)
+
+            shutil.move(copy.joinpath("tmp.txt"), orig.joinpath("bf_sim/Model_parameters.txt"))
+
 
     def _log_substitution_failure(self, exception):
         # TODO
@@ -82,16 +102,24 @@ class ISCTDecoder(BaseDecoder, decoder_name="ISCTDecoder"):
         run_path = pathlib.Path(run_info['run_dir'])
         assert os.path.isdir(run_path)
 
-        patient = Patient.from_yaml(run_path.joinpath(self.target_filename))
+        #patient = Patient.from_yaml(run_path.joinpath(self.target_filename))
+
+        patient = Patient.from_yaml(run_path.joinpath("patient.yml"))
 
         data = []
 
         #for col in self.output_columns:
         #    if isinstance(col, str):
         #        data.append([(col, 0), [1])
+        #data = [(("age"), 50), (("HeartRate"), 100)]
 
-        data = [(("age"), 50), (("HeartRate"), 100)]
-        return pd.DataFrame(data)
+        if "pressure_drop" in self.output_columns:
+            with open(run_path.joinpath(self.target_filename), "r") as f:
+                dP = float(f.read().splitlines()[-1].split(",")[-1])
+
+            data = [(("pressure_drop", 0), [dP]), (("BLOOD_VISC", 0), [patient["BLOOD_VISC"]])]
+
+        return pd.DataFrame(dict(data))
 
     def _log_substitution_failure(self, exception):
         # TODO
