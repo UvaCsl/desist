@@ -5,10 +5,15 @@ _build
 
 # output
 *.pdf
+*.jpg
+*.png
 *.log
 *.gz 
 *.tar.gz 
 *.coverage
+
+# jupyter notebook
+.ipynb_checkpoints/*
 
 # containers
 *.sif 
