@@ -129,6 +129,8 @@ class Patient(dict):
         with open(self.dir.joinpath(self.filename), "w") as outfile:
             yaml.dump(dict(self), outfile)
 
+        return self
+
     def to_xml(self):
         """Dumps the Patient configuration dictionary towards xml file."""
         # dictionary to xml conversion
@@ -141,6 +143,8 @@ class Patient(dict):
             xml_str = ET.tostring(xml_config, encoding="unicode")
             dom = xml.dom.minidom.parseString(xml_str)
             outfile.write(dom.toprettyxml())
+
+        return self
 
     def full_path(self):
         return self.dir.joinpath(self.filename).absolute()
