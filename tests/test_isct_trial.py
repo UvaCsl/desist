@@ -190,6 +190,7 @@ def test_trial_run_invalid_config_file(trial_directory, mocker):
     with pytest.raises(SystemExit):
         trial(f"trial run {path} -x --validate")
 
+@pytest.mark.skipif(shutil.which('docker') is None, reason="no docker")
 @pytest.mark.parametrize("dir_filter", (None, Patient.path_is_patient))
 @pytest.mark.parametrize("recurse", (True, False))
 def test_trial_status_log(trial_directory, recurse, dir_filter):
@@ -204,8 +205,8 @@ def test_trial_status_log(trial_directory, recurse, dir_filter):
             # only the main patient directories
             assert len(lines) == num
         else:
-            # includes patient directores + patient.yml + config.xml + trial.yml
-            assert len(lines) == 3 * num + 1
+            # includes patient directores + patient.yml + config.xml + trial.yml + Clots.txt
+            assert len(lines) == 4 * num + 1
     else:
         if dir_filter is not None:
             # only the main patient directories

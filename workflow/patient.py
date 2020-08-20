@@ -129,6 +129,8 @@ class Patient(dict):
         with open(self.dir.joinpath(self.filename), "w") as outfile:
             yaml.dump(dict(self), outfile)
 
+        return self
+
     def to_xml(self):
         """Dumps the Patient configuration dictionary towards xml file."""
         # dictionary to xml conversion
@@ -141,6 +143,8 @@ class Patient(dict):
             xml_str = ET.tostring(xml_config, encoding="unicode")
             dom = xml.dom.minidom.parseString(xml_str)
             outfile.write(dom.toprettyxml())
+
+        return self
 
     def full_path(self):
         return self.dir.joinpath(self.filename).absolute()
@@ -174,6 +178,34 @@ class Patient(dict):
 
         self.update(**defaults)
         return self
+
+    def create_default_files(self):
+        """Initialises default files in patient directory."""
+
+        # integer to string mapping for occlusion segment
+        occl_segment_map = {
+            0: 'M3', 1: 'IICA', 2: 'ICAT', 3: 'M1', 4: 'M2',
+        }
+
+        left_or_right = "R"
+        vessel = f"{left_or_right}. {occl_segment_map[int(self.get('occlsegment_c_short', 0))]}"
+
+        # `Clots.txt` layed out as list of tuples
+        data = [
+            ("Vesselname", vessel),
+            ("Clotlocation(mm)", 3),
+            ("Clotlength(mm)", 3),
+            ("Permeability", 0),
+            ("Porosity", 0)
+        ]
+
+        # Write data to file as csv (header separated by `,` values by `\t`
+        with open(self.dir.joinpath("Clots.txt"), "w") as outfile:
+            header = ",".join([d[0] for d in data])
+            outfile.write(header)
+            outfile.write('\n')
+            clot = "\t".join([str(d[1]) for d in data])
+            outfile.write(clot)
 
     def set_events(self, overwrite=False):
         """Add list of events to a patient configuration.

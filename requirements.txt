@@ -6,3 +6,6 @@ pytest==5.4.3
 pytest-cov==2.10.0
 pytest-mock==3.2.0
 schema==0.7.2
+#easyvvuq==0.6 point EasyVVUQ to commit with `YAMLDecoder` until is released.
+git+git://github.com/UCL-CCS/EasyVVUQ@0ad1ab0b2407071db23a5bcbce90d37fd5c9547b#egg=easyvvuq
+pandas==1.1.0
