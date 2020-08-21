@@ -1,6 +1,8 @@
 import os
 import pathlib
 import shutil
+import subprocess
+import logging
 
 from workflow.container import Container, ContainerType
 import workflow.utilities as utilities
@@ -40,3 +42,18 @@ class Docker(Container):
         """Returns a command to test container with tag `path` exists."""
         tag = self.image(path)
         return f"{self.sudo} {self.type} image inspect {tag}".split()
+
+    def set_permissions(self, path, dry_run=True):
+        """Updates the file permissions after Docker runs to prevent files
+        remaining on the filesystem with `root` permissions inherited from the
+        Docker container."""
+        if self.os == utilities.OS.LINUX:
+            user = subprocess.check_output(['whoami'], universal_newlines=True).strip()
+            chown = ["sudo", "chown", "-R", f"{user}:{user}", str(path)]
+
+            # log the command
+            logging.info(" + " + " ".join(chown))
+
+            # only evaluate when not doing a dry run
+            if not dry_run:
+                subprocess.run(chown)

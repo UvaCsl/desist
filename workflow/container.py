@@ -65,6 +65,10 @@ class Container(abc.ABC):
     def check_image(self, path):
         """Returns the command to verify the image exists on the host."""
 
+    @abc.abstractmethod
+    def set_permissions(self, path, dry_run=True):
+        """Sets the file permissions for the patient directory."""
+
     def run_image(self, tag, args):
         """Returns the command to run the image corresponding to `tag` where
         the additional arguments `args` are appended to the command."""
