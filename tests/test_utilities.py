@@ -2,12 +2,20 @@ import pytest
 import pathlib
 import os
 import subprocess
-
+import logging
 
 from mock import patch, MagicMock
 
 from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
 from workflow.utilities import OS
+
+@pytest.fixture
+def log_subprocess_run(mocker):
+    mocker.patch('subprocess.run', logging.info)
+
+@pytest.fixture
+def mock_check_output(mocker):
+    mocker.patch('subprocess.check_output', return_value='string\n')
 
 def test_isct_module_path():
     import workflow as wf

@@ -199,6 +199,8 @@ def run_container(args):
         patient.completed_event(event_id)
         patient.to_yaml()
 
+    # update file permissions
+    cmd = c.set_permissions(patient.dir, dry_run)
 
 def container(argv=None):
     """Provides commands for interaction with building containers."""

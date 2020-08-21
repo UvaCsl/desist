@@ -10,6 +10,8 @@ from workflow.docker import Docker
 from workflow.singularity import Singularity
 from workflow.container import ContainerType
 
+from tests.test_utilities import log_subprocess_run, mock_check_output
+
 @pytest.mark.parametrize("singularity, cls", [(".", Singularity), (None, Docker)])
 def test_new_container_instance(singularity, cls):
     c = new_container(singularity)
@@ -185,3 +187,18 @@ def test_singularity_build_image_command(os_str, OS, mocker, tmp_path):
 
     for k in ['cd', 'mv', os.path.basename(tmp_path)]:
         assert k in cmd
+
+@pytest.mark.usefixtures('mock_check_output')
+@pytest.mark.usefixtures('log_subprocess_run')
+@pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
+def test_docker_change_permissions(os_str, OS, mocker, tmp_path):
+    path = tmp_path.joinpath("newfile")
+    path.touch()
+
+    # set OS
+    mocker.patch("sys.platform", os_str)
+
+    # make sure changing permissions does not fail
+    for container in [Docker]:
+        c = container()
+        c.set_permissions(path, dry_run=False)

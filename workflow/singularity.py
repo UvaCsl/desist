@@ -57,3 +57,7 @@ class Singularity(Container):
         """Returns a command to test if the `.sif` file of the path exists."""
         path = self.image(path)
         return f"test -e {path}".split()
+
+    def set_permissions(self, path, dry_run=True):
+        """Singularity containers do not require to modify file permissions."""
+        pass

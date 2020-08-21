@@ -14,6 +14,7 @@ from workflow.isct_container import container
 from tests.test_isct_trial import trial_directory
 from workflow.isct_container import form_container_command
 from workflow.isct_trial import trial as trial_cmd
+from tests.test_utilities import log_subprocess_run, mock_check_output
 
 
 # This newpopen mocks a popen object that holds some data inside its .stdout
@@ -116,8 +117,9 @@ def test_run_container_valid_path(trial_directory, mocker):
 
     container(f"container run tag {patient} 1 -x".split())
 
-@patch('shutil.which', return_value="/mocker/bin/docker")
+@pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
+@patch('shutil.which', return_value="/mocker/bin/docker")
 def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_directory, mocker):
     # create config
     path = trial_directory
