@@ -270,6 +270,11 @@ class Patient(dict):
     def full_path(self):
         return self.dir.joinpath(self.filename).absolute()
 
+    def update_defaults(self):
+        # Translate variable name from `virtual patient generation` towards the
+        # blood flow (and subsequent) models.
+        self['SystolePressure'] = self['rr_syst']
+
     def set_defaults(self, pid, seed):
         """Insert default configuration into the current patient.
 
@@ -291,7 +296,6 @@ class Patient(dict):
             'status': False,
             'random_seed': seed,
             'HeartRate': 60,
-            'SystolePressure': 17300,
             'DiastolePressure': 10100,
             'MeanRightAtrialPressure': 0,
             'StrokeVolume': 70,
