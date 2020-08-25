@@ -55,29 +55,37 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
         # change its filename
         patient.dir = pathlib.Path(target_dir).absolute()
 
-        # update parameters
-        patient.update(**params)
+        # update parameters: this updates all parameters that are read from
+        # either the `patient.yml` or the `congfig.xml`.
 
-        # dump patient to yaml and xml
-        patient.to_yaml()
-        patient.to_xml()
+        # attempt: update only parameters that are already present, if not,
+        # we either are inserting them, which might or might not be what we
+        # want to do, or we should update them otherwise
+        for k, v in params.items():
+            if k in patient:
+                patient[k] = v
 
-        # update viscosity
-        PARAM = "BLOOD_VISC"
-        if PARAM in patient:
             # read in template parameters
             with open(copy.joinpath("tmp.txt"), "w") as outfile:
                 with open(orig.joinpath("bf_sim/Model_parameters.txt"),
                           "r") as config:
                     for line in config:
                         key = line.strip().split("=")[0]
-                        if key == PARAM:
+                        if key == k:
                             outfile.write(f"{key}={patient[key]}\n")
                         else:
                             outfile.write(line)
 
-            shutil.move(copy.joinpath("tmp.txt"),
-                        orig.joinpath("bf_sim/Model_parameters.txt"))
+            shutil.move(copy.joinpath("tmp.txt"), orig.joinpath("bf_sim/Model_parameters.txt"))
+            del params[k]
+
+        # assert the `params` dictionary is empty, indicating that all the
+        # parameters have been encoded towards a location
+        assert params == {}
+
+        # dump patient to yaml and xml
+        patient.to_yaml()
+        patient.to_xml()
 
     def _log_substitution_failure(self, exception):
         # TODO
