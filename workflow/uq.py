@@ -65,6 +65,22 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
             if k in patient:
                 patient[k] = v
 
+        done = [k for k, _ in params.items() if k in patient]
+        for k in done:
+            del params[k]
+
+
+        # all parameters located in `bf_sim/Model_parameters.txt`
+        options = ["BLOOD_VISC", "StrokeVolume", "Density", "SystolePressure",
+                 "DiastolePressure",]
+        matches = [(k,v) for k, v in params.items() if k in options]
+
+        # update the matches only
+        for k, v in matches:
+
+            # update the patient config with these parameters
+            patient[k] = v
+
             # read in template parameters
             with open(copy.joinpath("tmp.txt"), "w") as outfile:
                 with open(orig.joinpath("bf_sim/Model_parameters.txt"),
