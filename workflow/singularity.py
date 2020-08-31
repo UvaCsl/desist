@@ -5,6 +5,7 @@ import shutil
 from workflow.container import Container, ContainerType
 import workflow.utilities as utilities
 
+
 class Singularity(Container):
     def __init__(self, path=None):
         super().__init__()
@@ -23,7 +24,8 @@ class Singularity(Container):
             # sufficient. This only provide means to run the images, whereas
             # building the images requires the additional `vagrant` VM to be
             # present.
-            return not self.executable_present() or shutil.which("vagrant") is None
+            return not self.executable_present() or shutil.which(
+                "vagrant") is None
 
         return not self.executable_present()
 
@@ -44,13 +46,14 @@ class Singularity(Container):
         if self.os == utilities.OS.LINUX:
             return f"{chdir} && {cmd} && {mv}".split()
 
-        # On `macos` we require to evaluate the singularity build command inside
-        # a `vagrant` VM. This machine shares `/vagrant/` with the directory
-        # containing all submodules, therefore `cd` into the path's basename.
+        # On `macos` we require to evaluate the singularity build command
+        # inside a `vagrant` VM. This machine shares `/vagrant/` with the
+        # directory containing all submodules, therefore `cd` into the path's
+        # basename.
         chdir = f"cd /vagrant/{os.path.basename(path)}"
 
-        # `vagrant` accepts singularity commands over ssh and move the resulting
-        # image file `singularity.sif` to the desired directory.
+        # `vagrant` accepts singularity commands over ssh and move the
+        # resulting # image file `singularity.sif` to the desired directory.
         return f'vagrant ssh -c "{chdir} && {cmd}" && {mv}'.split()
 
     def check_image(self, path):

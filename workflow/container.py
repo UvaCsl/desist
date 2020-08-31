@@ -3,9 +3,9 @@ import enum
 import shutil
 import pathlib
 import sys
-import os
 
 import workflow.utilities as utilities
+
 
 def new_container(singularity_path=None):
     """Generates a specific container instance based on input arguments."""
@@ -16,6 +16,7 @@ def new_container(singularity_path=None):
         from workflow.docker import Docker
         return Docker()
 
+
 @enum.unique
 class ContainerType(enum.Enum):
     DOCKER = "docker"
@@ -23,6 +24,7 @@ class ContainerType(enum.Enum):
 
     def __str__(self):
         return str(self.value)
+
 
 class Container(abc.ABC):
     def __init__(self):
@@ -43,10 +45,11 @@ class Container(abc.ABC):
 
     def dry_run(self):
         """Returns True if system lacks requirements to execute commands."""
-        # For Docker to execute it only requires that we can find the executable
-        # on the current path. Note, on MACOS it might be that the Docker's VM
-        # (`docker-machine`) is not accessible, which provides another error.
-        # This is not validated in here, as it is directly logged to `stdout`.
+        # For Docker to execute it only requires that we can find the
+        # executable on the current path. Note, on MACOS it might be that the
+        # Docker's VM (`docker-machine`) is not accessible, which provides
+        # another error. This is not validated in here, as it is directly
+        # logged to `stdout`.
         return not self.executable_present()
 
     def dry_build(self):
@@ -81,4 +84,3 @@ class Container(abc.ABC):
 
         # define the run-command by combining the arguments
         return f"{self.sudo} {self.type} run {volumes} {image} {args}".split()
-

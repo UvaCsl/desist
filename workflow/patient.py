@@ -2,14 +2,12 @@ import os
 import pathlib
 import yaml
 import schema
-import sys
-
 
 import workflow.utilities as utilities
 
+
 class Patient(dict):
     """Representation of a patient."""
-
     def __init__(self, path, *args, **kwargs):
         """Initialise a patient like a dictionary."""
 
@@ -26,7 +24,6 @@ class Patient(dict):
         self.update(*args, **kwargs)
 
     def __repr__(self):
-        dictrepr = dict.__repr__(self)
         return f"{type(self).__name__}({dict.__repr__(self)})"
 
     def validate(self):
@@ -48,55 +45,93 @@ class Patient(dict):
         """
 
         s = schema.Schema({
-            'events': [schema.And(lambda e: all([b in e for b in ["id", "event", "status"]]))],
-            'ASPECTS_BL': schema.And(float, lambda n: n > 0),
-            'DiastolePressure': schema.And(schema.Use(float), lambda n: n > 0),
-            'HeartRate': schema.And(schema.Use(float), lambda n: n > 0),
-            'MeanRightAtrialPressure': schema.Use(float),
-            'NIHSS_BL': schema.And(float, lambda n: n > 0),
-            'StrokeVolume': schema.Use(float),
-            'SystolePressure': schema.Use(float),
-            'age': schema.And(float, lambda n: n > 0),
-            'collaterals': schema.Use(float),
-            'dur_oer': schema.Use(float),
-            'er_iat_groin': schema.Use(float),
-            'git_sha': str,
-            'id': schema.And(int, lambda n: n >= 0),
-            'name': str,
-            'occlsegment_c_short': schema.Use(float),
-            'pipeline_length': schema.And(int, lambda n: n > 0),
-            'premrs': schema.Use(float),
-            'prev_af': schema.Use(float),
-            'prev_dm': schema.Use(float),
-            'prev_str': schema.Use(float),
-            'random_seed': schema.And(int, lambda n: n > 0),
-            'rr_syst': schema.Use(float),
-            'sex': schema.And(float, lambda s: int(s) == 0 or int(s) == 1),
-            'sex_long': schema.And(str, schema.Use(str.lower), lambda s: s in ('male', 'female')),
-            'status': bool,
+            'events': [
+                schema.And(
+                    lambda e: all([b in e for b in ["id", "event", "status"]]))
+            ],
+            'ASPECTS_BL':
+            schema.And(float, lambda n: n > 0),
+            'DiastolePressure':
+            schema.And(schema.Use(float), lambda n: n > 0),
+            'HeartRate':
+            schema.And(schema.Use(float), lambda n: n > 0),
+            'MeanRightAtrialPressure':
+            schema.Use(float),
+            'NIHSS_BL':
+            schema.And(float, lambda n: n > 0),
+            'StrokeVolume':
+            schema.Use(float),
+            'SystolePressure':
+            schema.Use(float),
+            'age':
+            schema.And(float, lambda n: n > 0),
+            'collaterals':
+            schema.Use(float),
+            'dur_oer':
+            schema.Use(float),
+            'er_iat_groin':
+            schema.Use(float),
+            'git_sha':
+            str,
+            'id':
+            schema.And(int, lambda n: n >= 0),
+            'name':
+            str,
+            'occlsegment_c_short':
+            schema.Use(float),
+            'pipeline_length':
+            schema.And(int, lambda n: n > 0),
+            'premrs':
+            schema.Use(float),
+            'prev_af':
+            schema.Use(float),
+            'prev_dm':
+            schema.Use(float),
+            'prev_str':
+            schema.Use(float),
+            'random_seed':
+            schema.And(int, lambda n: n > 0),
+            'rr_syst':
+            schema.Use(float),
+            'sex':
+            schema.And(float, lambda s: int(s) == 0 or int(s) == 1),
+            'sex_long':
+            schema.And(str, schema.Use(str.lower), lambda s: s in
+                       ('male', 'female')),
+            'status':
+            bool,
         })
 
         try:
-            args = s.validate(dict(self))
+            s.validate(dict(self))
         except schema.SchemaError as e:
             print(f"Validation failed with error `{e}`")
             return False
 
         # parse event properties individually
         allowed_events = [
-                '1d-blood-flow', 'darcy_multi-comp', 'place_clot',
-                'cell_death_model', 'thrombectomy', 'patient-outcome-model',
+            '1d-blood-flow',
+            'darcy_multi-comp',
+            'place_clot',
+            'cell_death_model',
+            'thrombectomy',
+            'patient-outcome-model',
         ]
 
         s = schema.Schema({
-            'id': schema.And(int, lambda n: n >= 0),
-            'status': bool,
-            'event': schema.And(str, schema.Use(str.lower), lambda s: s in allowed_events),
-            schema.Optional(str): object,
+            'id':
+            schema.And(int, lambda n: n >= 0),
+            'status':
+            bool,
+            'event':
+            schema.And(str, schema.Use(str.lower),
+                       lambda s: s in allowed_events),
+            schema.Optional(str):
+            object,
         })
         for event in dict(self)['events']:
             try:
-                args = s.validate(event)
+                s.validate(event)
             except schema.SchemaError as e:
                 print(f"Validation failed with error `{e}`")
                 return False
@@ -184,20 +219,20 @@ class Patient(dict):
 
         # integer to string mapping for occlusion segment
         occl_segment_map = {
-            0: 'M3', 1: 'IICA', 2: 'ICAT', 3: 'M1', 4: 'M2',
+            0: 'M3',
+            1: 'IICA',
+            2: 'ICAT',
+            3: 'M1',
+            4: 'M2',
         }
 
         left_or_right = "R"
-        vessel = f"{left_or_right}. {occl_segment_map[int(self.get('occlsegment_c_short', 0))]}"
+        segment = occl_segment_map[int(self.get('occlsegment_c_short', 0))]
+        vessel = f"{left_or_right}. {segment}"
 
         # `Clots.txt` layed out as list of tuples
-        data = [
-            ("Vesselname", vessel),
-            ("Clotlocation(mm)", 3),
-            ("Clotlength(mm)", 3),
-            ("Permeability", 0),
-            ("Porosity", 0)
-        ]
+        data = [("Vesselname", vessel), ("Clotlocation(mm)", 3),
+                ("Clotlength(mm)", 3), ("Permeability", 0), ("Porosity", 0)]
 
         # Write data to file as csv (header separated by `,` values by `\t`
         with open(self.dir.joinpath("Clots.txt"), "w") as outfile:
@@ -221,33 +256,37 @@ class Patient(dict):
 
         # FIXME where to obtain default values?
         events = [
-                ("1d-blood-flow", {}),
-                ("darcy_multi-comp", {"healthy": True}),
-                ("cell_death_model", {
-                    "state": 0,
-                    "read_init": 0,
-                    "time_start": -60.0,
-                    "time_end": 0.0,
-                    }),
-                ("place_clot", {"time": 0.0}),
-                ("1d-blood-flow", {}),
-                ("darcy_multi-comp", {}),
-                ("cell_death_model", {
-                    "state": 1,
-                    "read_init": 1,
-                    "time_start": 0.0,
-                    "time_end": 18622.47003804366,
-                    }),
-                ("thrombectomy", {}),
-                ("1d-blood-flow", {}),
-                ("darcy_multi-comp", {}),
-                ("cell_death_model", {
-                    "state": 2,
-                    "read_init": 2,
-                    "time_start": 18622.47003804366,
-                    "time_end": 22222.47003804366,
-                    }),
-                ("patient-outcome-model", {}),
+            ("1d-blood-flow", {}),
+            ("darcy_multi-comp", {
+                "healthy": True
+            }),
+            ("cell_death_model", {
+                "state": 0,
+                "read_init": 0,
+                "time_start": -60.0,
+                "time_end": 0.0,
+            }),
+            ("place_clot", {
+                "time": 0.0
+            }),
+            ("1d-blood-flow", {}),
+            ("darcy_multi-comp", {}),
+            ("cell_death_model", {
+                "state": 1,
+                "read_init": 1,
+                "time_start": 0.0,
+                "time_end": 18622.47003804366,
+            }),
+            ("thrombectomy", {}),
+            ("1d-blood-flow", {}),
+            ("darcy_multi-comp", {}),
+            ("cell_death_model", {
+                "state": 2,
+                "read_init": 2,
+                "time_start": 18622.47003804366,
+                "time_end": 22222.47003804366,
+            }),
+            ("patient-outcome-model", {}),
         ]
 
         # initialise events to empty list
@@ -259,9 +298,9 @@ class Patient(dict):
         # build the list of events with settings
         for i, (event, settings) in enumerate(events):
             defaults = {
-                    'event': event,
-                    'id': i,
-                    'status': False,
+                'event': event,
+                'id': i,
+                'status': False,
             }
 
             # append event and merge its defaults with specific settings
@@ -332,4 +371,3 @@ def dict_to_xml(config):
 
     # return the full XML root
     return root
-
