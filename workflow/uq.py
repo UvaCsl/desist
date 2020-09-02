@@ -9,6 +9,7 @@ from easyvvuq.decoders import BaseDecoder
 from easyvvuq import OutputType
 from workflow.patient import Patient
 
+
 class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
     def __init__(self, template_fname, target_filename=None):
         # template patient directory, e.g. `/path/patient_000`
@@ -47,11 +48,12 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
         patient.to_xml()
 
         # update viscosity
-        PARAM="BLOOD_VISC"
+        PARAM = "BLOOD_VISC"
         if PARAM in patient:
             # read in template parameters
             with open(copy.joinpath("tmp.txt"), "w") as outfile:
-                with open (orig.joinpath("bf_sim/Model_parameters.txt"), "r") as config:
+                with open(orig.joinpath("bf_sim/Model_parameters.txt"),
+                          "r") as config:
                     for line in config:
                         key = line.strip().split("=")[0]
                         if key == PARAM:
@@ -59,8 +61,8 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
                         else:
                             outfile.write(line)
 
-            shutil.move(copy.joinpath("tmp.txt"), orig.joinpath("bf_sim/Model_parameters.txt"))
-
+            shutil.move(copy.joinpath("tmp.txt"),
+                        orig.joinpath("bf_sim/Model_parameters.txt"))
 
     def _log_substitution_failure(self, exception):
         # TODO
@@ -68,12 +70,15 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
 
     def get_restart_dict(self):
         # TODO: temporary to fill requirement of returning some dict
-        return {"target_filename": self.target_filename,
-                "template_fname": self.template_fname}
+        return {
+            "target_filename": self.target_filename,
+            "template_fname": self.template_fname
+        }
 
     def element_version(self):
         # TODO: temporary to fill required function
         return "0.1"
+
 
 class ISCTDecoder(BaseDecoder, decoder_name="ISCTDecoder"):
     def __init__(self, target_filename=None, output_columns=None):
@@ -102,22 +107,23 @@ class ISCTDecoder(BaseDecoder, decoder_name="ISCTDecoder"):
         run_path = pathlib.Path(run_info['run_dir'])
         assert os.path.isdir(run_path)
 
-        #patient = Patient.from_yaml(run_path.joinpath(self.target_filename))
+        # patient = Patient.from_yaml(run_path.joinpath(self.target_filename))
 
         patient = Patient.from_yaml(run_path.joinpath("patient.yml"))
 
         data = []
 
-        #for col in self.output_columns:
-        #    if isinstance(col, str):
-        #        data.append([(col, 0), [1])
-        #data = [(("age"), 50), (("HeartRate"), 100)]
+        # for col in self.output_columns:
+        #     if isinstance(col, str):
+        #         data.append([(col, 0), [1])
+        # data = [(("age"), 50), (("HeartRate"), 100)]
 
         if "pressure_drop" in self.output_columns:
             with open(run_path.joinpath(self.target_filename), "r") as f:
                 dP = float(f.read().splitlines()[-1].split(",")[-1])
 
-            data = [(("pressure_drop", 0), [dP]), (("BLOOD_VISC", 0), [patient["BLOOD_VISC"]])]
+            data = [(("pressure_drop", 0), [dP]),
+                    (("BLOOD_VISC", 0), [patient["BLOOD_VISC"]])]
 
         return pd.DataFrame(dict(data))
 
@@ -127,8 +133,10 @@ class ISCTDecoder(BaseDecoder, decoder_name="ISCTDecoder"):
 
     def get_restart_dict(self):
         # TODO: temporary to fill requirement of returning some dict
-        return {"target_filename": self.target_filename,
-                "output_columns": self.output_columns}
+        return {
+            "target_filename": self.target_filename,
+            "output_columns": self.output_columns
+        }
 
     def element_version(self):
         # TODO: temporary to fill required function

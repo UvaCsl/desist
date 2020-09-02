@@ -5,6 +5,7 @@ import os
 import enum
 import sys
 
+
 @enum.unique
 class OS(enum.Enum):
     LINUX = "linux"
@@ -19,23 +20,25 @@ class OS(enum.Enum):
         else:
             sys.exit("Windows not yet supported.")
 
+
 def isct_module_path():
     """Retruns the path to the isct module. """
     import workflow as wf
     bn, fn = os.path.split(wf.__file__)
     return pathlib.Path(bn)
 
+
 def get_git_hash(path):
     """Return the git hash of path.
 
     This function can be combined with `utilities.isct_module_path` to get the
     git hash of the install package. Note, this is based on the fact that we
-    are working with a local, `pip --editable` installed version of the package.
-    This is likely break whenever the package is not installed as an editable
-    version, as the modules path probably does not point to a location that
-    actually contains a copy of the repository. In those cases, we should
-    probably resort to storing the package version (ensuring this is equal to
-    a certain git tag) rather then storing specific git hashes in this manner.
+    are working with a local, `pip --editable` installed version of the
+    package. This is likely break whenever the package is not installed as an
+    editable version, as the modules path probably does not point to a location
+    that actually contains a copy of the repository. In those cases, we should
+    probably resort to storing the package version (ensuring this is equal to a
+    certain git tag) rather then storing specific git hashes in this manner.
     """
 
     if shutil.which("git") is None:
@@ -44,17 +47,18 @@ def get_git_hash(path):
     try:
         # with universal_newlines=True returns a string
         label = subprocess.run(
-                    ["git", "rev-parse", "HEAD"],
-                    universal_newlines=True,
-                    cwd=path,
-                    capture_output=True,
-                    check=True,
-                    )
+            ["git", "rev-parse", "HEAD"],
+            universal_newlines=True,
+            cwd=path,
+            capture_output=True,
+            check=True,
+        )
         label = label.stdout.strip()
     except subprocess.CalledProcessError:
         label = ""
 
     return label
+
 
 def tree(path, prefix="", recurse=False, dir_filter=None, report=None):
     """Tree recursively generates a visual tree structure line by line.
@@ -77,20 +81,24 @@ def tree(path, prefix="", recurse=False, dir_filter=None, report=None):
 
     # show the top directory before recursing into all subdirectories
     print(prefix + f"{os.path.basename(path)}/")
-    for line in inner_tree(path, prefix=prefix, recurse=recurse,
-                           report=report, dir_filter=dir_filter):
+    for line in inner_tree(path,
+                           prefix=prefix,
+                           recurse=recurse,
+                           report=report,
+                           dir_filter=dir_filter):
         print(line)
+
 
 def inner_tree(path, prefix="", recurse=True, dir_filter=None, report=None):
     """Recursive routine of tree. Yields line-by-line output."""
 
     # prefix components:
-    space =  '    '
+    space = '    '
     branch = '│   '
 
     # pointers:
-    tee =    '├── '
-    last =   '└── '
+    tee = '├── '
+    last = '└── '
 
     # contents of the directories, including files
     contents = list(path.iterdir())
@@ -123,6 +131,8 @@ def inner_tree(path, prefix="", recurse=True, dir_filter=None, report=None):
         if path.is_dir() and recurse:
             extension = branch if pointer == tee else space
 
-            yield from inner_tree(path, prefix=prefix+extension,
-                                  recurse=recurse, dir_filter=dir_filter,
+            yield from inner_tree(path,
+                                  prefix=prefix + extension,
+                                  recurse=recurse,
+                                  dir_filter=dir_filter,
                                   report=report)

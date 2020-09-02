@@ -1,9 +1,11 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED] [--singularity=DIR]
+  isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
+                          [--singularity=DIR]
   isct trial ls TRIAL [-r | --recurse]
   isct trial plot TRIAL [--show]
-  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR] [--validate]
+  isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
+                       [--validate]
   isct trial status TRIAL
 
 Arguments:
@@ -14,16 +16,17 @@ Arguments:
 Options:
     -h, --help              Shows the usage of `isct trial`.
     --version               Shows the version number.
-    --prefix=PATIENT        The prefix for the patient directory [default: patient].
+    --prefix=PATIENT        Prefix for patient directory [default: patient].
     -n=NUM                  The number of patients to generate [default: 1].
     -f                      Force overwrite existing trial directory.
     -v                      Set verbose output.
     --seed=SEED             Random seed for the trial generation [default: 1].
-    --show                  Directly show the resulting figure [default: false].
+    --show                  Directly show the figure [default: false].
     -x                      Dry run: only log the command without evaluating.
     -r, --recurse           Recursivly show content of trial directory.
-    --gnu-parallel          Forms the outputs to be piped into gnu parallel, e.g.
-                            `isct trial run TRIAL --gnu-parallel | parallel -j+0`
+    --gnu-parallel          Forms the outputs to be piped into gnu parallel,
+                            e.g. `isct trial run TRIAL --gnu-parallel |
+                            parallel -j+0`
     -s, --singularity=DIR   Use singularity as containers by providing the
                             directory `DIR` of the Singularity containers.
     --validate              Validate the patient YAML configuration file.
@@ -45,15 +48,14 @@ import workflow.utilities as utilities
 from workflow.patient import Patient
 from workflow.isct_patient import patient as patient_cmd
 
+
 def trail_plot(args):
     """Generate a graph-like visualisation of the trial directory."""
 
-    s = schema.Schema(
-            {
-                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-                str: object
-            }
-    )
+    s = schema.Schema({
+        'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+        str: object
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -64,7 +66,7 @@ def trail_plot(args):
     try:
         from graphviz import Digraph
     except ImportError:
-        sys.exit(f"Cannot import 'graphviz' package")
+        sys.exit("Cannot import 'graphviz' package")
 
     # check if `dot` is present, cannot generate graph without it
     renderPlot = True
@@ -76,7 +78,7 @@ def trail_plot(args):
     path = pathlib.Path(args['TRIAL'])
     trial_name = os.path.basename(path)
     g = Digraph(trial_name, filename=path.joinpath("graph.gv").absolute())
-    g.attr(rankdir = "LR")
+    g.attr(rankdir="LR")
 
     # populate graph from trial -> patient ->  status
     for trial, patients, files in os.walk(path):
@@ -96,7 +98,7 @@ def trail_plot(args):
             g.node(patient, shape="record", label=label)
             g.edge(trial_name, patient)
 
-        break # prevent recursion of `os.walk()`
+        break  # prevent recursion of `os.walk()`
 
     # write `graph.gv`, this can run without `dot` as it does not render yet
     g.save()
@@ -118,30 +120,40 @@ def create_trial_config(path, prefix, num_patients):
         git_sha = "not_found"
 
     return {
-            'patients_directory': str(path.absolute()),
-            'prefix': prefix,
-            'number': num_patients,
-            'preprocessed': False,
-            'git_sha': git_sha,
+        'patients_directory': str(path.absolute()),
+        'prefix': prefix,
+        'number': num_patients,
+        'preprocessed': False,
+        'git_sha': git_sha,
     }
+
 
 def add_events(patient):
     """Add list of events to a patient configuration file."""
 
+
 def trial_create(args):
     # schema for argument validation
-    s = schema.Schema(
-            {
-                '-n': schema.And(schema.Use(int, error='Only integer number of patients'), lambda n: n > 0,
-                    error="Argument `-n` requires a postive non-zero integer number of patients"),
-                '-f': schema.Use(bool),
-                '-v': schema.Use(bool),
-                '--prefix': schema.Use(str, error='Only string prefixes are allowed'),
-                '--seed': schema.Use(int, error='Only integer random seeds allowed'),
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                str: object, # all other inputs doesnt  matter yet
-                }
-    )
+    s = schema.Schema({
+        '-n':
+        schema.And(
+            schema.Use(int, error='Only integer number of patients'),
+            lambda n: n > 0,
+            error="Argument `-n` must be a postive non-zero number of patients"
+        ),
+        '-f':
+        schema.Use(bool),
+        '-v':
+        schema.Use(bool),
+        '--prefix':
+        schema.Use(str, error='Only string prefixes are allowed'),
+        '--seed':
+        schema.Use(int, error='Only integer random seeds allowed'),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        str:
+        object,  # all other inputs doesnt  matter yet
+    })
 
     # validate arguments
     try:
@@ -160,7 +172,6 @@ def trial_create(args):
         prefix = "patient"
 
     num_patients = args['-n']
-    verbose = args['-v']
     seed = args['--seed']
 
     # require explicit -f to overwrite existing directories
@@ -184,12 +195,17 @@ def trial_create(args):
 
     # create patients configuration files
     for i in range(num_patients):
-        cmd = ['patient', 'create', str(path.absolute()), '--id', str(i), '--seed', str(seed), '--config-only']
+        cmd = [
+            'patient', 'create',
+            str(path.absolute()), '--id',
+            str(i), '--seed',
+            str(seed), '--config-only'
+        ]
         patient_cmd(cmd)
 
     # batch generate all configuration files
     # this runs through docker only once; and not for every patient
-    dirs = ["/patients/"+os.path.basename(d[0]) for d in os.walk(path)][1:]
+    dirs = ["/patients/" + os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
 
     c = new_container(args['--singularity'])
@@ -207,10 +223,14 @@ def trial_create(args):
         return
 
     # evaluate `virtual-patient-generation` model to fill config files
-    log = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8")
+    log = subprocess.run(cmd,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
+                         encoding="utf-8")
 
     # echo all output to the log
-    for line in log.stdout.splitlines(): logging.debug(line)
+    for line in log.stdout.splitlines():
+        logging.debug(line)
 
     # create auxilary files for each patient
     # TODO: remove the XML export once transitioned to YAML
@@ -218,19 +238,25 @@ def trial_create(args):
         Patient.from_yaml(d).create_default_files()
         Patient.from_yaml(d).to_xml()
 
+
 def trial_run(args):
     # validate run arguments
-    s = schema.Schema(
-            {
-                '-x': bool,
-                '-v': bool,
-                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-                '--gnu-parallel': bool,
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                '--validate': bool,
-                str: object,
-            }
-    )
+    s = schema.Schema({
+        '-x':
+        bool,
+        '-v':
+        bool,
+        'TRIAL':
+        schema.And(schema.Use(str), os.path.isdir),
+        '--gnu-parallel':
+        bool,
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--validate':
+        bool,
+        str:
+        object,
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -257,11 +283,12 @@ def trial_run(args):
         for p_dir in patients:
             patient = Patient.from_yaml(pathlib.Path(trial).joinpath(p_dir))
 
-            logging.info(f"Evaluating patient '{os.path.basename(patient.dir)}'...")
+            msg = f"Evaluating patient '{os.path.basename(patient.dir)}'..."
+            logging.info(msg)
 
             if validate:
                 if not patient.validate():
-                    logging.critical(f"Failed to validate configuration file.")
+                    logging.critical("Failed to validate configuration file.")
                     sys.exit(1)
 
             # form the command; a relative path is sufficient in this case
@@ -290,19 +317,19 @@ def trial_run(args):
             # evaluate the patient command
             patient_cmd(cmd)
 
-        break # prevent recursion of `os.walk()`
+        # prevent recursion of `os.walk()`
+        break
 
     return
 
+
 def trial_list(args):
     # validate run arguments
-    s = schema.Schema(
-            {
-                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-                '--recurse': bool,
-                str: object,
-            }
-    )
+    s = schema.Schema({
+        'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+        '--recurse': bool,
+        str: object,
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -316,14 +343,13 @@ def trial_list(args):
     # traverse the directory
     utilities.tree(path, recurse=recurse)
 
+
 def trial_status(args):
     # validate run arguments
-    s = schema.Schema(
-            {
-                'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-                str: object,
-            }
-    )
+    s = schema.Schema({
+        'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+        str: object,
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -333,8 +359,11 @@ def trial_status(args):
     # setup arguments
     path = pathlib.Path(args['TRIAL'])
 
-    utilities.tree(path, recurse=False, dir_filter=Patient.path_is_patient,
-                   report=lambda p : Patient.from_yaml(p).status())
+    utilities.tree(path,
+                   recurse=False,
+                   dir_filter=Patient.path_is_patient,
+                   report=lambda p: Patient.from_yaml(p).status())
+
 
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
@@ -355,6 +384,7 @@ def trial(argv):
 
     if args['ls']:
         return trial_list(args)
+
 
 if __name__ == "__main__":
     sys.exit(trial(sys.argv[1:]))

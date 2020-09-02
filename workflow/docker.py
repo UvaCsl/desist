@@ -1,19 +1,20 @@
 import os
 import pathlib
-import shutil
 import subprocess
 import logging
 
 from workflow.container import Container, ContainerType
 import workflow.utilities as utilities
 
+
 class Docker(Container):
     def __init__(self):
         super().__init__()
         self.type = ContainerType.DOCKER
 
-        # Docker requires the use of `sudo` for each command on Linux. Any other
-        # environment does not require this, as they run inside another VM
+        # Docker requires the use of `sudo` for each command on Linux. Any
+        # other environment does not require this, as they run inside another
+        # VM
         self.sudo = 'sudo' if self.os == utilities.OS.LINUX else ''
 
         # Docker uses the `-v [path_1:path_2]` argument to indicate that the
@@ -25,8 +26,8 @@ class Docker(Container):
     def image(self, path):
         """Return the image's tag as defined by the basename of the path."""
         # The `isct` command builds all Docker containers where the tags are
-        # matched to the basename of the directories. Therefore, we only need to
-        # split the basename here to obtain the corresponding image tag.
+        # matched to the basename of the directories. Therefore, we only need
+        # to split the basename here to obtain the corresponding image tag.
         return os.path.basename(pathlib.Path(path))
 
     def build_image(self, path):
@@ -48,7 +49,8 @@ class Docker(Container):
         remaining on the filesystem with `root` permissions inherited from the
         Docker container."""
         if self.os == utilities.OS.LINUX:
-            user = subprocess.check_output(['whoami'], universal_newlines=True).strip()
+            user = subprocess.check_output(['whoami'],
+                                           universal_newlines=True).strip()
             chown = ["sudo", "chown", "-R", f"{user}:{user}", str(path)]
 
             # log the command

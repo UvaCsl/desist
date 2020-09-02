@@ -1,6 +1,7 @@
 """
 Usage:
-    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only] [--singularity=DIR]
+    isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
+                              [--singularity=DIR]
     isct patient run PATIENT [-x] [-v] [--singularity=DIR]
     isct patient validate PATIENTS...
 
@@ -15,14 +16,16 @@ Options:
     --version                   Show the version number.
     --id=ID                     Identifier of the patient [default: 0].
     -f                          Force overwrite exist patient directory.
-    --seed=SEED                 Random seed for the patient generation [default: 1].
-    --config-only               Only generate a patient configuration file, and do not
-                                invoke the `virtual_patient_generation` module.
-    -x                          Perform a dry run: show commands to be executed without
+    --seed=SEED                 Random seed patient generation [default: 1].
+    --config-only               Only generate a patient configuration file, and
+                                do not invoke the `virtual_patient_generation`
+                                module.
+    -x                          Perform a dry run: only show commands.
                                 executing these commands.
     -v                          Set output verbosity.
-    -s, --singularity=DIR       Use Singularity rather than Docker by providing the
-                                directory `DIR` containing the Singularity images.
+    -s, --singularity=DIR       Use Singularity rather than Docker by providing
+                                the directory `DIR` containing the Singularity
+                                images.
 """
 
 from docopt import docopt
@@ -40,17 +43,20 @@ from workflow.container import new_container
 from workflow.isct_container import container as container_cmd
 from workflow.patient import Patient
 
+
 def patient_create(args):
     """Provides `patient create` to creating individual patients."""
     # schema for argument validation
-    s = schema.Schema(
-            {
-                '--id': schema.Use(int, error='Only integer patient ID allowed'),
-                '--seed': schema.Use(int, error='Only integer random seeds allowed'),
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                str: object,
-                }
-            )
+    s = schema.Schema({
+        '--id':
+        schema.Use(int, error='Only integer patient ID allowed'),
+        '--seed':
+        schema.Use(int, error='Only integer random seeds allowed'),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        str:
+        object,
+    })
 
     # validate arguments
     try:
@@ -83,7 +89,8 @@ def patient_create(args):
 
     # require explicit -f to overwrite existing patient directories
     if os.path.isdir(patient.dir) and not overwrite:
-        logging.critical(f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
+        logging.critical(
+            f"Patient '{patient.dir}' already exist. Provide -f to overwrite")
         sys.exit(__doc__)
 
     # clear out old, existing path
@@ -97,8 +104,8 @@ def patient_create(args):
     random.seed(seed)
 
     # pull the n-th random number, for the n-th patient
-    for i in range(patient_id+1):
-       p_seed = random.randrange(2<<31 - 1)
+    for i in range(patient_id + 1):
+        p_seed = random.randrange(2 << 31 - 1)
 
     # set basic configruation
     patient.set_defaults(patient_id, p_seed)
@@ -136,17 +143,19 @@ def patient_create(args):
     patient.to_yaml()
     patient.to_xml()
 
+
 def patient_run(argv):
     """Evaluate `patient run` to process the patient's events."""
 
     # validate the provided path exists
-    s = schema.Schema(
-            {
-                'PATIENT': schema.And(schema.Use(str), os.path.isdir),
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                str: object,
-            }
-        )
+    s = schema.Schema({
+        'PATIENT':
+        schema.And(schema.Use(str), os.path.isdir),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        str:
+        object,
+    })
     try:
         args = s.validate(argv)
     except schema.SchemaError as e:
@@ -164,7 +173,11 @@ def patient_run(argv):
         # ensure we traverse events in the correct order
         assert i == event['id']
 
-        cmd = ["container", "run", event['event'], str(patient.dir), str(event['id'])]
+        cmd = [
+            "container", "run", event['event'],
+            str(patient.dir),
+            str(event['id'])
+        ]
 
         if dry_run:
             cmd += ["-x"]
@@ -178,6 +191,7 @@ def patient_run(argv):
         container_cmd(cmd)
 
     return
+
 
 def patient_validate(argv):
     """Evaluate `patient validate` to validate a patient config file.
@@ -198,7 +212,9 @@ def patient_validate(argv):
 
     # prepare patients and list to store valid/invalid (True/False) and
     # remove any non-directory that was passed as argument
-    patients = list(map(lambda p: Patient.from_yaml(p), filter(os.path.isdir, args['PATIENTS'])))
+    patients = list(
+        map(lambda p: Patient.from_yaml(p),
+            filter(os.path.isdir, args['PATIENTS'])))
     results = []
 
     for patient in patients:
@@ -210,6 +226,7 @@ def patient_validate(argv):
             results.append(True)
 
     return list(zip(patients, results))
+
 
 def patient(argv):
     """Provides commands for interaction with virtual patients."""
@@ -227,6 +244,7 @@ def patient(argv):
     if args['validate']:
         patient_validate(args)
         return
+
 
 if __name__ == "__main__":
     sys.exit(patient(sys.argv[1:]))

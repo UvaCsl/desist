@@ -14,10 +14,11 @@ Options:
     -h, --help                  Show the usage of `isct container`.
     --version                   Show the version number.
     -v                          Set verbose output.
-    -x                          Dry run: only show the commands without evaluating.
+    -x                          Dry run: only show commands.
     -s, --singularity=PATH      Use `Singularity` to build the containers.
     --gnu-parallel              Output commands over `stdout` to be piped into
-                                `GNU parallel`, e.g. `isct trial run TRIAL --gnu-parallel | parallel -j+0`.
+                                `GNU parallel`, e.g. `isct trial run
+                                TRIAL --gnu-parallel | parallel -j+0`.
 """
 
 from docopt import docopt
@@ -27,11 +28,8 @@ import pathlib
 import os
 import sys
 import schema
-import shutil
 import subprocess
-import yaml
 
-from workflow.utilities import OS
 from workflow.container import new_container
 from workflow.patient import Patient
 
@@ -41,8 +39,9 @@ def form_container_command(tag, patient, event_id):
     """Forms the Docker run command.
 
     Builds the command to evaluate in Docker for a given Docker tag, a given
-    patient directory, and a given event_id. The command binds the corresponding
-    directories towards the container and passes any required information.
+    patient directory, and a given event_id. The command binds the
+    corresponding directories towards the container and passes any required
+    information.
     """
     cmd = ["docker", "run"]
 
@@ -60,18 +59,20 @@ def form_container_command(tag, patient, event_id):
 
     return cmd
 
+
 def build_container(args):
     """Construct the containers."""
     # validate arguments: ensure valid _and_ existing paths
-    s = schema.Schema(
-            {
-                # directly validate the path
-                'DIR': [schema.And(schema.Use(str), os.path.exists)],
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                '--gnu-parallel': bool,
-                str: object,
-                }
-        )
+    s = schema.Schema({
+        # directly validate the path
+        'DIR': [schema.And(schema.Use(str), os.path.exists)],
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--gnu-parallel':
+        bool,
+        str:
+        object,
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -106,9 +107,12 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
-            with subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT, encoding="utf-8",
-                    universal_newlines=True) as proc:
+            with subprocess.Popen(cmd,
+                                  shell=True,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  encoding="utf-8",
+                                  universal_newlines=True) as proc:
 
                 for line in iter(proc.stdout.readline, ''):
                     logging.info(f'{line.strip()}\r')
@@ -121,15 +125,18 @@ def run_container(args):
     #   container is string
     #   patient a valid path
     #   event ID is positive integer
-    s = schema.Schema(
-            {
-                'CONTAINER': schema.Use(str),
-                'PATIENT': schema.And(schema.Use(str), os.path.isdir),
-                'ID': schema.And(schema.Use(int), lambda n: n >= 0),
-                '--singularity': schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
-                str: object,
-            }
-        )
+    s = schema.Schema({
+        'CONTAINER':
+        schema.Use(str),
+        'PATIENT':
+        schema.And(schema.Use(str), os.path.isdir),
+        'ID':
+        schema.And(schema.Use(int), lambda n: n >= 0),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        str:
+        object,
+    })
     try:
         args = s.validate(args)
     except schema.SchemaError as e:
@@ -160,7 +167,7 @@ def run_container(args):
         try:
             # redirects output to `DEVNULL` to hide info on success
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as e :
+        except subprocess.CalledProcessError as e:
             logging.critical(f'Container does not exist: "{e}"')
             return
 
@@ -188,9 +195,12 @@ def run_container(args):
     if not dry_run:
 
         # start process and capture output
-        with subprocess.Popen(cmd, shell=False, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, encoding="utf-8",
-                universal_newlines=True) as proc:
+        with subprocess.Popen(cmd,
+                              shell=False,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              encoding="utf-8",
+                              universal_newlines=True) as proc:
 
             for line in iter(proc.stdout.readline, ''):
                 logging.info(f'{line.strip()}\r')
@@ -201,6 +211,7 @@ def run_container(args):
 
     # update file permissions
     cmd = c.set_permissions(patient.dir, dry_run)
+
 
 def container(argv=None):
     """Provides commands for interaction with building containers."""
@@ -220,8 +231,6 @@ def container(argv=None):
         run_container(args)
         return
 
+
 if __name__ == "__main__":
     sys.exit(container(sys.argv[1:]))
-
-
-
