@@ -22,3 +22,6 @@ _build
 *.egg*
 
 .vagrant/
+
+# no virtualenv
+venv
