@@ -3,6 +3,7 @@ Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
                           [--singularity=DIR]
   isct trial ls TRIAL [-r | --recurse]
+  isct trial outcome TRIAL [-v] [--singularity=DIR]
   isct trial plot TRIAL [--show]
   isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
                        [--validate]
@@ -54,7 +55,7 @@ def trail_plot(args):
 
     s = schema.Schema({
         'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-        str: object
+        str: object,
     })
     try:
         args = s.validate(args)
@@ -152,7 +153,7 @@ def trial_create(args):
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
         str:
-        object,  # all other inputs doesnt  matter yet
+        object,  # all other inputs don't matter
     })
 
     # validate arguments
@@ -365,6 +366,51 @@ def trial_status(args):
                    report=lambda p: Patient.from_yaml(p).status())
 
 
+def trial_outcome(args):
+    s = schema.Schema({
+        'TRIAL':
+        schema.And(schema.Use(str), os.path.isdir),
+        '-v':
+        schema.Use(bool),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        str:
+        object,  # all other inputs do not matter
+    })
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # extract variables
+    path = pathlib.Path(args['TRIAL'])
+
+    c = new_container(args['--singularity'])
+    tag = 'in-silico-trial-outcome'
+
+    c.bind_volume(path.absolute(), "/trial/")
+    cmd = c.run_image(tag, "/trial/")
+
+    # log command to be executed
+    logging.info(f' + {" ".join(cmd)}')
+
+    # only call into the container when its executable is present on a system
+    if not c.executable_present():
+        logging.critical(f"Cannot reach {c.type}.")
+        return
+
+    # evaluate the trial outcome module
+    log = subprocess.run(cmd,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT,
+                         encoding="utf-8")
+
+    # log the response
+    for line in log.stdout.splitlines():
+        logging.info(line)
+
+
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
     # parse command-line arguments
@@ -372,6 +418,9 @@ def trial(argv):
 
     if args['create']:
         return trial_create(args)
+
+    if args['outcome']:
+        return trial_outcome(args)
 
     if args['plot']:
         return trail_plot(args)
