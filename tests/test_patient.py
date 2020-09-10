@@ -326,6 +326,6 @@ def test_patient_default_clot_file(tmp_path):
         for c in line.split(","):
             assert c in ['Vesselname', 'Clotlocation(mm)', 'Clotlength(mm)', 'Permeability', 'Porosity']
 
-        line = clot.readline().strip().split("\t")
+        line = clot.readline().strip().split(",")
         assert len(line) == 5
 

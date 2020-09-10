@@ -5,16 +5,21 @@ variables:
   GIT_STRATEGY: clone
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-cache:
+cache: &global_cache
   paths:
     - .cache/pip
     - venv/
+  key: ${CI_COMMIT_REF_SLUG}
+  policy: pull-push
 
 before_script:
-  - python --version
+  - python -V
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
+  - python -m pip install --upgrade pip 
+  - pip install -r requirements.txt 
+  - pip install flake8 
 
 stages:
   - build
@@ -22,17 +27,24 @@ stages:
 
 build_isct:
   stage: build
+  cache:
+    <<: *global_cache
+    policy: push
   script:
     - pip install -e .
-    - pip install -r requirements.txt
-    - pip install flake8
 
 test_isct:
   stage: test
+  cache:
+    <<: *global_cache
+    policy: pull
   script:
     - pytest --cov=workflow
 
 flake8_isct:
   stage: test
+  cache:
+    <<: *global_cache
+    policy: pull
   script: 
     - flake8 workflow
