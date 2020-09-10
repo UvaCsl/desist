@@ -7,14 +7,14 @@ import sys
 import workflow.utilities as utilities
 
 
-def new_container(singularity_path=None):
+def new_container(singularity_path=None, permissions=False):
     """Generates a specific container instance based on input arguments."""
     if singularity_path is not None:
         from workflow.singularity import Singularity
         return Singularity(singularity_path)
     else:
         from workflow.docker import Docker
-        return Docker()
+        return Docker(permissions=permissions)
 
 
 @enum.unique
