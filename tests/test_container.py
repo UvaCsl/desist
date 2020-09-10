@@ -32,12 +32,16 @@ def test_container_instance_defaults(os_str, os, container_type, mocker):
     assert c.os == os
     assert c.volumes == []
 
+@pytest.mark.parametrize("permissions", [False, True])
 @pytest.mark.parametrize("os_str, os", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
-def test_docker_container_sudo(os_str, os, mocker):
+def test_docker_container_sudo(permissions, os_str, os, mocker):
     mocker.patch("sys.platform", os_str)
-    c = Docker()
+    c = Docker(permissions=permissions)
     if os == OS.LINUX:
-        assert c.sudo == "sudo"
+        if permissions:
+            assert c.sudo == ''
+        else:
+            assert c.sudo == "sudo"
     if os == OS.MACOS:
         assert c.sudo == ''
 

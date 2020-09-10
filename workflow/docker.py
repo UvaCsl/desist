@@ -8,14 +8,16 @@ import workflow.utilities as utilities
 
 
 class Docker(Container):
-    def __init__(self):
+    def __init__(self, permissions=False):
         super().__init__()
         self.type = ContainerType.DOCKER
 
         # Docker requires the use of `sudo` for each command on Linux. Any
         # other environment does not require this, as they run inside another
         # VM
-        self.sudo = 'sudo' if self.os == utilities.OS.LINUX else ''
+        self.sudo = ''
+        if not permissions and self.os == utilities.OS.LINUX:
+            self.sudo = 'sudo'
 
         # Docker uses the `-v [path_1:path_2]` argument to indicate that the
         # following paths represent the host's path (path_1) and the local

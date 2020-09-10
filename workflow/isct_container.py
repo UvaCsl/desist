@@ -1,7 +1,9 @@
 """
 Usage:
     isct container build DIR... [-v] [-x] [--singularity=PATH] [--gnu-parallel]
+                        [--root]
     isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
+                        [--root]
 
 Arguments:
     DIR             Directory of the container to construct.
@@ -19,6 +21,9 @@ Options:
     --gnu-parallel              Output commands over `stdout` to be piped into
                                 `GNU parallel`, e.g. `isct trial run
                                 TRIAL --gnu-parallel | parallel -j+0`.
+    --root                      Indicates the user has root permissions and
+                                no `sudo` has be prefixed for Docker
+                                containers.
 """
 
 from docopt import docopt
@@ -70,6 +75,8 @@ def build_container(args):
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
         '--gnu-parallel':
         bool,
+        '--root':
+        schema.Use(bool),
         str:
         object,
     })
@@ -81,7 +88,7 @@ def build_container(args):
         sys.exit(__doc__)
 
     # verbosity
-    c = new_container(args['--singularity'])
+    c = new_container(args['--singularity'], args['--root'])
     dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
     gnu_parallel = args['--gnu-parallel']
@@ -134,6 +141,8 @@ def run_container(args):
         schema.And(schema.Use(int), lambda n: n >= 0),
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         str:
         object,
     })
@@ -144,7 +153,7 @@ def run_container(args):
         sys.exit(__doc__)
 
     # create container and set verbosity
-    c = new_container(args['--singularity'])
+    c = new_container(args['--singularity'], args['--root'])
     dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
     if verbose:

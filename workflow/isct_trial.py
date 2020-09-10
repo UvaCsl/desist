@@ -1,9 +1,9 @@
 """
 Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
-                          [--singularity=DIR]
+                          [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
-  isct trial outcome TRIAL [-v] [--singularity=DIR]
+  isct trial outcome TRIAL [-v] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
   isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
                        [--validate]
@@ -31,6 +31,9 @@ Options:
     -s, --singularity=DIR   Use singularity as containers by providing the
                             directory `DIR` of the Singularity containers.
     --validate              Validate the patient YAML configuration file.
+    --root                  Flag to indicate root access or user already
+                            has permissions. This flag removes the prefixed
+                            `sudo` from the Docker containers.
 """
 
 from docopt import docopt
@@ -152,6 +155,8 @@ def trial_create(args):
         schema.Use(int, error='Only integer random seeds allowed'),
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         str:
         object,  # all other inputs don't matter
     })
@@ -209,7 +214,7 @@ def trial_create(args):
     dirs = ["/patients/" + os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
 
-    c = new_container(args['--singularity'])
+    c = new_container(args['--singularity'], args['--root'])
     tag = "virtual_patient_generation"
 
     c.bind_volume(path.absolute(), "/patients/")
@@ -374,6 +379,8 @@ def trial_outcome(args):
         schema.Use(bool),
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         str:
         object,  # all other inputs do not matter
     })
@@ -386,7 +393,7 @@ def trial_outcome(args):
     # extract variables
     path = pathlib.Path(args['TRIAL'])
 
-    c = new_container(args['--singularity'])
+    c = new_container(args['--singularity'], args['--root'])
     tag = 'in-silico-trial-outcome'
 
     c.bind_volume(path.absolute(), "/trial/")

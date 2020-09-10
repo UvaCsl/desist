@@ -1,7 +1,7 @@
 """
 Usage:
     isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
-                              [--singularity=DIR]
+                              [--singularity=DIR] [--root]
     isct patient run PATIENT [-x] [-v] [--singularity=DIR]
     isct patient validate PATIENTS...
 
@@ -26,6 +26,9 @@ Options:
     -s, --singularity=DIR       Use Singularity rather than Docker by providing
                                 the directory `DIR` containing the Singularity
                                 images.
+    --root                      Indicates the user has root permissions and
+                                no `sudo` has be prefixed for Docker
+                                containers.
 """
 
 from docopt import docopt
@@ -113,7 +116,7 @@ def patient_create(args):
     # write patient configuration to disk
     patient.to_yaml()
 
-    c = new_container(args['--singularity'])
+    c = new_container(args['--singularity'], args['--root'])
 
     # only call docker to fill the patients data when not set
     if not args['--config-only']:
