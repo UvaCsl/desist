@@ -239,7 +239,7 @@ class Patient(dict):
             header = ",".join([d[0] for d in data])
             outfile.write(header)
             outfile.write('\n')
-            clot = "\t".join([str(d[1]) for d in data])
+            clot = ",".join([str(d[1]) for d in data])
             outfile.write(clot)
 
     def set_events(self, overwrite=False):
