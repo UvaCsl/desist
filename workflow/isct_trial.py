@@ -3,7 +3,7 @@ Usage:
   isct trial create TRIAL [--prefix=PATIENT] [-n=NUM] [-fv] [--seed=SEED]
                           [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
-  isct trial outcome TRIAL [-v] [--singularity=DIR] [--root]
+  isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
   isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
                        [--validate]
@@ -375,6 +375,8 @@ def trial_outcome(args):
     s = schema.Schema({
         'TRIAL':
         schema.And(schema.Use(str), os.path.isdir),
+        '-x':
+        schema.Use(bool),
         '-v':
         schema.Use(bool),
         '--singularity':
@@ -392,30 +394,51 @@ def trial_outcome(args):
 
     # extract variables
     path = pathlib.Path(args['TRIAL'])
-
     c = new_container(args['--singularity'], args['--root'])
+
+    dry_run = True if c.dry_run() else args['-x']
+    verbose = True if dry_run else args['-v']
+
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
+
     tag = 'in-silico-trial-outcome'
-
-    c.bind_volume(path.absolute(), "/trial/")
-    cmd = c.run_image(tag, "/trial/")
-
-    # log command to be executed
-    logging.info(f' + {" ".join(cmd)}')
 
     # only call into the container when its executable is present on a system
     if not c.executable_present():
         logging.critical(f"Cannot reach {c.type}.")
         return
 
-    # evaluate the trial outcome module
-    log = subprocess.run(cmd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
-                         encoding="utf-8")
+    cmd = c.check_image(tag)
 
-    # log the response
-    for line in log.stdout.splitlines():
-        logging.info(line)
+    logging.info(" + " + " ".join(cmd))
+
+    if not dry_run:
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+        except subprocess.CalledProcessError as e:
+            logging.critical(f"Container does not exist: '{e}'")
+            return
+
+    # bind the trial directory
+    c.bind_volume(path.absolute(), "/trial/")
+    cmd = c.run_image(tag, "/trial/")
+
+    # log command to be executed
+    logging.info(" + " + " ".join(cmd))
+
+    # evaluate the trial outcome module
+    if not dry_run:
+
+        with subprocess.Popen(cmd,
+                              shell=False,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              encoding="utf-8",
+                              universal_newlines=True) as proc:
+
+            for line in iter(proc.stdout.readline, ''):
+                logging.info(f'{line.strip()}\r')
 
 
 def trial(argv):
