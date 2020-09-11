@@ -249,3 +249,17 @@ def test_trial_ls_cmd(trial_directory):
     # invalid arguments
     with pytest.raises(SystemExit):
         trial(f"trial ls {path} --does-not-exist-flag".split())
+
+def test_trial_outcome(trial_directory, mocker):
+    # this only ensures the command runs, i.e. it does not actually test the
+    # functionality of the trial output container
+    path = trial_directory
+    trial(f"trial create {path}".split())
+    trial(f"trial outcome {path}".split())
+    trial(f"trial outcome {path} -x".split())
+
+    with pytest.raises(SystemExit):
+        trial(f"trial outcome does_not_exit_path".split())
+
+    mocker.patch("shutil.which", return_value=None)
+    trial(f"trial outcome {path} -x".split())
