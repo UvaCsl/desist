@@ -232,7 +232,7 @@ class Patient(dict):
 
         # `Clots.txt` layed out as list of tuples
         data = [("Vesselname", vessel), ("Clotlocation(mm)", 3),
-                ("Clotlength(mm)", 3), ("Permeability", 0), ("Porosity", 0)]
+                ("Clotlength(mm)", 15), ("Permeability", 0), ("Porosity", 0)]
 
         # Write data to file as csv (header separated by `,` values by `\t`
         with open(self.dir.joinpath("Clots.txt"), "w") as outfile:
