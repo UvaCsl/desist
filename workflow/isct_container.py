@@ -195,7 +195,7 @@ def run_container(args):
     c.bind_volume(patient.dir, "/patient")
 
     # construct the container command with the desired arguments
-    inp = f"handle_event --patient=/patient/config.xml --event {args['ID']}"
+    inp = f"event -p /patient/ -e {args['ID']}"
     cmd = c.run_image(tag, inp)
 
     logging.info(" + " + " ".join(cmd))
