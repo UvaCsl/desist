@@ -93,9 +93,7 @@ def trail_plot(args):
         for patient in patients:
 
             # patient parameters from configuration file
-            p_dir = pathlib.Path(trial).joinpath(patient)
-            with open(p_dir.joinpath("patient.yml"), "r") as configfile:
-                c = yaml.load(configfile, yaml.SafeLoader)
+            c = Patient.from_yaml(pathlib.Path(trial).joinpath(patient))
 
             # setup label and attach to graph
             label = f"{patient}/ | id: {c['id']} | done: {c['status']}"
