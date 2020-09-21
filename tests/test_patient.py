@@ -6,7 +6,7 @@ import yaml
 
 from mock import patch
 
-from workflow.patient import Patient, dict_to_xml
+from workflow.patient import Patient, dict_to_xml, Event, State
 from workflow.utilities import get_git_hash, isct_module_path
 
 @pytest.mark.parametrize("path", ["", "/home", pathlib.Path("/home")])
@@ -133,7 +133,7 @@ def test_patient_add_events(tmp_path):
 
     # assert defaults are present
     for event in patient.events():
-        for required_key in ['event', 'id', 'status']:
+        for required_key in ['event', 'id', 'status', 'state']:
             assert required_key in event
 
 def test_patient_events_equal(tmp_path):
@@ -329,3 +329,52 @@ def test_patient_default_clot_file(tmp_path):
         line = clot.readline().strip().split(",")
         assert len(line) == 5
 
+@pytest.mark.parametrize("enum, label", [
+    (Event.BLOODFLOW, "1d-blood-flow"),
+    (Event.PERFUSION, "darcy_multi-comp"),
+    (Event.CELL_DEATH, "cell_death_model"),
+    (Event.PLACE_CLOT, "place_clot"),
+    (Event.THROMBECTOMY, "thrombectomy"),
+    (Event.THROMBOLYSIS, "thrombolysis"),
+    (Event.PATIENT_OUTCOME, "patient-outcome-model"),
+    (None, ""),
+    (None, "non-existing-event"),
+])
+def test_event_enum_from_string(enum, label):
+    assert Event.from_str(label) == enum
+
+@pytest.mark.parametrize("enums, labels, valid", [
+    ([Event.BLOODFLOW], "1d-blood-flow", True),
+    ([Event.BLOODFLOW], ["1d-blood-flow"], True),
+    ([Event.BLOODFLOW], ["1d-blood-flow", "non-existing"], False),
+    ([Event.BLOODFLOW, Event.PLACE_CLOT], ["1d-blood-flow", "place_clot"], True),
+    ([], [], True),
+    ([], "", False),
+    ([], "non-existing-event", False),
+    ([], ["non-existing-event"], False),
+])
+def test_parse_events(enums, labels, valid):
+    events = Event.parse_events(labels)
+    for event, enum in zip(events, labels):
+        assert event == enum
+    assert Event.validate_events(labels) == valid
+
+@pytest.mark.parametrize("enum, label, valid", [
+    (State.BASELINE, "baseline", True),
+    (State.STROKE, "stroke", True),
+    (State.TREATMENT, "treatment", True),
+    (None, "", False),
+    (None, "non-existing-state", False),
+])
+def test_state_enum_from_string(enum, label, valid):
+    assert State.from_str(label) == enum
+    assert State.validate_state(label) == valid
+
+@pytest.mark.parametrize("enum, label, valid", [
+    (State.BASELINE, 0, True),
+    (State.STROKE, 1, True),
+    (State.TREATMENT, 2, True),
+])
+def test_state_enum_from_index(enum, label, valid):
+    assert State(label) == enum
+    assert State.validate_state(label) == valid
