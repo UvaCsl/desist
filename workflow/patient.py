@@ -1,9 +1,71 @@
+import enum
 import os
 import pathlib
 import yaml
 import schema
 
 import workflow.utilities as utilities
+
+
+@enum.unique
+class State(enum.IntEnum):
+    """Enumerated type indicating the state of the trial.
+
+    The state of the trial is used to determine the placement of output during
+    the trial. The values of the enumerated type correspond to the relative
+    directories inside the `/patient/` directory where the results will be
+    stored.
+    """
+    BASELINE = 0
+    STROKE = 1
+    TREATMENT = 2
+
+    @staticmethod
+    def from_str(label):
+        for state in State:
+            if label.lower() == state.name.lower():
+                return state
+
+    @staticmethod
+    def validate_state(state):
+        if isinstance(state, str):
+            return State._validate_string(state)
+        if isinstance(state, int):
+            return State._validate_integer(state)
+
+    @staticmethod
+    def _validate_string(state):
+        return State.from_str(state) is not None
+
+    @staticmethod
+    def _validate_integer(state):
+        return state in State.__members__.values()
+
+
+@enum.unique
+class Event(enum.Enum):
+    BLOODFLOW = "1d-blood-flow"
+    PERFUSION = "darcy_multi-comp"
+    CELL_DEATH = "cell_death_model"
+    PLACE_CLOT = "place_clot"
+    THROMBECTOMY = "thrombectomy"
+    THROMBOLYSIS = "thrombolysis"
+    PATIENT_OUTCOME = "patient-outcome-model"
+
+    @staticmethod
+    def from_str(label):
+        for event in Event:
+            if label == event.value:
+                return event
+
+    @staticmethod
+    def parse_events(events):
+        return list(filter(Event.from_str, events))
+
+    @staticmethod
+    def validate_events(events):
+        events = [events] if not isinstance(events, list) else events
+        return len(events) == len(Event.parse_events(events))
 
 
 class Patient(dict):
@@ -109,15 +171,6 @@ class Patient(dict):
             return False
 
         # parse event properties individually
-        allowed_events = [
-            '1d-blood-flow',
-            'darcy_multi-comp',
-            'place_clot',
-            'cell_death_model',
-            'thrombectomy',
-            'patient-outcome-model',
-        ]
-
         s = schema.Schema({
             'id':
             schema.And(int, lambda n: n >= 0),
@@ -125,7 +178,7 @@ class Patient(dict):
             bool,
             'event':
             schema.And(str, schema.Use(str.lower),
-                       lambda s: s in allowed_events),
+                       lambda s: Event.validate_events(s)),
             schema.Optional(str):
             object,
         })
@@ -256,37 +309,34 @@ class Patient(dict):
 
         # FIXME where to obtain default values?
         events = [
-            ("1d-blood-flow", {}),
-            ("darcy_multi-comp", {
+            (Event.BLOODFLOW, {}),
+            (Event.PERFUSION, {
                 "healthy": True
             }),
-            ("cell_death_model", {
-                "state": 0,
+            (Event.CELL_DEATH, {
                 "read_init": 0,
                 "time_start": -60.0,
                 "time_end": 0.0,
             }),
-            ("place_clot", {
+            (Event.PLACE_CLOT, {
                 "time": 0.0
             }),
-            ("1d-blood-flow", {}),
-            ("darcy_multi-comp", {}),
-            ("cell_death_model", {
-                "state": 1,
+            (Event.BLOODFLOW, {}),
+            (Event.PERFUSION, {}),
+            (Event.CELL_DEATH, {
                 "read_init": 1,
                 "time_start": 0.0,
                 "time_end": 18622.47003804366,
             }),
-            ("thrombectomy", {}),
-            ("1d-blood-flow", {}),
-            ("darcy_multi-comp", {}),
-            ("cell_death_model", {
-                "state": 2,
+            (Event.THROMBECTOMY, {}),
+            (Event.BLOODFLOW, {}),
+            (Event.PERFUSION, {}),
+            (Event.CELL_DEATH, {
                 "read_init": 2,
                 "time_start": 18622.47003804366,
                 "time_end": 22222.47003804366,
             }),
-            ("patient-outcome-model", {}),
+            (Event.PATIENT_OUTCOME, {}),
         ]
 
         # initialise events to empty list
@@ -295,12 +345,27 @@ class Patient(dict):
         # store length of pipeline
         self['pipeline_length'] = len(events)
 
+        # pipeline state is incremented based on the occured events
+        self['states'] = [state.name.lower() for state in State]
+        state = State.BASELINE
+
         # build the list of events with settings
         for i, (event, settings) in enumerate(events):
+
+            # change state to STROKE indicating that occlusion is present
+            if event == Event.PLACE_CLOT:
+                state = State(state + 1)
+
+            # change state to TREATMENT indicating that treatment has started
+            if event == Event.THROMBECTOMY or event == Event.THROMBOLYSIS:
+                if state != State.TREATMENT:
+                    state = State(state + 1)
+
             defaults = {
-                'event': event,
+                'event': event.value,
                 'id': i,
                 'status': False,
+                'state': state.value,
             }
 
             # append event and merge its defaults with specific settings
