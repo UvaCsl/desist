@@ -307,6 +307,15 @@ class Patient(dict):
             msg = f"Events already exist, while overwrite is {overwrite}"
             assert overwrite, msg
 
+        # Extract timestamps of events, or assign defaults when not present.
+        # These give the time between onset and arrival at ER `onset_to_er`
+        # and the time from ER arrival to groin punction `er_iat_groin`. The
+        # elapsed time after the complete procedure is the sum of both. The
+        # `baseline` simulation is set at one hour (-60 min) in the timeline to
+        # indicate it happens before the stroke event.
+        onset_to_er = self.get('dur_oer', 86.60659896539732)
+        er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
+
         # FIXME where to obtain default values?
         events = [
             (Event.BLOODFLOW, {}),
@@ -326,15 +335,15 @@ class Patient(dict):
             (Event.CELL_DEATH, {
                 "read_init": 1,
                 "time_start": 0.0,
-                "time_end": 18622.47003804366,
+                "time_end": onset_to_er,
             }),
             (Event.THROMBECTOMY, {}),
             (Event.BLOODFLOW, {}),
             (Event.PERFUSION, {}),
             (Event.CELL_DEATH, {
                 "read_init": 2,
-                "time_start": 18622.47003804366,
-                "time_end": 22222.47003804366,
+                "time_start": onset_to_er,
+                "time_end": onset_to_er + er_to_puncture,
             }),
             (Event.PATIENT_OUTCOME, {}),
         ]
