@@ -2,7 +2,7 @@
 Usage:
     isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
                               [--singularity=DIR] [--root]
-    isct patient run PATIENT [-x] [-v] [--singularity=DIR]
+    isct patient run PATIENT [-x] [-v] [--singularity=DIR] [--root]
     isct patient validate PATIENTS...
 
 Arguments:
@@ -57,6 +57,8 @@ def patient_create(args):
         schema.Use(int, error='Only integer random seeds allowed'),
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         str:
         object,
     })
@@ -156,6 +158,8 @@ def patient_run(argv):
         schema.And(schema.Use(str), os.path.isdir),
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         str:
         object,
     })
@@ -187,6 +191,9 @@ def patient_run(argv):
 
         if verbose:
             cmd += ["-v"]
+
+        if args['--root']:
+            cmd += ["--root"]
 
         if args['--singularity'] is not None:
             cmd += ["--singularity", args['--singularity']]

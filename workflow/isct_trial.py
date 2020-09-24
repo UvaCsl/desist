@@ -6,7 +6,7 @@ Usage:
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
   isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
-                       [--validate]
+                       [--validate] [--root]
   isct trial status TRIAL
 
 Arguments:
@@ -256,6 +256,8 @@ def trial_run(args):
         bool,
         '--singularity':
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
         '--validate':
         bool,
         str:
@@ -304,6 +306,9 @@ def trial_run(args):
 
             if verbose:
                 cmd += ["-v"]
+
+            if args['--root']:
+                cmd += ["--root"]
 
             if args['--singularity'] is not None:
                 cmd += ["--singularity", args['--singularity']]
