@@ -216,7 +216,6 @@ def trial_create(args):
     tag = "virtual_patient_generation"
 
     c.bind_volume(path.absolute(), "/patients/")
-    cmd = c.run_image(tag, " ".join(dirs))
 
     # log command to be executed
     logging.info(f' + {" ".join(cmd)}')
@@ -226,15 +225,29 @@ def trial_create(args):
         logging.critical(f"Cannot reach {c.type}.")
         return
 
-    # evaluate `virtual-patient-generation` model to fill config files
-    log = subprocess.run(cmd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT,
-                         encoding="utf-8")
+    # check if `virtual-patient-generation` image is available
+    cmd = c.check_image(tag)
 
-    # echo all output to the log
-    for line in log.stdout.splitlines():
-        logging.debug(line)
+    logging.info(" + " + " ".join(cmd))
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+    except subprocess.CalledProcessError as e:
+        logging.critical(f"Container '{tag}' does not exitst: '{e}'.")
+        return
+
+    # evaluate `virtual-patient-generation` model to fill config files
+    cmd = c.run_image(tag, " ".join(dirs))
+    logging.info(" + " + " ".join(cmd))
+
+    with subprocess.Popen(cmd,
+            shell=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            universal_newlines=True) as proc:
+
+        for line in iter(proc.stdout.readline, ''):
+            logging.info(f'{line.strip()}\r')
 
     # create auxilary files for each patient
     # TODO: remove the XML export once transitioned to YAML
