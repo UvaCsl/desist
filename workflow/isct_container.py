@@ -94,7 +94,7 @@ def build_container(args):
     gnu_parallel = args['--gnu-parallel']
 
     if verbose:
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
 
     # get the absolute path of the containers and filter out any non-directory
     paths = map(lambda p: pathlib.Path(p).absolute(), args['DIR'])
@@ -157,7 +157,7 @@ def run_container(args):
     dry_run = True if c.dry_run() else args['-x']
     verbose = True if dry_run else args['-v']
     if verbose:
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
 
     # ensure the container exists
     tag = args['CONTAINER']

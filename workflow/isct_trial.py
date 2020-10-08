@@ -170,6 +170,10 @@ def trial_create(args):
     path = pathlib.Path(args['TRIAL'])
     overwrite = args['-f']
 
+    if args['-v']:
+        # print all info levels for user
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
+
     # prevent spaces in directories, set to default for empty
     prefix = args['--prefix'].replace(" ", "_")
     if prefix == "''":
@@ -240,11 +244,11 @@ def trial_create(args):
     logging.info(" + " + " ".join(cmd))
 
     with subprocess.Popen(cmd,
-            shell=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding="utf-8",
-            universal_newlines=True) as proc:
+                          shell=False,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          encoding="utf-8",
+                          universal_newlines=True) as proc:
 
         for line in iter(proc.stdout.readline, ''):
             logging.info(f'{line.strip()}\r')
@@ -291,7 +295,7 @@ def trial_run(args):
 
     if verbose:
         # print all info levels for user
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
 
     logging.info(f"Evaluating all patients for trial '{path}'")
 
@@ -416,7 +420,7 @@ def trial_outcome(args):
     verbose = True if dry_run else args['-v']
 
     if verbose:
-        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
 
     tag = 'in-silico-trial-outcome'
 

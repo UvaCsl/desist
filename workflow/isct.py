@@ -44,7 +44,7 @@ def main(argv=None):
 
     # create a console handler logging from warning and higher
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(logging.WARNING)
     logger.addHandler(ch)
 
     argv = sys.argv[1:] if argv is None else argv
