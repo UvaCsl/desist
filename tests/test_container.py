@@ -194,8 +194,9 @@ def test_singularity_build_image_command(os_str, OS, mocker, tmp_path):
 
 @pytest.mark.usefixtures('mock_check_output')
 @pytest.mark.usefixtures('log_subprocess_run')
+@pytest.mark.parametrize("permissions", [True, False])
 @pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
-def test_docker_change_permissions(os_str, OS, mocker, tmp_path):
+def test_docker_change_permissions(permissions, os_str, OS, mocker, tmp_path):
     path = tmp_path.joinpath("newfile")
     path.touch()
 
@@ -204,5 +205,15 @@ def test_docker_change_permissions(os_str, OS, mocker, tmp_path):
 
     # make sure changing permissions does not fail
     for container in [Docker]:
-        c = container()
-        c.set_permissions(path, dry_run=False)
+        c = container(permissions)
+        cmd = c.set_permissions(path, "tag", dry_run=False)
+
+        if OS == OS.MACOS:
+            assert cmd == None
+        else:
+            # sudo should not be present if permissions are available
+            assert (not 'sudo' in cmd) == permissions
+            # entrypoint should be present if permissions are given, to overcome
+            # the need sudo requirements for chown
+            assert ('entrypoint' in cmd) == permissions
+

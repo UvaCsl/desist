@@ -61,6 +61,6 @@ class Singularity(Container):
         path = self.image(path)
         return f"test -e {path}".split()
 
-    def set_permissions(self, path, dry_run=True):
+    def set_permissions(self, path, tag, dry_run=True):
         """Singularity containers do not require to modify file permissions."""
         pass
