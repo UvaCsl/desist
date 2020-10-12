@@ -378,3 +378,15 @@ def test_state_enum_from_string(enum, label, valid):
 def test_state_enum_from_index(enum, label, valid):
     assert State(label) == enum
     assert State.validate_state(label) == valid
+
+def test_terminate(tmp_path):
+    p = Patient(tmp_path)
+    assert not p.terminated
+
+    p.terminate()
+    assert p.terminated
+
+    for b in [True, False]:
+        p.terminated = b
+        assert p.terminated == b
+

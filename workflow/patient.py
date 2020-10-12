@@ -88,6 +88,20 @@ class Patient(dict):
     def __repr__(self):
         return f"{type(self).__name__}({dict.__repr__(self)})"
 
+    @property
+    def terminated(self):
+        """Returns true if the simulation should terminate."""
+        if 'terminated' not in dict(self):
+            return False
+        return self['terminated']
+
+    @terminated.setter
+    def terminated(self, value):
+        self['terminated'] = value
+
+    def terminate(self):
+        self.terminated = True
+
     def validate(self):
         """Returns True if the patient config is validated sucessfully.
 
