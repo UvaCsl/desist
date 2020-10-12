@@ -37,6 +37,7 @@ import subprocess
 
 from workflow.container import new_container
 from workflow.patient import Patient
+from workflow.utilities import run_and_stream
 
 
 # TODO: support alternative containers in addition to Docker.
@@ -114,6 +115,7 @@ def build_container(args):
 
         # evaluate the command
         if not dry_run:
+
             with subprocess.Popen(cmd,
                                   shell=True,
                                   stdout=subprocess.PIPE,
@@ -200,22 +202,26 @@ def run_container(args):
 
     logging.info(" + " + " ".join(cmd))
 
-    # evaluation
-    if not dry_run:
+    if patient.terminated:
+        logging.critical(
+            "Patient has been flagged as terminated due to previous errors.\n"
+            "Skipping container execution"
+        )
 
-        # start process and capture output
-        with subprocess.Popen(cmd,
-                              shell=False,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              encoding="utf-8",
-                              universal_newlines=True) as proc:
+    if not dry_run and not patient.terminated:
 
-            for line in iter(proc.stdout.readline, ''):
-                logging.info(f'{line.strip()}\r')
+        # evaluate command and stream its output to the logger
+        returncode = run_and_stream(cmd, logging)
 
-        # mark event as complete and update config file on disk
-        patient.completed_event(event_id)
+        # mark event as complete for successful evaluation
+        if returncode == 0:
+            patient.completed_event(event_id)
+        else:
+            logging.critical(f"Container failed with exit code '{returncode}'")
+            logging.critical("Flagging patient to be terminated...")
+            patient.terminate()
+
+        # update config file on disk
         patient.to_yaml()
 
     # update file permissions

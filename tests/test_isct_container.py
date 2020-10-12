@@ -11,6 +11,7 @@ from mock import patch, MagicMock
 
 from workflow.patient import Patient
 from workflow.isct_container import container
+from workflow.utilities import run_and_stream
 from tests.test_isct_trial import trial_directory
 from workflow.isct_container import form_container_command
 from workflow.isct_trial import trial as trial_cmd
@@ -23,12 +24,13 @@ from tests.test_utilities import log_subprocess_run, mock_check_output
 # provides the required functions to mimic the same behaviour, where the command
 # is something meaningless rather than a call to Docker/Singularity
 class newpopen(object):
-    def __init__(self):
+    def __init__(self, returncode=0):
         # evaluate some silly process to mock the output
         proc = subprocess.Popen(['echo', 'hello'], stdout=subprocess.PIPE,
                 encoding='utf-8', universal_newlines=True)
         proc.wait()
         self.stdout = proc.stdout
+        self.returncode = returncode
 
     def __enter__(self):
         return self
@@ -141,3 +143,24 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
     # ensure the first status is now set to true
     patient = Patient.from_yaml(patient.dir)
     assert patient.events()[0]['status']
+
+@pytest.mark.usefixtures('mock_check_output')
+@patch('subprocess.run', return_value=True)
+@patch('shutil.which', return_value="/mocker/bin/docker")
+def test_terminate_failed_container(mock_which, mock_run,
+        trial_directory, mocker):
+    # create config
+    path = trial_directory
+    patient = Patient(path.joinpath("patient_000"))
+    os.makedirs(patient.dir)
+    patient.set_events()
+    patient.to_yaml()
+
+    # assert patient terminate=True on non-zero exit code
+    mocker.patch('subprocess.Popen', return_value=newpopen(returncode=1))
+    event = patient.events()[0]
+    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+
+    patient = Patient.from_yaml(patient.dir)
+    assert patient.terminated
+    assert not patient.events()[0]['status']
