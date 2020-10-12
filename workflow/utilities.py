@@ -136,3 +136,21 @@ def inner_tree(path, prefix="", recurse=True, dir_filter=None, report=None):
                                   recurse=recurse,
                                   dir_filter=dir_filter,
                                   report=report)
+
+
+def run_and_stream(cmd, logger, shell=False):
+    """Run a command with `subprocess.Popen` and stream its output.
+
+    The function returns the returncode of the process.
+    """
+    with subprocess.Popen(cmd,
+                          shell=shell,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          encoding="utf-8",
+                          universal_newlines=True) as proc:
+
+        for line in iter(proc.stdout.readline, ''):
+            logger.info(f'{line.strip()}\r')
+
+    return proc.returncode
