@@ -68,6 +68,15 @@ class Event(enum.Enum):
         return len(events) == len(Event.parse_events(events))
 
 
+def patients_from_trial(trial):
+    """Returns all patient instances in the given trial directory."""
+    trial = pathlib.Path(trial)
+    assert os.path.isdir(trial)
+
+    return map(Patient.from_yaml,
+               filter(lambda p: os.path.isdir(p), trial.iterdir()))
+
+
 class Patient(dict):
     """Representation of a patient."""
     def __init__(self, path, *args, **kwargs):
@@ -87,6 +96,29 @@ class Patient(dict):
 
     def __repr__(self):
         return f"{type(self).__name__}({dict.__repr__(self)})"
+
+    @property
+    def terminated(self):
+        """Returns true if the simulation should terminate."""
+        if 'terminated' not in dict(self):
+            return False
+        return self['terminated']
+
+    @terminated.setter
+    def terminated(self, value):
+        self['terminated'] = value
+
+    def terminate(self):
+        self.terminated = True
+
+    def reset(self):
+        """Resets the status of the patient.
+
+        Currently only resets the `terminated` flag.
+        """
+
+        if 'terminated' in dict(self):
+            del self['terminated']
 
     def validate(self):
         """Returns True if the patient config is validated sucessfully.

@@ -37,6 +37,7 @@ import subprocess
 
 from workflow.container import new_container
 from workflow.patient import Patient
+import workflow.utilities as utilities
 
 
 # TODO: support alternative containers in addition to Docker.
@@ -104,25 +105,15 @@ def build_container(args):
         # obtain the command to build the container
         cmd = " ".join(c.build_image(d))
 
-        # show the command
-        logging.info(" + " + cmd)
-
         # only pipe the command into `stdout` for parallel evaluation
         if gnu_parallel:
+            logging.info(" + " + cmd)
             sys.stdout.write(f'{cmd}\n')
             continue
 
         # evaluate the command
         if not dry_run:
-            with subprocess.Popen(cmd,
-                                  shell=True,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT,
-                                  encoding="utf-8",
-                                  universal_newlines=True) as proc:
-
-                for line in iter(proc.stdout.readline, ''):
-                    logging.info(f'{line.strip()}\r')
+            utilities.run_and_stream(cmd, logging, shell=True)
 
 
 def run_container(args):
@@ -198,24 +189,26 @@ def run_container(args):
     inp = f"event -p /patient/ -e {args['ID']}"
     cmd = c.run_image(tag, inp)
 
-    logging.info(" + " + " ".join(cmd))
+    if patient.terminated:
+        logging.critical(
+            "Patient has been flagged as terminated due to previous errors.\n"
+            "Skipping container execution"
+        )
 
-    # evaluation
-    if not dry_run:
+    if not dry_run and not patient.terminated:
 
-        # start process and capture output
-        with subprocess.Popen(cmd,
-                              shell=False,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              encoding="utf-8",
-                              universal_newlines=True) as proc:
+        # evaluate command and stream its output to the logger
+        returncode = utilities.run_and_stream(cmd, logging)
 
-            for line in iter(proc.stdout.readline, ''):
-                logging.info(f'{line.strip()}\r')
+        # mark event as complete for successful evaluation
+        if returncode == 0:
+            patient.completed_event(event_id)
+        else:
+            logging.critical(f"Container failed with exit code '{returncode}'")
+            logging.critical("Flagging patient to be terminated...")
+            patient.terminate()
 
-        # mark event as complete and update config file on disk
-        patient.completed_event(event_id)
+        # update config file on disk
         patient.to_yaml()
 
     # update file permissions

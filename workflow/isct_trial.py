@@ -5,6 +5,7 @@ Usage:
   isct trial ls TRIAL [-r | --recurse]
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
+  isct trial reset TRIAL
   isct trial run TRIAL [-x] [-v] [--gnu-parallel] [--singularity=DIR]
                        [--validate] [--root]
   isct trial status TRIAL
@@ -49,7 +50,7 @@ import logging
 
 from workflow.container import new_container
 import workflow.utilities as utilities
-from workflow.patient import Patient
+from workflow.patient import Patient, patients_from_trial
 from workflow.isct_patient import patient as patient_cmd
 
 
@@ -239,21 +240,13 @@ def trial_create(args):
         logging.critical(f"Container '{tag}' does not exitst: '{e}'.")
         return
 
-    # evaluate `virtual-patient-generation` model to fill config files
+    # form command to evaluate `virtual-patient-generation`
     cmd = c.run_image(tag, " ".join(dirs))
-    logging.info(" + " + " ".join(cmd))
 
-    with subprocess.Popen(cmd,
-                          shell=False,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          encoding="utf-8",
-                          universal_newlines=True) as proc:
+    # evaluate `virtual-patient-generation` model to fill config files
+    utilities.run_and_stream(cmd, logging)
 
-        for line in iter(proc.stdout.readline, ''):
-            logging.info(f'{line.strip()}\r')
-
-    # create auxilary files for each patient
+    # Create auxilary files for each patient.
     # TODO: remove the XML export once transitioned to YAML
     for d in [d[0] for d in os.walk(path)][1:]:
         Patient.from_yaml(d).create_default_files()
@@ -461,6 +454,24 @@ def trial_outcome(args):
                 logging.info(f'{line.strip()}\r')
 
 
+def trial_reset(args):
+    s = schema.Schema({
+        'TRIAL': schema.And(schema.Use(str), os.path.isdir),
+        '-v': schema.Use(bool),
+        str: object,  # all other inputs do not matter
+    })
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # reset each patient and update its configuration file
+    for patient in patients_from_trial(pathlib.Path(args['TRIAL'])):
+        patient.reset()
+        patient.to_yaml()
+
+
 def trial(argv):
     """Provides comamnds for interaction with in-silico trials."""
     # parse command-line arguments
@@ -477,6 +488,9 @@ def trial(argv):
 
     if args['run']:
         return trial_run(args)
+
+    if args['reset']:
+        return trial_reset(args)
 
     if args['status']:
         return trial_status(args)
