@@ -111,6 +111,15 @@ class Patient(dict):
     def terminate(self):
         self.terminated = True
 
+    def reset(self):
+        """Resets the status of the patient.
+
+        Currently only resets the `terminated` flag.
+        """
+
+        if 'terminated' in dict(self):
+            del self['terminated']
+
     def validate(self):
         """Returns True if the patient config is validated sucessfully.
 

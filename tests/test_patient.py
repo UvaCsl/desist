@@ -392,6 +392,15 @@ def test_terminate(tmp_path):
         p.terminated = b
         assert p.terminated == b
 
+def test_patient_reset(tmp_path):
+    p = Patient(tmp_path)
+    assert not p.terminated
+
+    p.terminate()
+    assert p.terminated
+
+    p.reset()
+    assert not p.terminated
 
 def test_patients_from_trial(trial_directory):
     trial = pathlib.Path(trial_directory)
