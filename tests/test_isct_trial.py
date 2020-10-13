@@ -5,9 +5,9 @@ from importlib import util as importlib_util
 
 from mock import patch
 
-from workflow.patient import Patient
+from workflow.patient import Patient, patients_from_trial
 from workflow.isct_trial import trial, create_trial_config
-from workflow.utilities import get_git_hash, isct_module_path, inner_tree
+from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -196,6 +196,8 @@ def test_trial_run_invalid_config_file(trial_directory, mocker):
 def test_trial_status_log(trial_directory, recurse, dir_filter):
     path = trial_directory
     num = 10
+    nfiles = 4
+
     trial(f"trial create {path} -n {num}".split())
 
     lines = list(inner_tree(path, recurse=recurse, dir_filter=dir_filter))
@@ -206,7 +208,7 @@ def test_trial_status_log(trial_directory, recurse, dir_filter):
             assert len(lines) == num
         else:
             # includes patient directores + patient.yml + config.xml + trial.yml + Clots.txt
-            assert len(lines) == 4 * num + 1
+            assert len(lines) == nfiles * num + 1
     else:
         if dir_filter is not None:
             # only the main patient directories
@@ -263,3 +265,16 @@ def test_trial_outcome(trial_directory, mocker):
 
     mocker.patch("shutil.which", return_value=None)
     trial(f"trial outcome {path} -x".split())
+
+def test_trial_reset(trial_directory):
+    path = trial_directory
+    trial(f"trial create {path}".split())
+
+    for patient in patients_from_trial(path):
+        patient.terminate()
+        assert patient.terminated
+
+    trial(f"trial reset {path}")
+
+    for patient in patients_from_trial(path):
+        assert not patient.terminated

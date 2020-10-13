@@ -2,6 +2,7 @@
 Usage:
     isct patient create TRIAL [--id=ID] [-f] [--seed=SEED] [--config-only]
                               [--singularity=DIR] [--root]
+    isct patient reset PATIENT
     isct patient run PATIENT [-x] [-v] [--singularity=DIR] [--root]
     isct patient validate PATIENTS...
 
@@ -114,6 +115,7 @@ def patient_create(args):
 
     # set basic configruation
     patient.set_defaults(patient_id, p_seed)
+    patient.create_default_files()
 
     # write patient configuration to disk
     patient.to_yaml()
@@ -203,6 +205,26 @@ def patient_run(argv):
     return
 
 
+def patient_reset(argv):
+    """Evaluate `patient reset` to reset the patient's configuration."""
+
+    # validate the provided path exists
+    s = schema.Schema({
+        'PATIENT': schema.And(schema.Use(str), os.path.isdir),
+        str: object,
+    })
+    try:
+        args = s.validate(argv)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # reset the patient's configuration and update on disk
+    patient = Patient.from_yaml(args['PATIENT'])
+    patient.reset()
+    patient.to_yaml()
+
+
 def patient_validate(argv):
     """Evaluate `patient validate` to validate a patient config file.
 
@@ -245,6 +267,10 @@ def patient(argv):
 
     if args['create']:
         patient_create(args)
+        return
+
+    if args['reset']:
+        patient_reset(args)
         return
 
     if args['run']:

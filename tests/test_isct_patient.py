@@ -3,7 +3,7 @@ import os
 import yaml
 from mock import patch
 
-from workflow.patient import Patient
+from workflow.patient import Patient, patients_from_trial
 from workflow.isct_patient import patient as patient_cmd
 from workflow.isct_patient import patient_validate
 from workflow.isct_trial import trial
@@ -105,3 +105,16 @@ def test_patient_validate_config(trial_directory):
     argv = docopt.docopt(mypatient.__doc__, argv=f"patient validate {patient_0.dir} {patient_1.dir}")
     res = patient_validate(argv)
     assert not all([b for (r, b) in res])
+
+def test_patient_reset(trial_directory):
+    path = trial_directory
+    patient = path.joinpath("patient_000")
+    trial(f"trial create {path} -n 1".split())
+
+    for patient in patients_from_trial(path):
+        patient.terminate()
+        assert patient.terminated
+        patient_cmd(f"patient reset {patient.dir}".split())
+
+    for patient in patients_from_trial(path):
+        assert not patient.terminated
