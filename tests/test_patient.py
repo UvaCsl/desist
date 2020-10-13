@@ -6,7 +6,9 @@ import yaml
 
 from mock import patch
 
+from tests.test_isct_trial import trial_directory
 from workflow.patient import Patient, dict_to_xml, Event, State
+from workflow.patient import patients_from_trial
 from workflow.utilities import get_git_hash, isct_module_path
 
 @pytest.mark.parametrize("path", ["", "/home", pathlib.Path("/home")])
@@ -390,3 +392,19 @@ def test_terminate(tmp_path):
         p.terminated = b
         assert p.terminated == b
 
+
+def test_patients_from_trial(trial_directory):
+    trial = pathlib.Path(trial_directory)
+    patient = trial.joinpath('patient')
+
+    # create tmp dirs
+    for p in [trial, patient]:
+        os.makedirs(p, exist_ok=True)
+
+    # create a patient and another file
+    p = Patient(patient).to_yaml()
+    other = trial.joinpath('other.txt').touch()
+
+    # assert only one patient is found, and equal to what was generated
+    assert len(list(patients_from_trial(trial))) == 1
+    assert list(patients_from_trial(trial))[0] == p

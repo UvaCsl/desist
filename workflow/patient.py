@@ -68,6 +68,15 @@ class Event(enum.Enum):
         return len(events) == len(Event.parse_events(events))
 
 
+def patients_from_trial(trial):
+    """Returns all patient instances in the given trial directory."""
+    trial = pathlib.Path(trial)
+    assert os.path.isdir(trial)
+
+    return map(Patient.from_yaml,
+               filter(lambda p: os.path.isdir(p), trial.iterdir()))
+
+
 class Patient(dict):
     """Representation of a patient."""
     def __init__(self, path, *args, **kwargs):
