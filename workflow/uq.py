@@ -34,6 +34,21 @@ class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):
         # add "/." to copy contents including hidden directories
         subprocess.run(["cp", "-r", f"{str(orig)}/.", copy])
 
+        # files to be reset/removed
+        remove = ['clot_present', 'thrombectomy_outcome.txt']
+
+        # directories to remove them from
+        dirs = [copy]
+        for p in ['baseline', 'stroke', 'treatment']:
+            dirs.append(copy.joinpath(p))
+
+        # travers directories and remove desired files
+        for d in dirs:
+            for f in filter(os.path.isfile, d.iterdir()):
+                f = pathlib.Path(f)
+                if f.name in remove:
+                    os.remove(f)
+
         # load the template patient configuration
         patient = Patient.from_yaml(self.template_fname)
 
