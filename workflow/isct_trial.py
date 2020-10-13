@@ -240,19 +240,11 @@ def trial_create(args):
         logging.critical(f"Container '{tag}' does not exitst: '{e}'.")
         return
 
-    # evaluate `virtual-patient-generation` model to fill config files
+    # form command to evaluate `virtual-patient-generation`
     cmd = c.run_image(tag, " ".join(dirs))
-    logging.info(" + " + " ".join(cmd))
 
-    with subprocess.Popen(cmd,
-                          shell=False,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          encoding="utf-8",
-                          universal_newlines=True) as proc:
-
-        for line in iter(proc.stdout.readline, ''):
-            logging.info(f'{line.strip()}\r')
+    # evaluate `virtual-patient-generation` model to fill config files
+    utilities.run_and_stream(cmd, logging)
 
     # Create auxilary files for each patient.
     # TODO: remove the XML export once transitioned to YAML
