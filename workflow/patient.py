@@ -45,8 +45,7 @@ class State(enum.IntEnum):
 @enum.unique
 class Event(enum.Enum):
     BLOODFLOW = "1d-blood-flow"
-    PERFUSION = "darcy_multi-comp"
-    CELL_DEATH = "cell_death_model"
+    PERFUSION = "perfusion_and_tissue_damage"
     PLACE_CLOT = "place_clot"
     THROMBECTOMY = "thrombectomy"
     THROMBOLYSIS = "thrombolysis"
