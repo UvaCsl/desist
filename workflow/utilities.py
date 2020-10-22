@@ -144,7 +144,8 @@ def run_and_stream(cmd, logger, shell=False):
     The function returns the returncode of the process.
     """
 
-    logger.info(" + " + " ".join(cmd))
+    msg = cmd if shell else " ".join(cmd)
+    logger.info(f" + {msg}")
 
     with subprocess.Popen(cmd,
                           shell=shell,
