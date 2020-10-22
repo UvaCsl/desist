@@ -237,11 +237,11 @@ events:
 - event: 1d-blood-flow
   id: 0
   status: false
-- event: darcy_multi-comp
+- event: perfusion_and_tissue_damage
   healthy: true
   id: 1
   status: false
-- event: cell_death_model
+- event: tissue_damage
   id: 2
   read_init: 0
   state: 0
@@ -255,10 +255,10 @@ events:
 - event: 1d-blood-flow
   id: 4
   status: false
-- event: darcy_multi-comp
+- event: perfusion_and_tissue_damage
   id: 5
   status: false
-- event: cell_death_model
+- event: tissue_damage
   id: 6
   read_init: 1
   state: 1
@@ -271,10 +271,10 @@ events:
 - event: 1d-blood-flow
   id: 8
   status: false
-- event: darcy_multi-comp
+- event: perfusion_and_tissue_damage
   id: 9
   status: false
-- event: cell_death_model
+- event: tissue_damage
   id: 10
   read_init: 2
   state: 2
@@ -333,8 +333,7 @@ def test_patient_default_clot_file(tmp_path):
 
 @pytest.mark.parametrize("enum, label", [
     (Event.BLOODFLOW, "1d-blood-flow"),
-    (Event.PERFUSION, "darcy_multi-comp"),
-    (Event.CELL_DEATH, "cell_death_model"),
+    (Event.PERFUSION, "perfusion_and_tissue_damage"),
     (Event.PLACE_CLOT, "place_clot"),
     (Event.THROMBECTOMY, "thrombectomy"),
     (Event.THROMBOLYSIS, "thrombolysis"),
