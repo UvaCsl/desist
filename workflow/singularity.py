@@ -56,10 +56,14 @@ class Singularity(Container):
         # resulting # image file `singularity.sif` to the desired directory.
         return f'vagrant ssh -c "{chdir} && {cmd}" && {mv}'.split()
 
-    def check_image(self, path):
-        """Returns a command to test if the `.sif` file of the path exists."""
-        path = self.image(path)
-        return f"test -e {path}".split()
+    def check_image(self, tag):
+        """Returns the command to identify if the `.sif` of `tag` exists."""
+        return f"test -e {tag}".split()
+
+    def image_exists(self, tag, dry_run=True):
+        """Returns True if the `.sif` file corresponding to `tag` exists."""
+        cmd = self.check_image(self.image(tag))
+        return utilities.command_succeeds(cmd, dry_run=dry_run)
 
     def set_permissions(self, path, tag, dry_run=True):
         """Singularity containers do not require to modify file permissions."""

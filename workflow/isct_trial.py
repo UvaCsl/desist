@@ -231,14 +231,8 @@ def trial_create(args):
         return
 
     # check if `virtual-patient-generation` image is available
-    cmd = c.check_image(tag)
-
-    logging.info(" + " + " ".join(cmd))
-    try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-    except subprocess.CalledProcessError as e:
-        logging.critical(f"Container '{tag}' does not exitst: '{e}'.")
-        return
+    if not c.image_exists(tag):
+        sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
     cmd = c.run_image(tag, " ".join(dirs))
@@ -422,16 +416,9 @@ def trial_outcome(args):
         logging.critical(f"Cannot reach {c.type}.")
         return
 
-    cmd = c.check_image(tag)
-
-    logging.info(" + " + " ".join(cmd))
-
-    if not dry_run:
-        try:
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as e:
-            logging.critical(f"Container does not exist: '{e}'")
-            return
+    # exit in case the image is not present
+    if not c.image_exists(tag, dry_run):
+        sys.exit(1)
 
     # bind the trial directory
     c.bind_volume(path.absolute(), "/trial/")
