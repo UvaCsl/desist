@@ -19,6 +19,6 @@
 [submodule "patient-outcome-model"]
 	path = software/patient-outcome-model
 	url = ../patient-outcome-model.git
-[submodule "software/perfusion_and_tissue_damage"]
+[submodule "perfusion_and_tissue_damage"]
 	path = software/perfusion_and_tissue_damage
 	url = ../perfusion_and_tissue_damage.git
