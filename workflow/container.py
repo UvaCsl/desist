@@ -1,7 +1,8 @@
 import abc
 import enum
-import shutil
+import os
 import pathlib
+import shutil
 import sys
 
 import workflow.utilities as utilities
@@ -55,6 +56,15 @@ class Container(abc.ABC):
     def dry_build(self):
         """Return True if system lacks requirements to construct images."""
         return not self.executable_present()
+
+    def _format_image(self, image):
+        """Return formatted version of the image.
+
+        All underscores (`_`) are replaced by dashed (`-`) for consistency in
+        the container names.
+        """
+        parent, base = image.parent, os.path.basename(image)
+        return parent.joinpath(base.replace("_", "-"))
 
     @abc.abstractmethod
     def image(self, path):

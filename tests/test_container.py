@@ -109,13 +109,25 @@ def test_container_dry_build_with_executable(mock_executable_present, mocker):
         assert c.dry_run() == False
         assert c.dry_build() == ref
 
+@pytest.mark.parametrize("folder", [
+    "", "folder", "folder_with_underscores", "folder-with-dashes"])
+@pytest.mark.parametrize("path", [
+    "path", "path_with_underscores", "path-with-dashes"])
+def test_container_image_format(folder,path):
+    p = pathlib.Path(folder).joinpath(path)
+    for c in [Docker(), Singularity()]:
+        assert os.path.basename(c._format_image(p)) == path.replace("_","-")
+        assert c._format_image(p).parent == pathlib.Path(folder)
+
 def test_docker_container_image_tag(tmp_path):
     c = Docker()
-    assert os.path.basename(tmp_path) == c.image(tmp_path)
+    path = c._format_image(pathlib.Path(tmp_path))
+    assert  os.path.basename(path) == c.image(tmp_path)
 
 def test_singularity_container_image_tag(tmp_path):
     c = Singularity(tmp_path)
-    assert f"{tmp_path}.sif" == c.image(tmp_path)
+    path = c._format_image(pathlib.Path(tmp_path))
+    assert path == c.image(tmp_path)
 
 @pytest.mark.parametrize("os_str, OS", [("linux", OS.LINUX), ("darwin", OS.MACOS)])
 def test_docker_check_image_command(os_str, OS, mocker, tmp_path):
@@ -159,7 +171,7 @@ def test_docker_run_image_command(os_str, OS, mocker, tmp_path):
     if OS == OS.LINUX:
         assert "sudo" in cmd
 
-    for k in ['run', 'docker', 'host', 'local', ':', c.bind_flag, os.path.basename(tmp_path), arg]:
+    for k in ['run', 'docker', 'host', 'local', ':', c.bind_flag, os.path.basename(c._format_image(pathlib.Path(tmp_path))), arg]:
         assert k in cmd
 
 def test_create_singularity_container_invalid_path(tmp_path):

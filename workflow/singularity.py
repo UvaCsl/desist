@@ -30,13 +30,13 @@ class Singularity(Container):
         return not self.executable_present()
 
     def image(self, path):
-        path = self.image_path.joinpath(path)
-        return f"{pathlib.Path(path).absolute()}.sif"
+        """Returns the image path for the Singularity container."""
+        return self._format_image(self.image_path.joinpath(path)).absolute()
 
     def build_image(self, path):
         """Builds the `image.sif` container image using Singularity."""
         path = pathlib.Path(path)
-        base = os.path.basename(path)
+        base = os.path.basename(self.image(path))
 
         # images are build in the local directory of definition file
         chdir = f"cd {path.absolute()}"
