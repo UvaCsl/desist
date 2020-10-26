@@ -44,10 +44,14 @@ class Docker(Container):
         tag = self.image(path)
         return f"{self.sudo} {self.type} build {path} -t {tag}".split()
 
-    def check_image(self, path):
-        """Returns a command to test container with tag `path` exists."""
-        tag = self.image(path)
+    def check_image(self, tag):
+        """Returns the command to identify if the image of `tag` exists."""
         return f"{self.sudo} {self.type} image inspect {tag}".split()
+
+    def image_exists(self, tag, dry_run=True):
+        """Returns True if container with tag `tag` exists on the host."""
+        cmd = self.check_image(self.image(tag))
+        return utilities.command_succeeds(cmd, dry_run=dry_run)
 
     def set_permissions(self, path, tag, dry_run=True):
         """Updates the file permissions after Docker runs to prevent files

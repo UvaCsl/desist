@@ -66,7 +66,11 @@ class Container(abc.ABC):
 
     @abc.abstractmethod
     def check_image(self, path):
-        """Returns the command to verify the image exists on the host."""
+        """Returns a command to identify if the container image exists."""
+
+    @abc.abstractmethod
+    def image_exists(self, tag, dry_run=True):
+        """Returns True if container's image of `tag` exists."""
 
     @abc.abstractmethod
     def set_permissions(self, path, tag, dry_run=True):

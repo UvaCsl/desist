@@ -33,7 +33,6 @@ import pathlib
 import os
 import sys
 import schema
-import subprocess
 
 from workflow.container import new_container
 from workflow.patient import Patient
@@ -157,19 +156,11 @@ def run_container(args):
 
     # assert the considered container exists
     if not c.executable_present():
-        sys.exit(__doc__)
+        sys.exit(1)
 
-    cmd = c.check_image(tag)
-
-    logging.info(" + " + " ".join(cmd))
-
-    if not dry_run:
-        try:
-            # redirects output to `DEVNULL` to hide info on success
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as e:
-            logging.critical(f'Container does not exist: "{e}"')
-            return
+    # ensure the container image is present
+    if not c.image_exists(tag, dry_run):
+        sys.exit(1)
 
     # assert tag and event match: an event exists with the provided ID
     patient = Patient.from_yaml(p_dir)
@@ -192,8 +183,7 @@ def run_container(args):
     if patient.terminated:
         logging.critical(
             "Patient has been flagged as terminated due to previous errors.\n"
-            "Skipping container execution"
-        )
+            "Skipping container execution")
 
     if not dry_run and not patient.terminated:
 

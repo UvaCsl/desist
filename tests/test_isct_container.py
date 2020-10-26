@@ -91,14 +91,13 @@ def test_run_container_exit_without_docker(tmp_path, mocker):
     with pytest.raises(SystemExit):
         container(f"container run tag {tmp_path} 1 -x".split())
 
-@patch('shutil.which', return_value='/bin/mocker/')
-@patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, cmd='cmd'))
-def test_run_missing_container_exit(mocker_which, mocker_run, trial_directory):
+def test_run_missing_container_exit(trial_directory):
     path = trial_directory.joinpath("patient_000")
     os.makedirs(path)
     p = Patient(path, **{"name": "name", "id": "id"})
     p.to_yaml()
-    container(f"container run tag {path} 1 -v".split())
+    with pytest.raises(SystemExit):
+        container(f"container run tag {path} 1 -v".split())
 
 def test_run_container_valid_path(trial_directory, mocker):
     # create config file
