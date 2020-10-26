@@ -1,8 +1,9 @@
+import enum
+import logging
+import os
 import pathlib
 import shutil
 import subprocess
-import os
-import enum
 import sys
 
 
@@ -158,3 +159,39 @@ def run_and_stream(cmd, logger, shell=False):
             logger.info(f'{line.strip()}\r')
 
     return proc.returncode
+
+
+def command_succeeds(cmd, logger=logging, shell=False, dry_run=False):
+    """Run a command with `subprocess.run` and returns True on success.
+
+    This function evalautes if the passed command succeeds during evaluation.
+    This is mainly intended to check if certain (sub)commands are present, were
+    the intended use is along the lines of
+    ```
+    if not utilities.command_success(cmd):
+        # handle error here
+    ```
+    """
+    msg = cmd if shell else " ".join(cmd)
+    logger.info(f" + {msg}")
+
+    if dry_run:
+        # For `dry_run` the commands are not supposed to be evaluated, assume
+        # the commands do not fail.
+        return True
+
+    # attempt to evaluate the command
+    try:
+        subprocess.run(cmd,
+                       check=True,
+                       stdout=subprocess.DEVNULL,
+                       stderr=subprocess.PIPE,
+                       universal_newlines=True,
+                       encoding="utf-8")
+    except subprocess.CalledProcessError as e:
+        # log to console and repeat encountered stderr
+        logger.critical(f"Subprocess failed ($? {e.returncode}): '{e}'.")
+        logger.critical(f"Captured stderr: '{e.stderr.rstrip()}'.")
+        return False
+
+    return True

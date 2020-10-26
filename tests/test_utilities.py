@@ -7,7 +7,7 @@ import logging
 from mock import patch, MagicMock
 
 from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
-from workflow.utilities import OS, run_and_stream
+from workflow.utilities import OS, run_and_stream, command_succeeds
 
 @pytest.fixture
 def log_subprocess_run(mocker):
@@ -82,3 +82,8 @@ def test_OS_enum_exit_windows():
 @pytest.mark.parametrize("cmd, flag", [('true', 0), ('false', 1)])
 def test_run_and_stream(cmd, flag):
     assert run_and_stream(cmd, logging) == flag
+
+@pytest.mark.parametrize("cmd, out", [('true', True), ('false', False)])
+def test_command_succeeds(cmd, out):
+    assert command_succeeds(cmd) == out
+    assert command_succeeds(cmd, dry_run=True) == True
