@@ -45,8 +45,9 @@ class State(enum.IntEnum):
 @enum.unique
 class Event(enum.Enum):
     BLOODFLOW = "1d-blood-flow"
-    PERFUSION = "darcy_multi-comp"
-    CELL_DEATH = "cell_death_model"
+    PERFUSION = "perfusion_and_tissue_damage"
+    OXYGEN = "oxygen"
+    TISSUE_DAMAGE = "tissue_damage"
     PLACE_CLOT = "place_clot"
     THROMBECTOMY = "thrombectomy"
     THROMBOLYSIS = "thrombolysis"
@@ -345,8 +346,8 @@ class Patient(dict):
         # elapsed time after the complete procedure is the sum of both. The
         # `baseline` simulation is set at one hour (-60 min) in the timeline to
         # indicate it happens before the stroke event.
-        onset_to_er = self.get('dur_oer', 86.60659896539732)
-        er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
+        # onset_to_er = self.get('dur_oer', 86.60659896539732)
+        # er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
 
         # FIXME where to obtain default values?
         events = [
@@ -354,29 +355,32 @@ class Patient(dict):
             (Event.PERFUSION, {
                 "healthy": True
             }),
-            (Event.CELL_DEATH, {
-                "read_init": 0,
-                "time_start": -60.0,
-                "time_end": 0.0,
-            }),
+            # TODO: replace!
+            # (Event.CELL_DEATH, {
+            #     "read_init": 0,
+            #     "time_start": -60.0,
+            #     "time_end": 0.0,
+            # }),
             (Event.PLACE_CLOT, {
                 "time": 0.0
             }),
             (Event.BLOODFLOW, {}),
             (Event.PERFUSION, {}),
-            (Event.CELL_DEATH, {
-                "read_init": 1,
-                "time_start": 0.0,
-                "time_end": onset_to_er,
-            }),
+            # TODO: replace!
+            # (Event.CELL_DEATH, {
+            #     "read_init": 1,
+            #     "time_start": 0.0,
+            #     "time_end": onset_to_er,
+            # }),
             (Event.THROMBECTOMY, {}),
             (Event.BLOODFLOW, {}),
             (Event.PERFUSION, {}),
-            (Event.CELL_DEATH, {
-                "read_init": 2,
-                "time_start": onset_to_er,
-                "time_end": onset_to_er + er_to_puncture,
-            }),
+            # TODO: replace!
+            # (Event.CELL_DEATH, {
+            #     "read_init": 2,
+            #     "time_start": onset_to_er,
+            #     "time_end": onset_to_er + er_to_puncture,
+            # }),
             (Event.PATIENT_OUTCOME, {}),
         ]
 

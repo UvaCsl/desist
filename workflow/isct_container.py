@@ -212,7 +212,7 @@ def run_container(args):
         patient.to_yaml()
 
     # update file permissions
-    cmd = c.set_permissions(patient.dir, tag, dry_run)
+    c.set_permissions(patient.dir, tag, dry_run)
 
 
 def container(argv=None):

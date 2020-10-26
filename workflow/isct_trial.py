@@ -442,7 +442,6 @@ def trial_outcome(args):
 
     # evaluate the trial outcome module
     if not dry_run:
-
         with subprocess.Popen(cmd,
                               shell=False,
                               stdout=subprocess.PIPE,
@@ -452,6 +451,9 @@ def trial_outcome(args):
 
             for line in iter(proc.stdout.readline, ''):
                 logging.info(f'{line.strip()}\r')
+
+    # update file permissions
+    c.set_permissions(path.absolute(), tag, dry_run)
 
 
 def trial_reset(args):
