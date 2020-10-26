@@ -1,2 +1,28 @@
 __pycache__
 _build
+
+.DS_*
+
+# output
+*.pdf
+*.jpg
+*.png
+*.log
+*.gz 
+*.tar.gz 
+*.coverage
+
+# jupyter notebook
+*.ipynb_checkpoints/*
+*.ipynb
+
+# containers
+*.sif 
+
+# local installation
+*.egg*
+
+.vagrant/
+
+# no virtualenv
+venv

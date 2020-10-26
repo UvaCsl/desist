@@ -7,12 +7,6 @@
 [submodule "thrombectomy"]
 	path = software/thrombectomy
 	url = ../thrombectomy_python_rs.git
-[submodule "darcy_multi-comp"]
-	path = software/darcy_multi-comp
-	url = ../darcy_multi-comp.git
-[submodule "cell_death_model"]
-	path = software/cell_death_model
-	url = ../cell_death_model.git
 [submodule "thrombo-sis-lysis"]
 	path = software/thrombo-sis-lysis
 	url = ../thrombo-sis-lysis.git
@@ -25,3 +19,6 @@
 [submodule "patient-outcome-model"]
 	path = software/patient-outcome-model
 	url = ../patient-outcome-model.git
+[submodule "perfusion_and_tissue_damage"]
+	path = software/perfusion_and_tissue_damage
+	url = ../perfusion_and_tissue_damage.git

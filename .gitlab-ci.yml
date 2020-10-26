@@ -1,26 +1,50 @@
-stages:
-  - build
-  - test
+image: "python:3.8"
+
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_STRATEGY: clone
-cache:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache: &global_cache
   paths:
-    - patient/
-  key: "$CI_PIPELINE_ID"
+    - .cache/pip
+    - venv/
+  key: ${CI_COMMIT_REF_SLUG}
+  policy: pull-push
 
-build_images:
+before_script:
+  - python -V
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - python -m pip install --upgrade pip 
+  - pip install -r requirements.txt 
+  - pip install flake8 
+
+stages:
+  - build
+  - test
+
+build_isct:
   stage: build
+  cache:
+    <<: *global_cache
+    policy: push
   script:
-    - ./scripts/create_containers.sh
-    - rm ./workflow/docker_image_list
+    - pip install -e .
 
-build_trial_directory: 
-  stage: build 
+test_isct:
+  stage: test
+  cache:
+    <<: *global_cache
+    policy: pull
+  script:
+    - pytest --cov=workflow
+
+flake8_isct:
+  stage: test
+  cache:
+    <<: *global_cache
+    policy: pull
   script: 
-    - mkdir trial
-    - chmod 777 trial
-
-verification:
-  script:
-    - ./scripts/run_in_silico_trial.sh -x scripts/variables.xml trial 1
+    - flake8 workflow
