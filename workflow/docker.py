@@ -33,7 +33,7 @@ class Docker(Container):
         # The `isct` command builds all Docker containers where the tags are
         # matched to the basename of the directories. Therefore, we only need
         # to split the basename here to obtain the corresponding image tag.
-        return os.path.basename(pathlib.Path(path))
+        return os.path.basename(self._format_image(pathlib.Path(path)))
 
     def build_image(self, path):
         """Build the Docker image of the Dockerfile in `path`."""
