@@ -1,10 +1,12 @@
-import pytest
-import os
 import numpy as np
-from easyvvuq.decoders.yaml import YAMLDecoder
+import os
+import pathlib
+import pytest
 
-from workflow.patient import Patient
+from easyvvuq.decoders.yaml import YAMLDecoder
 from tests.test_isct_trial import trial_directory
+from workflow.patient import Patient
+from workflow.uq import ISCTDecoder
 
 
 @pytest.mark.parametrize('dat', [{'scalar': 1}, {'vector': [1, 2, 3]}])
@@ -20,6 +22,18 @@ def test_yamldecoder_data(tmp_path, dat):
     data = decoder.parse_sim_output({'run_dir': str(path)})
 
     # assert all keys
+    for k, v in dat.items():
+        assert k in data
+        assert np.all(data[k] == v)
+
+@pytest.mark.parametrize('dat', [{'scalar': 1}])
+def test_isctdecoder(tmp_path, dat):
+    path = pathlib.Path(tmp_path)
+    patient = Patient(path, **dat).to_yaml()
+    assert os.path.isfile(patient.path)
+
+    decoder = ISCTDecoder(patient.path, list(dat.keys()))
+    data = decoder.parse_sim_output({'run_dir': str(path)})
     for k, v in dat.items():
         assert k in data
         assert np.all(data[k] == v)

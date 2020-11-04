@@ -243,8 +243,11 @@ def trial_create(args):
     # Create auxilary files for each patient.
     # TODO: remove the XML export once transitioned to YAML
     for d in [d[0] for d in os.walk(path)][1:]:
-        Patient.from_yaml(d).create_default_files()
-        Patient.from_yaml(d).to_xml()
+        p = Patient.from_yaml(d)
+        p.create_default_files()
+        p.update_defaults()
+        p.to_yaml()
+        p.to_xml()
 
 
 def trial_run(args):

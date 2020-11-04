@@ -18,11 +18,13 @@ _build
 
 # containers
 *.sif 
+.vagrant/
 
 # local installation
 *.egg*
 
-.vagrant/
+# configurations
+*.json
 
 # no virtualenv
 venv
