@@ -125,7 +125,7 @@ def create_trial_config(path, prefix, num_patients):
     return {
         'patients_directory': str(path.absolute()),
         'prefix': prefix,
-        'number': num_patients,
+        'sample_size': num_patients,
         'preprocessed': False,
         'git_sha': git_sha,
     }

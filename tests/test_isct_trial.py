@@ -54,12 +54,12 @@ def test_create_trial_configuration_no_docker(trial_directory, mocker):
 def test_trial_add_event_configuration(trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
-    number = 1
+    sample_size = 1
     prefix = "patient"
 
-    config = create_trial_config(path, prefix, number)
+    config = create_trial_config(path, prefix, sample_size)
 
-    assert config['number'] == number
+    assert config['sample_size'] == sample_size
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path.absolute())
     assert config['preprocessed'] == False
@@ -69,9 +69,9 @@ def test_trial_add_event_configuration(trial_directory):
 def test_trial_add_event_congifuration_no_git(mock_isct_module_path, trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
-    number = 1
+    sample_size = 1
     prefix = "patient"
-    config = create_trial_config(path, prefix, number)
+    config = create_trial_config(path, prefix, sample_size)
     assert config['git_sha'] == "not_found"
 
 
@@ -99,7 +99,7 @@ def test_trial_patient_prefix(trial_directory, t_prefix, prefix):
     with open(yml, "r") as outfile:
         config = yaml.load(outfile, yaml.SafeLoader)
 
-    assert config['number'] == 1
+    assert config['sample_size'] == 1
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path)
     assert config['preprocessed'] == False
