@@ -5,9 +5,9 @@ from importlib import util as importlib_util
 
 from mock import patch
 
-from workflow.patient import Patient, patients_from_trial
-from workflow.isct_trial import trial, create_trial_config
-from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
+from isct.patient import Patient, patients_from_trial
+from isct.isct_trial import trial, create_trial_config
+from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -65,7 +65,7 @@ def test_trial_add_event_configuration(trial_directory):
     assert config['preprocessed'] == False
     assert config['git_sha'] == get_git_hash(isct_module_path())
 
-@patch('workflow.utilities.isct_module_path', return_value="/")
+@patch('isct.utilities.isct_module_path', return_value="/")
 def test_trial_add_event_congifuration_no_git(mock_isct_module_path, trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory

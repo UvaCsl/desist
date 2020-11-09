@@ -3,10 +3,10 @@ import os
 import yaml
 from mock import patch
 
-from workflow.patient import Patient, patients_from_trial
-from workflow.isct_patient import patient as patient_cmd
-from workflow.isct_patient import patient_validate
-from workflow.isct_trial import trial
+from isct.patient import Patient, patients_from_trial
+from isct.isct_patient import patient as patient_cmd
+from isct.isct_patient import patient_validate
+from isct.isct_trial import trial
 from tests.test_isct_trial import trial_directory
 
 def test_patient_no_configuration(trial_directory):
@@ -83,7 +83,7 @@ def test_patient_validate_config(trial_directory):
     # `patient` command. However, internally, we can get access to its output
     # and validate if its behaviour is correct. It is a bit clumsy, but should
     # be sufficient for a basic test.
-    import workflow.isct_patient as mypatient
+    import isct.isct_patient as mypatient
     import docopt
 
     argv = docopt.docopt(mypatient.__doc__, argv=f"patient validate {patient_0.dir}")

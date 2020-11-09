@@ -34,9 +34,9 @@ import os
 import sys
 import schema
 
-from workflow.container import new_container
-from workflow.patient import Patient
-import workflow.utilities as utilities
+from .container import new_container
+from .patient import Patient
+import isct.utilities as utilities
 
 
 # TODO: support alternative containers in addition to Docker.

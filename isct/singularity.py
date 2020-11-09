@@ -2,8 +2,8 @@ import os
 import pathlib
 import shutil
 
-from workflow.container import Container, ContainerType
-import workflow.utilities as utilities
+from .container import Container, ContainerType
+import isct.utilities as utilities
 
 
 class Singularity(Container):

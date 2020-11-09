@@ -9,12 +9,12 @@ from subprocess import Popen
 
 from mock import patch, MagicMock
 
-from workflow.patient import Patient
-from workflow.isct_container import container
-from workflow.utilities import run_and_stream
+from isct.patient import Patient
+from isct.isct_container import container
+from isct.utilities import run_and_stream
 from tests.test_isct_trial import trial_directory
-from workflow.isct_container import form_container_command
-from workflow.isct_trial import trial as trial_cmd
+from isct.isct_container import form_container_command
+from isct.isct_trial import trial as trial_cmd
 from tests.test_utilities import log_subprocess_run, mock_check_output
 
 

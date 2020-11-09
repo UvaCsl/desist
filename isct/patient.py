@@ -4,7 +4,7 @@ import pathlib
 import yaml
 import schema
 
-import workflow.utilities as utilities
+from . import utilities
 
 
 @enum.unique

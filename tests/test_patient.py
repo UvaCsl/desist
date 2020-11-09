@@ -7,9 +7,9 @@ import yaml
 from mock import patch
 
 from tests.test_isct_trial import trial_directory
-from workflow.patient import Patient, dict_to_xml, Event, State
-from workflow.patient import patients_from_trial
-from workflow.utilities import get_git_hash, isct_module_path
+from isct.patient import Patient, dict_to_xml, Event, State
+from isct.patient import patients_from_trial
+from isct.utilities import get_git_hash, isct_module_path
 
 @pytest.mark.parametrize("path", ["", "/home", pathlib.Path("/home")])
 def test_init_patient_paths(path):
@@ -103,7 +103,7 @@ def test_patient_set_defaults(tmp_path, pid, seed):
     for req in required:
         assert req in patient
 
-@patch('workflow.utilities.isct_module_path', return_value="/")
+@patch('isct.utilities.isct_module_path', return_value="/")
 def test_patient_set_defaults(tmp_path):
     patient = Patient(tmp_path)
     patient.set_defaults(1, 1)

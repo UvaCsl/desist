@@ -48,10 +48,10 @@ import subprocess
 import schema
 import logging
 
-from workflow.container import new_container
-import workflow.utilities as utilities
-from workflow.patient import Patient, patients_from_trial
-from workflow.isct_patient import patient as patient_cmd
+import isct.utilities as utilities
+from .container import new_container
+from .patient import Patient, patients_from_trial
+from .isct_patient import patient as patient_cmd
 
 
 def trail_plot(args):

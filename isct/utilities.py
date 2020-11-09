@@ -24,8 +24,8 @@ class OS(enum.Enum):
 
 def isct_module_path():
     """Retruns the path to the isct module. """
-    import workflow as wf
-    bn, fn = os.path.split(wf.__file__)
+    import isct as isct
+    bn, fn = os.path.split(isct.__file__)
     return pathlib.Path(bn)
 
 

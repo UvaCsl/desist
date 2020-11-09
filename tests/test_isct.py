@@ -1,9 +1,9 @@
 import pytest
 
-from workflow.isct import main, load_module
-from workflow.isct_trial import trial as trial_cmd
-from workflow.isct_patient import patient as patient_cmd
-from workflow.isct_container import container as container_cmd
+from isct.isct import main, load_module
+from isct.isct_trial import trial as trial_cmd
+from isct.isct_patient import patient as patient_cmd
+from isct.isct_container import container as container_cmd
 
 import docopt
 

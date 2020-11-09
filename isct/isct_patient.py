@@ -43,9 +43,9 @@ import sys
 import random
 import shutil
 
-from workflow.container import new_container
-from workflow.isct_container import container as container_cmd
-from workflow.patient import Patient
+from .container import new_container
+from .isct_container import container as container_cmd
+from .patient import Patient
 
 
 def patient_create(args):
