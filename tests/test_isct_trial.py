@@ -54,10 +54,11 @@ def test_create_trial_configuration_no_docker(trial_directory, mocker):
 def test_trial_add_event_configuration(trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
-    sample_size = 1
     prefix = "patient"
+    sample_size = 1
+    seed = 1
 
-    config = create_trial_config(path, prefix, sample_size)
+    config = create_trial_config(path, prefix, sample_size, seed)
 
     assert config['sample_size'] == sample_size
     assert config['prefix'] == prefix
@@ -70,8 +71,9 @@ def test_trial_add_event_congifuration_no_git(mock_isct_module_path, trial_direc
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
     sample_size = 1
+    seed = 1
     prefix = "patient"
-    config = create_trial_config(path, prefix, sample_size)
+    config = create_trial_config(path, prefix, sample_size, seed)
     assert config['git_sha'] == "not_found"
 
 

@@ -34,14 +34,13 @@ Options:
 
 from docopt import docopt
 import logging
-import subprocess
+import os
 import pathlib
 import schema
-import yaml
-import os
-import sys
-import random
 import shutil
+import subprocess
+import sys
+import yaml
 
 from .container import new_container
 from .isct_container import container as container_cmd
@@ -106,15 +105,8 @@ def patient_create(args):
     # setup patient directory and fill
     os.makedirs(patient.dir, exist_ok=True)
 
-    # seed the random generator with the provided seed
-    random.seed(seed)
-
-    # pull the n-th random number, for the n-th patient
-    for i in range(patient_id + 1):
-        p_seed = random.randrange(2 << 31 - 1)
-
     # set basic configruation
-    patient.set_defaults(patient_id, p_seed)
+    patient.set_defaults(patient_id, seed)
     patient.create_default_files()
 
     # write patient configuration to disk
@@ -125,7 +117,7 @@ def patient_create(args):
     # only call docker to fill the patients data when not set
     if not args['--config-only']:
         tag = "virtual_patient_generation"
-        arg = f"/patients/{patient_prefix}_{patient_postfix}"
+        arg = f"/patients/{patient_prefix}_{patient_postfix} --seed {seed}"
 
         c.bind_volume(path.absolute(), "/patients/")
         cmd = c.run_image(tag, arg)

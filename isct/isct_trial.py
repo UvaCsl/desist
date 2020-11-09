@@ -111,7 +111,7 @@ def trail_plot(args):
         g.render(view=args['--show'])
 
 
-def create_trial_config(path, prefix, num_patients):
+def create_trial_config(path, prefix, num_patients, seed):
     """Initialise a dictionary as trial configuration."""
 
     # to easily get its absolute path
@@ -128,6 +128,7 @@ def create_trial_config(path, prefix, num_patients):
         'sample_size': num_patients,
         'preprocessed': False,
         'git_sha': git_sha,
+        'random_seed': seed,
     }
 
 
@@ -196,7 +197,7 @@ def trial_create(args):
     os.makedirs(path, exist_ok=True)
 
     # populate configuration file
-    config = create_trial_config(path, prefix, num_patients)
+    config = create_trial_config(path, prefix, num_patients, seed)
 
     # dump trial configuration to disk
     with open(path.joinpath("trial.yml"), "w") as outfile:
@@ -235,7 +236,7 @@ def trial_create(args):
         sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
-    cmd = c.run_image(tag, " ".join(dirs))
+    cmd = c.run_image(tag, f"{' '.join(dirs)} --seed {seed}")
 
     # evaluate `virtual-patient-generation` model to fill config files
     utilities.run_and_stream(cmd, logging)
