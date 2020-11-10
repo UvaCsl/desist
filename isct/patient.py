@@ -1,8 +1,9 @@
 import enum
 import os
 import pathlib
-import yaml
+import random
 import schema
+import yaml
 
 from . import utilities
 
@@ -309,17 +310,32 @@ class Patient(dict):
         """Initialises default files in patient directory."""
 
         # integer to string mapping for occlusion segment
-        occl_segment_map = {
-            0: 'M2',
-            1: 'IICA', # L/R
-            2: 'ICAT', # L/R
-            3: 'M1', # L/R
-            4: 'M2', # 4 locations (2 defs + L/R) - just pick randomly
+        occlusion_to_vessel = {
+            0: 'M2',  # originally M3, mapped to M2 for anatomy model
+            1: 'IICA',  # L/R
+            2: 'ICAT',  # L/R
+            3: 'M1',  # L/R
+            4: 'M2',  # 4 locations (2 defs + L/R) - just pick randomly
         }
 
-        left_or_right = "R"
-        segment = occl_segment_map[int(self.get('occlsegment_c_short', 0))]
-        vessel = f"{left_or_right}. {segment}"
+        # mapping from virtual patient model towards anatomy definition in
+        # one-dimensional blood flow analysis
+        # FIXME: mapping to be updated
+        vessel_to_anatomy = {
+            'M1': 'MCA',
+            'M2': 'MCA',
+            'IICA': 'MCA',
+            'ICAT': 'MCA',
+        }
+
+        # convert occlusion segment into blood-flow vessel name
+        occlusion_id = int(self.get('occlsegment_c_short', 0))
+        segment = vessel_to_anatomy[occlusion_to_vessel[occlusion_id]]
+
+        # left or right side: about 50/50 choice
+        # FIXME: to be updated with improved distributions
+        left_or_right = random.choice(("L", "R"))
+        vessel = f'"{left_or_right}. {segment}"'
 
         # `Clots.txt` layed out as list of tuples
         data = [("Vesselname", vessel), ("Clotlocation(mm)", 3),
