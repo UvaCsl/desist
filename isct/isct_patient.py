@@ -138,7 +138,7 @@ def patient_create(args):
 
     # read the config back, add events, and write back to disk
     patient = Patient.from_yaml(patient.full_path())
-    patient.set_events(overwrite=True)
+    patient.set_models(overwrite=True)
     patient.to_yaml()
     patient.to_xml()
 
@@ -169,15 +169,15 @@ def patient_run(argv):
     verbose = True if dry_run else args['-v']
 
     # run through all events
-    for i, event in enumerate(patient.events()):
+    for i, model in enumerate(patient.models):
 
         # ensure we traverse events in the correct order
-        assert i == event['id']
+        assert i == model['id']
 
         cmd = [
-            "container", "run", event['event'],
+            "container", "run", model['model'],
             str(patient.dir),
-            str(event['id'])
+            str(model['id'])
         ]
 
         if dry_run:

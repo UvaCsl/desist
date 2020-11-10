@@ -112,7 +112,7 @@ def test_run_container_valid_path(trial_directory, mocker):
         container(f"container run tag {patient} 1 -x".split())
 
     # mock tag exists
-    config = {'events': [{'event': "tag", 'id': 1}]}
+    config = {'models': [{'model': "tag", 'id': 1}]}
     with open(patient.joinpath("patient.yml"), "w") as configfile:
         yaml.dump(config, configfile)
 
@@ -126,22 +126,22 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
     os.makedirs(patient.dir)
-    patient.set_events()
+    patient.set_models()
     patient.to_yaml()
 
     # mock the subprocess popen by some dummy command
     mocker.patch('subprocess.Popen', return_value=newpopen())
 
     # run the first dummy event (note: subprocess.run mocks the docker call)
-    event = patient.events()[0]
-    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+    event = patient.models[0]
+    container(f"container run {event['model']} {patient.dir} {event['id']}".split())
 
     # make sure patient config still exist
     assert Patient.path_is_patient(patient.dir)
 
     # ensure the first status is now set to true
     patient = Patient.from_yaml(patient.dir)
-    assert patient.events()[0]['status']
+    assert patient.models[0]['status']
 
 @pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
@@ -152,14 +152,14 @@ def test_terminate_failed_container(mock_which, mock_run,
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
     os.makedirs(patient.dir)
-    patient.set_events()
+    patient.set_models()
     patient.to_yaml()
 
     # assert patient terminate=True on non-zero exit code
     mocker.patch('subprocess.Popen', return_value=newpopen(returncode=1))
-    event = patient.events()[0]
-    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+    event = patient.models[0]
+    container(f"container run {event['model']} {patient.dir} {event['id']}".split())
 
     patient = Patient.from_yaml(patient.dir)
     assert patient.terminated
-    assert not patient.events()[0]['status']
+    assert not patient.models[0]['status']

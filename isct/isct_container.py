@@ -164,14 +164,8 @@ def run_container(args):
 
     # assert tag and event match: an event exists with the provided ID
     patient = Patient.from_yaml(p_dir)
-
-    match_event_id = False
-    for event in patient.events():
-        if event['event'] == tag and event['id'] == event_id:
-            match_event_id = True
-
     msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
-    assert match_event_id, msg
+    assert patient.match_tag_id(tag, event_id), msg
 
     # bind the patient directory to the container
     c.bind_volume(patient.dir, "/patient")
@@ -192,7 +186,7 @@ def run_container(args):
 
         # mark event as complete for successful evaluation
         if returncode == 0:
-            patient.completed_event(event_id)
+            patient.completed_model(event_id)
         else:
             logging.critical(f"Container failed with exit code '{returncode}'")
             logging.critical("Flagging patient to be terminated...")
