@@ -60,6 +60,12 @@ class Model(enum.Enum):
                 return model
 
     @staticmethod
+    def from_name(name):
+        for model in Model:
+            if name == model.name:
+                return model
+
+    @staticmethod
     def parse_models(models):
         return list(filter(Model.from_str, models))
 
@@ -348,89 +354,79 @@ class Patient(dict):
             clot = ",".join([str(d[1]) for d in data])
             outfile.write(clot)
 
+    @property
+    def events(self):
+        for event in self.get('events', []):
+            yield event
+
+    @property
+    def models(self):
+        assert 'labels' in self
+        labels = self['labels']
+        for event in self.events:
+            for model in event['models']:
+                yield {**model, **{'container': labels[model['label']]}}
+
     def set_models(self, overwrite=False):
         """Add list of events to a patient configuration.
 
         Keyword arguments:
         overwrite: bool indicate to overwrite existing events or not.
+
+        TODO:
+        Extract timestamps of events, or assign defaults when not present.
+        These give the time between onset and arrival at ER `onset_to_er`
+        and the time from ER arrival to groin punction `er_iat_groin`. The
+        elapsed time after the complete procedure is the sum of both. The
+        `baseline` simulation is set at one hour (-60 min) in the timeline to
+        indicate it happens before the stroke event.
+        onset_to_er = self.get('dur_oer', 86.60659896539732)
+        er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
         """
 
         # do not modify the already existing events
-        if len(self.models) > 0:
-            msg = f"Models already exist, while overwrite is {overwrite}"
-            assert overwrite, msg
+        #if len(self.models) > 0:
+        #    msg = f"Models already exist, while overwrite is {overwrite}"
+        #    assert overwrite, msg
 
-        # Extract timestamps of events, or assign defaults when not present.
-        # These give the time between onset and arrival at ER `onset_to_er`
-        # and the time from ER arrival to groin punction `er_iat_groin`. The
-        # elapsed time after the complete procedure is the sum of both. The
-        # `baseline` simulation is set at one hour (-60 min) in the timeline to
-        # indicate it happens before the stroke event.
-        # onset_to_er = self.get('dur_oer', 86.60659896539732)
-        # er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
+        self['labels'] = {m.name.lower(): m.value for m in Model}
+        self['events'] = []
 
-        # FIXME where to obtain default values?
-        models = [
-            (Model.BLOODFLOW, {}),
-            (Model.PERFUSION, {
-                "type": 'PERFUSION'
-            }),
-            (Model.OXYGEN, {
-                "type": 'OXYGEN'
-            }),
-            (Model.PLACE_CLOT, {
-                "time": 0.0
-            }),
-            (Model.BLOODFLOW, {}),
-            (Model.PERFUSION, {
-                "type": 'PERFUSION',
-                'evaluate_infarct_estimates': True
-            }),
-            (Model.OXYGEN, {
-                "type": 'OXYGEN'
-            }),
-            (Model.THROMBECTOMY, {}),
-            (Model.BLOODFLOW, {}),
-            (Model.PERFUSION, {
-                "type": 'PERFUSION'
-            }),
-            (Model.OXYGEN, {
-                "type": 'OXYGEN'
-            }),
-            (Model.PATIENT_OUTCOME, {}),
-        ]
+        # todo this can be changed by default dict..
+        for i, e in enumerate(Event):
+            if e == Event.BASELINE:
+                event = {'event': e.name.lower(), 'models': [
+                        {'label': Model.BLOODFLOW.name},
+                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION'},
+                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
+                ]}
 
-        # initialise events to empty list
-        self['models'] = []
+            if e == Event.STROKE:
+                event = {'event': e.name.lower(), 'models': [
+                        {'label': Model.PLACE_CLOT.name},
+                        {'label': Model.BLOODFLOW.name},
+                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION'},
+                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
+                ]}
 
-        # store length of pipeline
-        self['pipeline_length'] = len(models)
+            if e == Event.TREATMENT:
+                event = {'event': e.name.lower(), 'models': [
+                        {'label': Model.THROMBECTOMY.name},
+                        {'label': Model.BLOODFLOW.name},
+                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION',
+                'evaluate_infarct_estimates': True,
+                            },
+                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
+                        {'label': Model.PATIENT_OUTCOME.name},
+                ]}
 
-        # pipeline event is incremented based on the occured events
-        self['events'] = [event.name.lower() for event in Event]
-        event = Event.BASELINE
+            for model in event['models']:
+                model['label'] = model['label'].lower()
 
-        # build the list of events with settings
-        for i, (model, settings) in enumerate(models):
+            self['events'].append(event)
 
-            # change event to STROKE indicating that occlusion is present
-            if model == Model.PLACE_CLOT:
-                event = Event(event + 1)
-
-            # change event to TREATMENT indicating that treatment has started
-            if model == Model.THROMBECTOMY or model == Model.THROMBOLYSIS:
-                if event != Event.TREATMENT:
-                    event = Event(event + 1)
-
-            defaults = {
-                'model': model.value,
-                'id': i,
-                'status': False,
-                'event': event.value,
-            }
-
-            # append event and merge its defaults with specific settings
-            self['models'] += [{**defaults, **settings}]
+        ## store length of pipeline
+        self['pipeline_lenght'] = sum([len(e['models']) for e in self.events])
 
         return self
 
@@ -440,11 +436,6 @@ class Patient(dict):
                 return True
         return False
 
-    @property
-    def models(self):
-        """Returns a list of models of the current patient."""
-        return self.get('models', [])
-
     def status(self):
         """Returns a string indicating the model status: o: True, x: False."""
         status = ["o" if model['status'] else "x" for model in self.models]
@@ -453,9 +444,10 @@ class Patient(dict):
 
     def completed_model(self, model_id):
         """Marks the status of model with id = `model_id` to True."""
-        for model in self.models:
-            if model['id'] == model_id:
-                model['status'] = True
+        pass
+        #for model in self.models:
+        #    if model['id'] == model_id:
+        #        model['status'] = True
 
     @staticmethod
     def path_is_patient(path):
@@ -480,27 +472,28 @@ def dict_to_xml(config):
     # events. These are given as a list and require specific treament.
     for key, val in config.items():
 
-        # directly convert the key to XML element with text set to its value
-        if key != 'events':
-            el = ET.SubElement(patient, key)
-            el.text = str(val)
+        if key == 'models' or key == 'events':
             continue
 
+        # directly convert the key to XML element with text set to its value
+        el = ET.SubElement(patient, key)
+        el.text = str(val)
+
         # adds the <events> element
-        models = ET.SubElement(patient, key)
+        #models = ET.SubElement(patient, key)
 
-        # adds an <event> element for each event
-        for model in config['models']:
-            e = ET.SubElement(models, "model")
+        ## adds an <event> element for each event
+        #for model in [e['models'] for e in patient.events]:
+        #    e = ET.SubElement(models, "model")
 
-            # Each (key, value) of settings per event are now converted to
-            # attributes of the XML document. Note, "event" is converted into
-            # "name" to match the original format
-            for k, v in model.items():
-                if k == "model":
-                    e.set("name", str(v))
-                else:
-                    e.set(k, str(v))
+        #    # Each (key, value) of settings per event are now converted to
+        #    # attributes of the XML document. Note, "event" is converted into
+        #    # "name" to match the original format
+        #    for k, v in model.items():
+        #        if k == "model":
+        #            e.set("name", str(v))
+        #        else:
+        #            e.set(k, str(v))
 
     # return the full XML root
     return root

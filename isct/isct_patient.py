@@ -44,7 +44,7 @@ import yaml
 
 from .container import new_container
 from .isct_container import container as container_cmd
-from .patient import Patient
+from .patient import Patient, Model
 
 
 def patient_create(args):
@@ -170,14 +170,10 @@ def patient_run(argv):
 
     # run through all events
     for i, model in enumerate(patient.models):
-
-        # ensure we traverse events in the correct order
-        assert i == model['id']
-
         cmd = [
-            "container", "run", model['model'],
+            "container", "run", model['container'],
             str(patient.dir),
-            str(model['id'])
+            str(i),
         ]
 
         if dry_run:

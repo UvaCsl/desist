@@ -164,8 +164,8 @@ def run_container(args):
 
     # assert tag and event match: an event exists with the provided ID
     patient = Patient.from_yaml(p_dir)
-    msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
-    assert patient.match_tag_id(tag, event_id), msg
+    #msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
+    #assert patient.match_tag_id(tag, event_id), msg
 
     # bind the patient directory to the container
     c.bind_volume(patient.dir, "/patient")
