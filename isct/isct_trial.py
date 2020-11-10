@@ -245,7 +245,6 @@ def trial_create(args):
     # TODO: remove the XML export once transitioned to YAML
     for d in [d[0] for d in os.walk(path)][1:]:
         p = Patient.from_yaml(d)
-        p.create_default_files()
         p.update_defaults()
         p.to_yaml()
         p.to_xml()
