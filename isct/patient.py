@@ -43,11 +43,10 @@ class Event(enum.IntEnum):
         return event in Event.__members__.values()
 
 
-@enum.unique
 class Model(enum.Enum):
     BLOODFLOW = "1d-blood-flow"
     PERFUSION = "perfusion_and_tissue_damage"
-    OXYGEN = "oxygen"
+    OXYGEN = "perfusion_and_tissue_damage"
     TISSUE_DAMAGE = "tissue_damage"
     PLACE_CLOT = "place_clot"
     THROMBECTOMY = "thrombectomy"
@@ -374,34 +373,30 @@ class Patient(dict):
         models = [
             (Model.BLOODFLOW, {}),
             (Model.PERFUSION, {
-                "healthy": True
+                "type": 'PERFUSION'
             }),
-            # TODO: replace!
-            # (Model.CELL_DEATH, {
-            #     "read_init": 0,
-            #     "time_start": -60.0,
-            #     "time_end": 0.0,
-            # }),
+            (Model.OXYGEN, {
+                "type": 'OXYGEN'
+            }),
             (Model.PLACE_CLOT, {
                 "time": 0.0
             }),
             (Model.BLOODFLOW, {}),
-            (Model.PERFUSION, {}),
-            # TODO: replace!
-            # (Model.CELL_DEATH, {
-            #     "read_init": 1,
-            #     "time_start": 0.0,
-            #     "time_end": onset_to_er,
-            # }),
+            (Model.PERFUSION, {
+                "type": 'PERFUSION',
+                'evaluate_infarct_estimates': True
+            }),
+            (Model.OXYGEN, {
+                "type": 'OXYGEN'
+            }),
             (Model.THROMBECTOMY, {}),
             (Model.BLOODFLOW, {}),
-            (Model.PERFUSION, {}),
-            # TODO: replace!
-            # (Model.CELL_DEATH, {
-            #     "read_init": 2,
-            #     "time_start": onset_to_er,
-            #     "time_end": onset_to_er + er_to_puncture,
-            # }),
+            (Model.PERFUSION, {
+                "type": 'PERFUSION'
+            }),
+            (Model.OXYGEN, {
+                "type": 'OXYGEN'
+            }),
             (Model.PATIENT_OUTCOME, {}),
         ]
 
