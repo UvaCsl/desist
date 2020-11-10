@@ -310,11 +310,11 @@ class Patient(dict):
 
         # integer to string mapping for occlusion segment
         occl_segment_map = {
-            0: 'M3',
-            1: 'IICA',
-            2: 'ICAT',
-            3: 'M1',
-            4: 'M2',
+            0: 'M2',
+            1: 'IICA', # L/R
+            2: 'ICAT', # L/R
+            3: 'M1', # L/R
+            4: 'M2', # 4 locations (2 defs + L/R) - just pick randomly
         }
 
         left_or_right = "R"
