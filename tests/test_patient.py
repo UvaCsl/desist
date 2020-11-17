@@ -122,38 +122,49 @@ def test_patient_set_defaults_return_self(tmp_path):
 
 def test_patient_empty_events(tmp_path):
     patient = Patient(tmp_path)
-    assert patient.models == []
+    assert list(patient.models) == []
 
 def test_patient_add_events(tmp_path):
     patient = Patient(tmp_path)
     patient.set_models()
 
-    assert isinstance(patient['models'], list)
+    assert isinstance(patient['events'], list)
     assert isinstance(patient['pipeline_length'], int)
-    assert len(patient.models) > 0
-    assert len(patient.models) == patient['pipeline_length']
+    assert len(list(patient.models)) > 0
+    assert len(list(patient.models)) == patient['pipeline_length']
 
     # assert defaults are present
-    for model in patient.models:
-        for required_key in ['model', 'id', 'status', 'event']:
+    for mid, model in enumerate(patient.models):
+        for required_key in ['event', 'event_id']:
             assert required_key in model
+        assert model == patient.get_model(mid)
+        assert patient.event(mid) == model['event']
+        assert patient.event_id(mid) == model['event_id']
+
+    assert patient.event(-1) == ''
+    assert patient.event_id(-1) == 0
+    assert patient.event_from_id(0) == patient.event(0)
+    assert patient.event_from_id(0) == patient.event(1)
+    assert patient.event_from_id(0) != patient.event(5)
+
 
 def test_patient_events_equal(tmp_path):
     patient = Patient(tmp_path)
     ref = patient.set_models()
     assert ref == patient # returns ref of itself
-    assert patient.models == patient['models'] # equal to dict
+    for mid, model in enumerate(patient.models):
+        assert model == patient.get_model(mid)
 
 def test_patient_not_overwrite_existing_events(tmp_path):
+    # it shoult not be OK for valid values
     patient = Patient(tmp_path)
-    patient['models'] = ['something']
-
+    events = [{'event': 't', 'models': [{'test': 'a'}]}]
+    patient['events'] = events
     with pytest.raises(AssertionError):
         patient.set_models()
-    assert patient.models == ['something']
 
+    # but it should be fine with overwrite
     patient.set_models(overwrite=True)
-    assert patient.models != []
 
 def test_convert_config_yaml_to_xml(tmp_path):
     """Weakly test the conversion of YAML format towards XML."""
@@ -172,7 +183,7 @@ def test_convert_config_yaml_to_xml(tmp_path):
 
     # check some contents of the <Patient>
     vp = vp[0]
-    for k in ['id', 'models', 'random_seed', 'HeartRate']:
+    for k in ['id', 'random_seed', 'HeartRate']:
         element = vp.findall(k)
         assert element is not None
         assert len(element) == 1
@@ -182,14 +193,14 @@ def test_patient_status_string(tmp_path):
     patient.set_models()
 
     status = patient.status()
-    assert len(status.split()) == len(patient.models) + 2 # +2 for the braces
+    assert len(status.split()) == len(list(patient.models)) + 2 # +2 for the braces
 
     # only "x" after initialise
     for flag in status.split()[1:-1]:
         assert flag == "x"
 
     # assert we obtain 'o' for a passed event
-    patient['models'][0]['status'] = True
+    patient['completed'] = 0
     status = patient.status()
     assert status.split()[1] == "o"
 
@@ -210,15 +221,14 @@ def test_patient_completed_event(tmp_path):
 
     # mark one complete
     patient.completed_model(0)
-    assert patient['models'][0]['status']
+    assert patient['completed'] == 0
 
     # mark all complete
-    for model in patient.models:
-        patient.completed_model(model['id'])
+    for mid, _ in enumerate(patient.models):
+        patient.completed_model(mid)
 
     # verify all are complete
-    for model in patient.models:
-        assert model['status']
+    assert patient['completed'] == len(list(patient.models)) - 1
 
 # example config
 document = """
@@ -343,6 +353,8 @@ def test_patient_default_clot_file(tmp_path):
 ])
 def test_event_enum_from_string(enum, label):
     assert Model.from_str(label) == enum
+    if enum:
+        assert Model.from_name(enum.name) == enum
 
 @pytest.mark.parametrize("enums, labels, valid", [
     ([Model.BLOODFLOW], "1d-blood-flow", True),

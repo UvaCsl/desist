@@ -118,3 +118,6 @@ def test_patient_reset(trial_directory):
 
     for patient in patients_from_trial(path):
         assert not patient.terminated
+
+    with pytest.raises(SystemExit):
+        patient_cmd(f"patient reset '/not/existing/path'".split())

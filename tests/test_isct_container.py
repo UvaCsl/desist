@@ -112,7 +112,9 @@ def test_run_container_valid_path(trial_directory, mocker):
         container(f"container run tag {patient} 1 -x".split())
 
     # mock tag exists
-    config = {'models': [{'model': "tag", 'id': 1}]}
+    config = {'labels': {'no-tag': 'no-tag', 'tag': 'tag'}, 'events': [
+            {'event': 'baseline',
+            'models': [{'label': 'no-tag'}, {'label': 'tag'}]}]}
     with open(patient.joinpath("patient.yml"), "w") as configfile:
         yaml.dump(config, configfile)
 
@@ -133,15 +135,15 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
     mocker.patch('subprocess.Popen', return_value=newpopen())
 
     # run the first dummy event (note: subprocess.run mocks the docker call)
-    event = patient.models[0]
-    container(f"container run {event['model']} {patient.dir} {event['id']}".split())
+    event = next(patient.models)
+    container(f"container run {event['container']} {patient.dir} 0".split())
 
     # make sure patient config still exist
     assert Patient.path_is_patient(patient.dir)
 
     # ensure the first status is now set to true
     patient = Patient.from_yaml(patient.dir)
-    assert patient.models[0]['status']
+    assert patient['completed'] == 0
 
 @pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
@@ -157,9 +159,12 @@ def test_terminate_failed_container(mock_which, mock_run,
 
     # assert patient terminate=True on non-zero exit code
     mocker.patch('subprocess.Popen', return_value=newpopen(returncode=1))
-    event = patient.models[0]
-    container(f"container run {event['model']} {patient.dir} {event['id']}".split())
+    event = next(patient.models)
+    container(f"container run {event['container']} {patient.dir} 0".split())
 
     patient = Patient.from_yaml(patient.dir)
     assert patient.terminated
-    assert not patient.models[0]['status']
+    assert patient['completed'] < 0
+
+    # assert container can run; no failer after marked failed
+    container(f"container run {event['container']} {patient.dir} 0".split())

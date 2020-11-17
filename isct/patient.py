@@ -354,18 +354,54 @@ class Patient(dict):
             clot = ",".join([str(d[1]) for d in data])
             outfile.write(clot)
 
+    def event(self, model_id):
+        """The event corresponding to the ith model (model_id)."""
+        model = self.get_model(model_id)
+        if model is None:
+            return ''
+        return model['event']
+
+    def event_id(self, model_id):
+        """The ID of the current event."""
+        model = self.get_model(model_id)
+        if model is None:
+            return 0
+        return model['event_id']
+
+    def event_from_id(self, event_id):
+        """The event corresponding to the ith event (event_id)."""
+        event = next(x for i, x in enumerate(self.events) if i == event_id)
+        return event['event']
+
     @property
     def events(self):
+        """Generator for all events present in the configuration."""
         for event in self.get('events', []):
             yield event
 
     @property
     def models(self):
-        assert 'labels' in self
-        labels = self['labels']
-        for event in self.events:
+        """Generator for all models present in the configuration.
+
+        This injects the corresponding event's `event`, `event_id` keys into
+        the current model. This simplifies accessing these properties in
+        subclass implementations. Also, when a list of `labels` is present
+        in the patient configruation (these map the model names towards
+        corresponding container labels/tags), the mapping is evaluate and added
+        to the model dictionary under the `container` key.
+        """
+        labels = self.get('labels', None)
+        for i, event in enumerate(self.events):
             for model in event['models']:
-                yield {**model, **{'container': labels[model['label']]}}
+                augment = {'event': event['event'], 'event_id': i}
+                if labels:
+                    augment['container'] = labels[model['label']]
+                yield {**model, **augment}
+
+    def get_model(self, model_id):
+        """Dictionary of the model with ID `model_id`."""
+        return next((x for i, x in enumerate(self.models) if i == model_id),
+                    None)
 
     def set_models(self, overwrite=False):
         """Add list of events to a patient configuration.
@@ -385,69 +421,123 @@ class Patient(dict):
         """
 
         # do not modify the already existing events
-        #if len(self.models) > 0:
-        #    msg = f"Models already exist, while overwrite is {overwrite}"
-        #    assert overwrite, msg
+        if len(list(self.models)) > 0:
+            msg = f"Models already exist, while overwrite is {overwrite}"
+            assert overwrite, msg
 
         self['labels'] = {m.name.lower(): m.value for m in Model}
         self['events'] = []
+        self['completed'] = -1
 
         # todo this can be changed by default dict..
         for i, e in enumerate(Event):
             if e == Event.BASELINE:
-                event = {'event': e.name.lower(), 'models': [
-                        {'label': Model.BLOODFLOW.name},
-                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION'},
-                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
-                ]}
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION'
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                    ]
+                }
 
             if e == Event.STROKE:
-                event = {'event': e.name.lower(), 'models': [
-                        {'label': Model.PLACE_CLOT.name},
-                        {'label': Model.BLOODFLOW.name},
-                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION'},
-                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
-                ]}
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.PLACE_CLOT.name
+                        },
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION'
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                    ]
+                }
 
             if e == Event.TREATMENT:
-                event = {'event': e.name.lower(), 'models': [
-                        {'label': Model.THROMBECTOMY.name},
-                        {'label': Model.BLOODFLOW.name},
-                        {'label': Model.PERFUSION.name, 'type': 'PERFUSION',
-                'evaluate_infarct_estimates': True,
-                            },
-                        {'label': Model.OXYGEN.name, 'type': 'OXYGEN'},
-                        {'label': Model.PATIENT_OUTCOME.name},
-                ]}
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.THROMBECTOMY.name
+                        },
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION',
+                            'evaluate_infarct_estimates': True,
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                        {
+                            'label': Model.PATIENT_OUTCOME.name
+                        },
+                    ]
+                }
 
             for model in event['models']:
                 model['label'] = model['label'].lower()
 
             self['events'].append(event)
 
-        ## store length of pipeline
-        self['pipeline_lenght'] = sum([len(e['models']) for e in self.events])
+        # store length of pipeline
+        self['pipeline_length'] = sum([len(e['models']) for e in self.events])
 
         return self
 
     def match_tag_id(self, tag, model_id):
-        for model in self.models:
-            if model['model'] == tag and model['id'] == model_id:
+        for mid, model in enumerate(self.models):
+            if model.get('container', '') == tag and mid == model_id:
                 return True
         return False
 
     def status(self):
         """Returns a string indicating the model status: o: True, x: False."""
-        status = ["o" if model['status'] else "x" for model in self.models]
+        if self['completed'] < 0:
+            status = ["x" for model in self.models]
+            status = " ".join(status)
+            return f" [ {status} ]"
+
+        status = []
+        for mid, _ in enumerate(self.models):
+            if mid > self['completed']:
+                mark = "x"
+            else:
+                mark = "o"
+            status.append(mark)
+
         status = " ".join(status)
         return f" [ {status} ]"
 
     def completed_model(self, model_id):
         """Marks the status of model with id = `model_id` to True."""
-        pass
-        #for model in self.models:
-        #    if model['id'] == model_id:
-        #        model['status'] = True
+        for mid, model in enumerate(self.models):
+            if mid == model_id:
+                self['completed'] = mid
+                return
 
     @staticmethod
     def path_is_patient(path):
@@ -479,21 +569,4 @@ def dict_to_xml(config):
         el = ET.SubElement(patient, key)
         el.text = str(val)
 
-        # adds the <events> element
-        #models = ET.SubElement(patient, key)
-
-        ## adds an <event> element for each event
-        #for model in [e['models'] for e in patient.events]:
-        #    e = ET.SubElement(models, "model")
-
-        #    # Each (key, value) of settings per event are now converted to
-        #    # attributes of the XML document. Note, "event" is converted into
-        #    # "name" to match the original format
-        #    for k, v in model.items():
-        #        if k == "model":
-        #            e.set("name", str(v))
-        #        else:
-        #            e.set(k, str(v))
-
-    # return the full XML root
     return root

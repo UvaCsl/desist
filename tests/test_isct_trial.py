@@ -168,7 +168,7 @@ def test_trial_run(trial_directory, mocker):
     mocker.patch("shutil.which", return_value="/mocker/bin/docker")
 
     # just a dry run, mock the docker executable path
-    trial(f"trial run {path} -x".split())
+    trial(f"trial run {path} -x --root".split())
 
     # run dry run with --gnu-parallel
     trial(f"trial run {path} -x --gnu-parallel".split())
@@ -280,3 +280,6 @@ def test_trial_reset(trial_directory):
 
     for patient in patients_from_trial(path):
         assert not patient.terminated
+
+    with pytest.raises(SystemExit):
+        trial(f"trial reset '/none/existing/path'")
