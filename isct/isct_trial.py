@@ -1,6 +1,6 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [--criteria=FILE] [-n=NUM] [-fv] 
+  isct trial create TRIAL [--prefix=PATIENT] [--criteria=FILE] [-n=NUM] [-fv]
                           [--seed=SEED] [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
@@ -19,10 +19,9 @@ Options:
     -h, --help              Shows the usage of `isct trial`.
     --version               Shows the version number.
     --prefix=PATIENT        Prefix for patient directory [default: patient].
-    --criteria=FILE         YAML file defining the inclusion criteria for the trial. 
-                            If this includes random_seed and/or sample_size these 
-                            will override the --seed and --n arguments to this 
-                            command.
+    --criteria=FILE         YAML file defining inclusion criteria. These will
+                            overwrite any values specified by `--seed` and
+                            `-n` for the random seed and number of patients.
     -n=NUM                  The number of patients to generate [default: 1].
     -f                      Force overwrite existing trial directory.
     -v                      Set verbose output.
@@ -161,6 +160,8 @@ def trial_create(args):
         schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
         '--root':
         schema.Use(bool),
+        '--criteria':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isfile)),
         str:
         object,  # all other inputs don't matter
     })
@@ -202,17 +203,14 @@ def trial_create(args):
 
     # populate configuration file
     config = create_trial_config(path, prefix, num_patients, seed)
-    
-    # Load inclusion criteria if provided
-    criteriafile = args['--criteria']
-    if criteriafile is not None:
-        if not os.path.isfile(criteriafile):
-            sys.exit(f"No trial criteria is found in '{path}'")
-        with open(criteriafile, "r") as infile:
-            criteria = yaml.load(infile, yaml.SafeLoader)
-        config = {**config,**criteria}
-        num_patients = config['sample_size']
 
+    # Load inclusion criteria if provided and update duplicate variables
+    criteria = utilities.read_yaml(args['--criteria'])
+    config = {**config, **criteria}
+
+    # sample size and random seed can be present in the criteria files
+    num_patients = config.get('sample_size', num_patients)
+    seed = config.get('random_seed', seed)
 
     # dump trial configuration to disk
     with open(path.joinpath("trial.yml"), "w") as outfile:

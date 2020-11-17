@@ -1,13 +1,17 @@
-import pytest
-import os
-import shutil
 from importlib import util as importlib_util
+import docopt
+import os
+import pathlib
+import pytest
+import shutil
+import yaml
 
 from mock import patch
 
 from isct.patient import Patient, patients_from_trial
 from isct.isct_trial import trial, create_trial_config
 from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
+from isct.utilities import read_yaml
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -40,6 +44,30 @@ def test_create_trial_configuration(trial_directory):
 
     yml = path.joinpath("trial.yml")
     assert os.path.isfile(yml)
+
+def test_create_trial_with_criteria(tmp_path, trial_directory):
+    path = trial_directory
+
+    # fail on no path
+    with pytest.raises(docopt.DocoptExit):
+        trial(f"trial create {path} --criteria".split())
+
+    # fail on missing path
+    yml_path = pathlib.Path(tmp_path).joinpath('c.yml')
+    with pytest.raises(SystemExit):
+        trial(f"trial create {path} --criteria {yml_path}".split())
+
+    sample_size, random_seed = 10, 100
+
+    d = {'sample_size': sample_size, 'random_seed': random_seed}
+
+    with open(yml_path, 'w') as criteria_file:
+        yaml.dump(d, criteria_file)
+
+    trial(f"trial create {path} --criteria {yml_path}".split())
+    trial_config = read_yaml(path.joinpath('trial.yml'))
+    assert trial_config['sample_size'] == sample_size
+    assert trial_config['random_seed'] == random_seed
 
 def test_create_trial_configuration_no_docker(trial_directory, mocker):
     path = trial_directory

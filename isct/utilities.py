@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import yaml
 
 
 @enum.unique
@@ -195,3 +196,20 @@ def command_succeeds(cmd, logger=logging, shell=False, dry_run=False):
         return False
 
     return True
+
+
+def read_yaml(path):
+    """Read the yaml configuration from the provided path.
+
+    Returns empty dict for `None` or non-existing paths.
+    """
+    if path is None:
+        return {}
+
+    path = pathlib.Path(path)
+    if not path.is_file():
+        return {}
+
+    with open(path) as config_file:
+        config = yaml.load(config_file, yaml.SafeLoader)
+    return config

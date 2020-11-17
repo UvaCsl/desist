@@ -1,13 +1,14 @@
-import pytest
-import pathlib
-import os
-import subprocess
 import logging
+import os
+import pathlib
+import pytest
+import subprocess
+import yaml
 
 from mock import patch, MagicMock
 
 from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
-from isct.utilities import OS, run_and_stream, command_succeeds
+from isct.utilities import OS, run_and_stream, command_succeeds, read_yaml
 
 @pytest.fixture
 def log_subprocess_run(mocker):
@@ -87,3 +88,13 @@ def test_run_and_stream(cmd, flag):
 def test_command_succeeds(cmd, out):
     assert command_succeeds(cmd) == out
     assert command_succeeds(cmd, dry_run=True) == True
+
+def test_read_yaml(tmp_path):
+    p = pathlib.Path(tmp_path)
+    assert read_yaml(None) == {}
+    assert read_yaml(p.joinpath('does-not-exist.yml')) == {}
+    d = {'some': 'dict'}
+    yml_p = p.joinpath('test.yml')
+    with open(yml_p, 'w') as outfile:
+        yaml.dump(d, outfile)
+    assert read_yaml(yml_p) == d

@@ -244,8 +244,8 @@ class Patient(dict):
         if os.path.isdir(yaml_path):
             yaml_path = yaml_path.joinpath("patient.yml")
 
-        with open(yaml_path, "r") as configfile:
-            config = yaml.load(configfile, yaml.SafeLoader)
+        # extract configuration from file
+        config = utilities.read_yaml(yaml_path)
 
         # split filename from directories' path
         path, _ = os.path.split(os.path.normpath(yaml_path))
@@ -541,13 +541,11 @@ class Patient(dict):
 
     @staticmethod
     def path_is_patient(path):
-        """Returns true if the dictory contains a patient config file."""
-        path = pathlib.Path(path)
-        try:
-            Patient.from_yaml(path)
-            return True
-        except FileNotFoundError:
+        """True if the path contains a non-empty patient configuration file."""
+        path = pathlib.Path(path).joinpath("patient.yml")
+        if not path.is_file():
             return False
+        return utilities.read_yaml(path) != {}
 
 
 def dict_to_xml(config):
