@@ -6,10 +6,10 @@ with open("README.md", "r") as fh:
 setup(
         name="isct",
         version="0.0.1",
-        packages=find_packages('workflow'),
+        packages=find_packages('isct'),
         entry_points={
             'console_scripts': [
-                'isct = workflow.isct:main',
+                'isct = isct.isct:main',
             ],
         },
         install_requires=[

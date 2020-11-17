@@ -6,8 +6,8 @@ import logging
 
 from mock import patch, MagicMock
 
-from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
-from workflow.utilities import OS, run_and_stream, command_succeeds
+from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
+from isct.utilities import OS, run_and_stream, command_succeeds
 
 @pytest.fixture
 def log_subprocess_run(mocker):
@@ -18,7 +18,7 @@ def mock_check_output(mocker):
     mocker.patch('subprocess.check_output', return_value='string\n')
 
 def test_isct_module_path():
-    import workflow as wf
+    import isct as wf
     assert isct_module_path().samefile(os.path.split(wf.__file__)[0])
 
 @patch('subprocess.run',

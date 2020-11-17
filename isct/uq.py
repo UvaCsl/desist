@@ -5,7 +5,7 @@ import shutil
 
 from easyvvuq.encoders import BaseEncoder
 from easyvvuq.decoders import YAMLDecoder
-from workflow.patient import Patient
+from .patient import Patient
 
 
 class ISCTEncoder(BaseEncoder, encoder_name="ISCTEncoder"):

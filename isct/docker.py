@@ -3,8 +3,8 @@ import pathlib
 import subprocess
 import logging
 
-from workflow.container import Container, ContainerType
-import workflow.utilities as utilities
+from .container import Container, ContainerType
+import isct.utilities as utilities
 
 
 class Docker(Container):

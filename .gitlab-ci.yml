@@ -17,9 +17,9 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - python -m pip install --upgrade pip 
-  - pip install -r requirements.txt 
-  - pip install flake8 
+  - python -m pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install flake8
 
 stages:
   - build
@@ -39,12 +39,12 @@ test_isct:
     <<: *global_cache
     policy: pull
   script:
-    - pytest --cov=workflow
+    - pytest --cov=isct
 
 flake8_isct:
   stage: test
   cache:
     <<: *global_cache
     policy: pull
-  script: 
-    - flake8 workflow
+  script:
+    - flake8 isct

@@ -48,10 +48,10 @@ import subprocess
 import schema
 import logging
 
-from workflow.container import new_container
-import workflow.utilities as utilities
-from workflow.patient import Patient, patients_from_trial
-from workflow.isct_patient import patient as patient_cmd
+import isct.utilities as utilities
+from .container import new_container
+from .patient import Patient, patients_from_trial
+from .isct_patient import patient as patient_cmd
 
 
 def trail_plot(args):
@@ -111,7 +111,7 @@ def trail_plot(args):
         g.render(view=args['--show'])
 
 
-def create_trial_config(path, prefix, num_patients):
+def create_trial_config(path, prefix, num_patients, seed):
     """Initialise a dictionary as trial configuration."""
 
     # to easily get its absolute path
@@ -125,9 +125,10 @@ def create_trial_config(path, prefix, num_patients):
     return {
         'patients_directory': str(path.absolute()),
         'prefix': prefix,
-        'number': num_patients,
+        'sample_size': num_patients,
         'preprocessed': False,
         'git_sha': git_sha,
+        'random_seed': seed,
     }
 
 
@@ -196,7 +197,7 @@ def trial_create(args):
     os.makedirs(path, exist_ok=True)
 
     # populate configuration file
-    config = create_trial_config(path, prefix, num_patients)
+    config = create_trial_config(path, prefix, num_patients, seed)
 
     # dump trial configuration to disk
     with open(path.joinpath("trial.yml"), "w") as outfile:
@@ -235,7 +236,7 @@ def trial_create(args):
         sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
-    cmd = c.run_image(tag, " ".join(dirs))
+    cmd = c.run_image(tag, f"{' '.join(dirs)} --seed {seed}")
 
     # evaluate `virtual-patient-generation` model to fill config files
     utilities.run_and_stream(cmd, logging)
@@ -244,7 +245,6 @@ def trial_create(args):
     # TODO: remove the XML export once transitioned to YAML
     for d in [d[0] for d in os.walk(path)][1:]:
         p = Patient.from_yaml(d)
-        p.create_default_files()
         p.update_defaults()
         p.to_yaml()
         p.to_xml()

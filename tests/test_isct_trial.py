@@ -5,9 +5,9 @@ from importlib import util as importlib_util
 
 from mock import patch
 
-from workflow.patient import Patient, patients_from_trial
-from workflow.isct_trial import trial, create_trial_config
-from workflow.utilities import get_git_hash, isct_module_path, inner_tree, tree
+from isct.patient import Patient, patients_from_trial
+from isct.isct_trial import trial, create_trial_config
+from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
 
 @pytest.fixture()
 def trial_directory(tmp_path):
@@ -54,24 +54,26 @@ def test_create_trial_configuration_no_docker(trial_directory, mocker):
 def test_trial_add_event_configuration(trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
-    number = 1
     prefix = "patient"
+    sample_size = 1
+    seed = 1
 
-    config = create_trial_config(path, prefix, number)
+    config = create_trial_config(path, prefix, sample_size, seed)
 
-    assert config['number'] == number
+    assert config['sample_size'] == sample_size
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path.absolute())
     assert config['preprocessed'] == False
     assert config['git_sha'] == get_git_hash(isct_module_path())
 
-@patch('workflow.utilities.isct_module_path', return_value="/")
+@patch('isct.utilities.isct_module_path', return_value="/")
 def test_trial_add_event_congifuration_no_git(mock_isct_module_path, trial_directory):
     """Ensure create_config provides the expected defaults."""
     path = trial_directory
-    number = 1
+    sample_size = 1
+    seed = 1
     prefix = "patient"
-    config = create_trial_config(path, prefix, number)
+    config = create_trial_config(path, prefix, sample_size, seed)
     assert config['git_sha'] == "not_found"
 
 
@@ -99,7 +101,7 @@ def test_trial_patient_prefix(trial_directory, t_prefix, prefix):
     with open(yml, "r") as outfile:
         config = yaml.load(outfile, yaml.SafeLoader)
 
-    assert config['number'] == 1
+    assert config['sample_size'] == 1
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path)
     assert config['preprocessed'] == False
@@ -166,7 +168,7 @@ def test_trial_run(trial_directory, mocker):
     mocker.patch("shutil.which", return_value="/mocker/bin/docker")
 
     # just a dry run, mock the docker executable path
-    trial(f"trial run {path} -x".split())
+    trial(f"trial run {path} -x --root".split())
 
     # run dry run with --gnu-parallel
     trial(f"trial run {path} -x --gnu-parallel".split())
@@ -278,3 +280,6 @@ def test_trial_reset(trial_directory):
 
     for patient in patients_from_trial(path):
         assert not patient.terminated
+
+    with pytest.raises(SystemExit):
+        trial(f"trial reset '/none/existing/path'")

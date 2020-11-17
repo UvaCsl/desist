@@ -4,11 +4,11 @@ import pathlib
 
 from mock import patch
 
-from workflow.utilities import OS
-from workflow.container import new_container, Container
-from workflow.docker import Docker
-from workflow.singularity import Singularity
-from workflow.container import ContainerType
+from isct.utilities import OS
+from isct.container import new_container, Container
+from isct.docker import Docker
+from isct.singularity import Singularity
+from isct.container import ContainerType
 
 from tests.test_utilities import log_subprocess_run, mock_check_output
 
@@ -80,7 +80,7 @@ def test_container_detect_executable(container_type, mocker):
     assert new_container(container_type).executable_present() == True
     assert c.dry_run() == False
 
-@patch('workflow.container.Container.executable_present', return_value=False)
+@patch('isct.container.Container.executable_present', return_value=False)
 def test_container_dry_build_with_executable(mock_executable_present, mocker):
     # no executable, all should fail
     for os in [OS.MACOS, OS.LINUX]:
@@ -90,7 +90,7 @@ def test_container_dry_build_with_executable(mock_executable_present, mocker):
             assert c.dry_run() == True
             assert c.dry_build() == c.dry_run()
 
-@patch('workflow.container.Container.executable_present', return_value=True)
+@patch('isct.container.Container.executable_present', return_value=True)
 def test_container_dry_build_with_executable(mock_executable_present, mocker):
     # now we have an executable, on Linux all should run fine
     for c in [Docker(), Singularity()]:

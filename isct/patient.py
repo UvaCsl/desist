@@ -1,17 +1,18 @@
 import enum
 import os
 import pathlib
-import yaml
+import random
 import schema
+import yaml
 
-import workflow.utilities as utilities
+from . import utilities
 
 
 @enum.unique
-class State(enum.IntEnum):
-    """Enumerated type indicating the state of the trial.
+class Event(enum.IntEnum):
+    """Enumerated type indicating the event of the trial.
 
-    The state of the trial is used to determine the placement of output during
+    The event of the trial is used to determine the placement of output during
     the trial. The values of the enumerated type correspond to the relative
     directories inside the `/patient/` directory where the results will be
     stored.
@@ -22,31 +23,30 @@ class State(enum.IntEnum):
 
     @staticmethod
     def from_str(label):
-        for state in State:
-            if label.lower() == state.name.lower():
-                return state
+        for event in Event:
+            if label.lower() == event.name.lower():
+                return event
 
     @staticmethod
-    def validate_state(state):
-        if isinstance(state, str):
-            return State._validate_string(state)
-        if isinstance(state, int):
-            return State._validate_integer(state)
+    def validate_event(event):
+        if isinstance(event, str):
+            return Event._validate_string(event)
+        if isinstance(event, int):
+            return Event._validate_integer(event)
 
     @staticmethod
-    def _validate_string(state):
-        return State.from_str(state) is not None
+    def _validate_string(event):
+        return Event.from_str(event) is not None
 
     @staticmethod
-    def _validate_integer(state):
-        return state in State.__members__.values()
+    def _validate_integer(event):
+        return event in Event.__members__.values()
 
 
-@enum.unique
-class Event(enum.Enum):
+class Model(enum.Enum):
     BLOODFLOW = "1d-blood-flow"
     PERFUSION = "perfusion_and_tissue_damage"
-    OXYGEN = "oxygen"
+    OXYGEN = "perfusion_and_tissue_damage"
     TISSUE_DAMAGE = "tissue_damage"
     PLACE_CLOT = "place_clot"
     THROMBECTOMY = "thrombectomy"
@@ -55,18 +55,24 @@ class Event(enum.Enum):
 
     @staticmethod
     def from_str(label):
-        for event in Event:
-            if label == event.value:
-                return event
+        for model in Model:
+            if label == model.value:
+                return model
 
     @staticmethod
-    def parse_events(events):
-        return list(filter(Event.from_str, events))
+    def from_name(name):
+        for model in Model:
+            if name == model.name:
+                return model
 
     @staticmethod
-    def validate_events(events):
-        events = [events] if not isinstance(events, list) else events
-        return len(events) == len(Event.parse_events(events))
+    def parse_models(models):
+        return list(filter(Model.from_str, models))
+
+    @staticmethod
+    def validate_models(models):
+        models = [models] if not isinstance(models, list) else models
+        return len(models) == len(Model.parse_models(models))
 
 
 def patients_from_trial(trial):
@@ -140,9 +146,9 @@ class Patient(dict):
         """
 
         s = schema.Schema({
-            'events': [
+            'models': [
                 schema.And(
-                    lambda e: all([b in e for b in ["id", "event", "status"]]))
+                    lambda e: all([b in e for b in ["id", "model", "status"]]))
             ],
             'ASPECTS_BL':
             schema.And(float, lambda n: n > 0),
@@ -203,21 +209,21 @@ class Patient(dict):
             print(f"Validation failed with error `{e}`")
             return False
 
-        # parse event properties individually
+        # parse model properties individually
         s = schema.Schema({
             'id':
             schema.And(int, lambda n: n >= 0),
             'status':
             bool,
-            'event':
+            'model':
             schema.And(str, schema.Use(str.lower),
-                       lambda s: Event.validate_events(s)),
+                       lambda s: Model.validate_models(s)),
             schema.Optional(str):
             object,
         })
-        for event in dict(self)['events']:
+        for model in dict(self)['models']:
             try:
-                s.validate(event)
+                s.validate(model)
             except schema.SchemaError as e:
                 print(f"Validation failed with error `{e}`")
                 return False
@@ -309,17 +315,32 @@ class Patient(dict):
         """Initialises default files in patient directory."""
 
         # integer to string mapping for occlusion segment
-        occl_segment_map = {
-            0: 'M2',
-            1: 'IICA', # L/R
-            2: 'ICAT', # L/R
-            3: 'M1', # L/R
-            4: 'M2', # 4 locations (2 defs + L/R) - just pick randomly
+        occlusion_to_vessel = {
+            0: 'M2',  # originally M3, mapped to M2 for anatomy model
+            1: 'IICA',  # L/R
+            2: 'ICAT',  # L/R
+            3: 'M1',  # L/R
+            4: 'M2',  # 4 locations (2 defs + L/R) - just pick randomly
         }
 
-        left_or_right = "R"
-        segment = occl_segment_map[int(self.get('occlsegment_c_short', 0))]
-        vessel = f"{left_or_right}. {segment}"
+        # mapping from virtual patient model towards anatomy definition in
+        # one-dimensional blood flow analysis
+        # FIXME: mapping to be updated
+        vessel_to_anatomy = {
+            'M1': 'MCA',
+            'M2': 'MCA',
+            'IICA': 'MCA',
+            'ICAT': 'MCA',
+        }
+
+        # convert occlusion segment into blood-flow vessel name
+        occlusion_id = int(self.get('occlsegment_c_short', 0))
+        segment = vessel_to_anatomy[occlusion_to_vessel[occlusion_id]]
+
+        # left or right side: about 50/50 choice
+        # FIXME: to be updated with improved distributions
+        left_or_right = random.choice(("L", "R"))
+        vessel = f'"{left_or_right}. {segment}"'
 
         # `Clots.txt` layed out as list of tuples
         data = [("Vesselname", vessel), ("Clotlocation(mm)", 3),
@@ -333,111 +354,190 @@ class Patient(dict):
             clot = ",".join([str(d[1]) for d in data])
             outfile.write(clot)
 
-    def set_events(self, overwrite=False):
+    def event(self, model_id):
+        """The event corresponding to the ith model (model_id)."""
+        model = self.get_model(model_id)
+        if model is None:
+            return ''
+        return model['event']
+
+    def event_id(self, model_id):
+        """The ID of the current event."""
+        model = self.get_model(model_id)
+        if model is None:
+            return 0
+        return model['event_id']
+
+    def event_from_id(self, event_id):
+        """The event corresponding to the ith event (event_id)."""
+        event = next(x for i, x in enumerate(self.events) if i == event_id)
+        return event['event']
+
+    @property
+    def events(self):
+        """Generator for all events present in the configuration."""
+        for event in self.get('events', []):
+            yield event
+
+    @property
+    def models(self):
+        """Generator for all models present in the configuration.
+
+        This injects the corresponding event's `event`, `event_id` keys into
+        the current model. This simplifies accessing these properties in
+        subclass implementations. Also, when a list of `labels` is present
+        in the patient configruation (these map the model names towards
+        corresponding container labels/tags), the mapping is evaluate and added
+        to the model dictionary under the `container` key.
+        """
+        labels = self.get('labels', None)
+        for i, event in enumerate(self.events):
+            for model in event['models']:
+                augment = {'event': event['event'], 'event_id': i}
+                if labels:
+                    augment['container'] = labels[model['label']]
+                yield {**model, **augment}
+
+    def get_model(self, model_id):
+        """Dictionary of the model with ID `model_id`."""
+        return next((x for i, x in enumerate(self.models) if i == model_id),
+                    None)
+
+    def set_models(self, overwrite=False):
         """Add list of events to a patient configuration.
 
         Keyword arguments:
         overwrite: bool indicate to overwrite existing events or not.
+
+        TODO:
+        Extract timestamps of events, or assign defaults when not present.
+        These give the time between onset and arrival at ER `onset_to_er`
+        and the time from ER arrival to groin punction `er_iat_groin`. The
+        elapsed time after the complete procedure is the sum of both. The
+        `baseline` simulation is set at one hour (-60 min) in the timeline to
+        indicate it happens before the stroke event.
+        onset_to_er = self.get('dur_oer', 86.60659896539732)
+        er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
         """
 
         # do not modify the already existing events
-        if len(self.events()) > 0:
-            msg = f"Events already exist, while overwrite is {overwrite}"
+        if len(list(self.models)) > 0:
+            msg = f"Models already exist, while overwrite is {overwrite}"
             assert overwrite, msg
 
-        # Extract timestamps of events, or assign defaults when not present.
-        # These give the time between onset and arrival at ER `onset_to_er`
-        # and the time from ER arrival to groin punction `er_iat_groin`. The
-        # elapsed time after the complete procedure is the sum of both. The
-        # `baseline` simulation is set at one hour (-60 min) in the timeline to
-        # indicate it happens before the stroke event.
-        # onset_to_er = self.get('dur_oer', 86.60659896539732)
-        # er_to_puncture = self.get('er_iat_groin', 77.00683786676517)
-
-        # FIXME where to obtain default values?
-        events = [
-            (Event.BLOODFLOW, {}),
-            (Event.PERFUSION, {
-                "healthy": True
-            }),
-            # TODO: replace!
-            # (Event.CELL_DEATH, {
-            #     "read_init": 0,
-            #     "time_start": -60.0,
-            #     "time_end": 0.0,
-            # }),
-            (Event.PLACE_CLOT, {
-                "time": 0.0
-            }),
-            (Event.BLOODFLOW, {}),
-            (Event.PERFUSION, {}),
-            # TODO: replace!
-            # (Event.CELL_DEATH, {
-            #     "read_init": 1,
-            #     "time_start": 0.0,
-            #     "time_end": onset_to_er,
-            # }),
-            (Event.THROMBECTOMY, {}),
-            (Event.BLOODFLOW, {}),
-            (Event.PERFUSION, {}),
-            # TODO: replace!
-            # (Event.CELL_DEATH, {
-            #     "read_init": 2,
-            #     "time_start": onset_to_er,
-            #     "time_end": onset_to_er + er_to_puncture,
-            # }),
-            (Event.PATIENT_OUTCOME, {}),
-        ]
-
-        # initialise events to empty list
+        self['labels'] = {m.name.lower(): m.value for m in Model}
         self['events'] = []
+        self['completed'] = -1
+
+        # todo this can be changed by default dict..
+        for i, e in enumerate(Event):
+            if e == Event.BASELINE:
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION'
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                    ]
+                }
+
+            if e == Event.STROKE:
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.PLACE_CLOT.name
+                        },
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION'
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                    ]
+                }
+
+            if e == Event.TREATMENT:
+                event = {
+                    'event':
+                    e.name.lower(),
+                    'models': [
+                        {
+                            'label': Model.THROMBECTOMY.name
+                        },
+                        {
+                            'label': Model.BLOODFLOW.name
+                        },
+                        {
+                            'label': Model.PERFUSION.name,
+                            'type': 'PERFUSION',
+                            'evaluate_infarct_estimates': True,
+                        },
+                        {
+                            'label': Model.OXYGEN.name,
+                            'type': 'OXYGEN'
+                        },
+                        {
+                            'label': Model.PATIENT_OUTCOME.name
+                        },
+                    ]
+                }
+
+            for model in event['models']:
+                model['label'] = model['label'].lower()
+
+            self['events'].append(event)
 
         # store length of pipeline
-        self['pipeline_length'] = len(events)
-
-        # pipeline state is incremented based on the occured events
-        self['states'] = [state.name.lower() for state in State]
-        state = State.BASELINE
-
-        # build the list of events with settings
-        for i, (event, settings) in enumerate(events):
-
-            # change state to STROKE indicating that occlusion is present
-            if event == Event.PLACE_CLOT:
-                state = State(state + 1)
-
-            # change state to TREATMENT indicating that treatment has started
-            if event == Event.THROMBECTOMY or event == Event.THROMBOLYSIS:
-                if state != State.TREATMENT:
-                    state = State(state + 1)
-
-            defaults = {
-                'event': event.value,
-                'id': i,
-                'status': False,
-                'state': state.value,
-            }
-
-            # append event and merge its defaults with specific settings
-            self['events'] += [{**defaults, **settings}]
+        self['pipeline_length'] = sum([len(e['models']) for e in self.events])
 
         return self
 
-    def events(self):
-        """Returns a list of events of the current patient."""
-        return self.get('events', [])
+    def match_tag_id(self, tag, model_id):
+        for mid, model in enumerate(self.models):
+            if model.get('container', '') == tag and mid == model_id:
+                return True
+        return False
 
     def status(self):
-        """Returns a string indicating the event status: o: True, x: False."""
-        status = ["o" if event['status'] else "x" for event in self.events()]
+        """Returns a string indicating the model status: o: True, x: False."""
+        if self['completed'] < 0:
+            status = ["x" for model in self.models]
+            status = " ".join(status)
+            return f" [ {status} ]"
+
+        status = []
+        for mid, _ in enumerate(self.models):
+            if mid > self['completed']:
+                mark = "x"
+            else:
+                mark = "o"
+            status.append(mark)
+
         status = " ".join(status)
         return f" [ {status} ]"
 
-    def completed_event(self, event_id):
-        """Marks the status of event with id = `event_id` to True."""
-        for event in self.events():
-            if event['id'] == event_id:
-                event['status'] = True
+    def completed_model(self, model_id):
+        """Marks the status of model with id = `model_id` to True."""
+        for mid, model in enumerate(self.models):
+            if mid == model_id:
+                self['completed'] = mid
+                return
 
     @staticmethod
     def path_is_patient(path):
@@ -462,27 +562,11 @@ def dict_to_xml(config):
     # events. These are given as a list and require specific treament.
     for key, val in config.items():
 
-        # directly convert the key to XML element with text set to its value
-        if key != 'events':
-            el = ET.SubElement(patient, key)
-            el.text = str(val)
+        if key == 'models' or key == 'events':
             continue
 
-        # adds the <events> element
-        events = ET.SubElement(patient, key)
+        # directly convert the key to XML element with text set to its value
+        el = ET.SubElement(patient, key)
+        el.text = str(val)
 
-        # adds an <event> element for each event
-        for event in config['events']:
-            e = ET.SubElement(events, "event")
-
-            # Each (key, value) of settings per event are now converted to
-            # attributes of the XML document. Note, "event" is converted into
-            # "name" to match the original format
-            for k, v in event.items():
-                if k == "event":
-                    e.set("name", str(v))
-                else:
-                    e.set(k, str(v))
-
-    # return the full XML root
     return root

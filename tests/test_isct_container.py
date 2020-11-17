@@ -9,12 +9,12 @@ from subprocess import Popen
 
 from mock import patch, MagicMock
 
-from workflow.patient import Patient
-from workflow.isct_container import container
-from workflow.utilities import run_and_stream
+from isct.patient import Patient
+from isct.isct_container import container
+from isct.utilities import run_and_stream
 from tests.test_isct_trial import trial_directory
-from workflow.isct_container import form_container_command
-from workflow.isct_trial import trial as trial_cmd
+from isct.isct_container import form_container_command
+from isct.isct_trial import trial as trial_cmd
 from tests.test_utilities import log_subprocess_run, mock_check_output
 
 
@@ -112,7 +112,9 @@ def test_run_container_valid_path(trial_directory, mocker):
         container(f"container run tag {patient} 1 -x".split())
 
     # mock tag exists
-    config = {'events': [{'event': "tag", 'id': 1}]}
+    config = {'labels': {'no-tag': 'no-tag', 'tag': 'tag'}, 'events': [
+            {'event': 'baseline',
+            'models': [{'label': 'no-tag'}, {'label': 'tag'}]}]}
     with open(patient.joinpath("patient.yml"), "w") as configfile:
         yaml.dump(config, configfile)
 
@@ -126,22 +128,22 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
     os.makedirs(patient.dir)
-    patient.set_events()
+    patient.set_models()
     patient.to_yaml()
 
     # mock the subprocess popen by some dummy command
     mocker.patch('subprocess.Popen', return_value=newpopen())
 
     # run the first dummy event (note: subprocess.run mocks the docker call)
-    event = patient.events()[0]
-    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+    event = next(patient.models)
+    container(f"container run {event['container']} {patient.dir} 0".split())
 
     # make sure patient config still exist
     assert Patient.path_is_patient(patient.dir)
 
     # ensure the first status is now set to true
     patient = Patient.from_yaml(patient.dir)
-    assert patient.events()[0]['status']
+    assert patient['completed'] == 0
 
 @pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
@@ -152,14 +154,17 @@ def test_terminate_failed_container(mock_which, mock_run,
     path = trial_directory
     patient = Patient(path.joinpath("patient_000"))
     os.makedirs(patient.dir)
-    patient.set_events()
+    patient.set_models()
     patient.to_yaml()
 
     # assert patient terminate=True on non-zero exit code
     mocker.patch('subprocess.Popen', return_value=newpopen(returncode=1))
-    event = patient.events()[0]
-    container(f"container run {event['event']} {patient.dir} {event['id']}".split())
+    event = next(patient.models)
+    container(f"container run {event['container']} {patient.dir} 0".split())
 
     patient = Patient.from_yaml(patient.dir)
     assert patient.terminated
-    assert not patient.events()[0]['status']
+    assert patient['completed'] < 0
+
+    # assert container can run; no failer after marked failed
+    container(f"container run {event['container']} {patient.dir} 0".split())

@@ -29,12 +29,12 @@ import schema
 # Beforehand it is unkown which command is requested by the user. Therefore,
 # the command we should run is unknown when this module is called. To overcome
 # that, we dynamically load the module (which works as long as all the commands
-# adhere to `workflow.isct_<command>.py`) and request the corresponding
+# adhere to `isct.isct_<command>.py`) and request the corresponding
 # function name through `getattr`. Then, we simply invoke that script to
 # continue operation.
 def load_module(cmd):
     """Loads the module corresponding to `cmd`."""
-    module = importlib.import_module(f"workflow.isct_{cmd}")
+    module = importlib.import_module(f"isct.isct_{cmd}")
     return getattr(module, cmd)
 
 

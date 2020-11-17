@@ -5,8 +5,8 @@ import pytest
 
 from easyvvuq.decoders.yaml import YAMLDecoder
 from tests.test_isct_trial import trial_directory
-from workflow.patient import Patient
-from workflow.uq import ISCTDecoder
+from isct.patient import Patient
+from isct.uq import ISCTDecoder
 
 
 @pytest.mark.parametrize('dat', [{'scalar': 1}, {'vector': [1, 2, 3]}])
