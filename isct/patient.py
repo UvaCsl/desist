@@ -146,10 +146,10 @@ class Patient(dict):
         """
 
         s = schema.Schema({
-            'models': [
-                schema.And(
-                    lambda e: all([b in e for b in ["id", "model", "status"]]))
-            ],
+            'events':
+            [schema.And(lambda e: all([b in e for b in ["event", "models"]]))],
+            'labels':
+            schema.Or(None, dict),
             'ASPECTS_BL':
             schema.And(float, lambda n: n > 0),
             'DiastolePressure':
@@ -199,8 +199,8 @@ class Patient(dict):
             'sex_long':
             schema.And(str, schema.Use(str.lower), lambda s: s in
                        ('male', 'female')),
-            'status':
-            bool,
+            'completed':
+            schema.Or(None, int),
         })
 
         try:
@@ -211,17 +211,16 @@ class Patient(dict):
 
         # parse model properties individually
         s = schema.Schema({
-            'id':
-            schema.And(int, lambda n: n >= 0),
-            'status':
-            bool,
-            'model':
-            schema.And(str, schema.Use(str.lower),
-                       lambda s: Model.validate_models(s)),
+            'label':
+            schema.And(
+                str,
+                schema.Use(str.lower),
+                # convert string using the provided mapping in `labels`
+                lambda s: Model.validate_models(self['labels'][s])),
             schema.Optional(str):
             object,
         })
-        for model in dict(self)['models']:
+        for model in self.models:
             try:
                 s.validate(model)
             except schema.SchemaError as e:
@@ -427,7 +426,6 @@ class Patient(dict):
 
         self['labels'] = {m.name.lower(): m.value for m in Model}
         self['events'] = []
-        self['completed'] = -1
 
         # todo this can be changed by default dict..
         for i, e in enumerate(Event):
@@ -516,14 +514,14 @@ class Patient(dict):
 
     def status(self):
         """Returns a string indicating the model status: o: True, x: False."""
-        if self['completed'] < 0:
+        if self.completed < 0:
             status = ["x" for model in self.models]
             status = " ".join(status)
             return f" [ {status} ]"
 
         status = []
         for mid, _ in enumerate(self.models):
-            if mid > self['completed']:
+            if mid > self.completed:
                 mark = "x"
             else:
                 mark = "o"
@@ -531,6 +529,10 @@ class Patient(dict):
 
         status = " ".join(status)
         return f" [ {status} ]"
+
+    @property
+    def completed(self):
+        return self.get('completed', -1)
 
     def completed_model(self, model_id):
         """Marks the status of model with id = `model_id` to True."""

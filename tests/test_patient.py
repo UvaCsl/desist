@@ -221,14 +221,14 @@ def test_patient_completed_event(tmp_path):
 
     # mark one complete
     patient.completed_model(0)
-    assert patient['completed'] == 0
+    assert patient.completed == 0
 
     # mark all complete
     for mid, _ in enumerate(patient.models):
         patient.completed_model(mid)
 
     # verify all are complete
-    assert patient['completed'] == len(list(patient.models)) - 1
+    assert patient.completed == len(list(patient.models)) - 1
 
 # example config
 document = """
@@ -243,57 +243,40 @@ age: 81.38059637671113
 collaterals: 1.0
 dur_oer: 86.60659896539732
 er_iat_groin: 77.00683786676517
-models:
-- model: 1d-blood-flow
-  id: 0
-  status: false
-- model: perfusion_and_tissue_damage
-  healthy: true
-  id: 1
-  status: false
-- model: tissue_damage
-  id: 2
-  read_init: 0
-  state: 0
-  status: false
-  time_end: 0.0
-  time_start: -60.0
-- model: place_clot
-  id: 3
-  status: false
-  time: 0.0
-- model: 1d-blood-flow
-  id: 4
-  status: false
-- model: perfusion_and_tissue_damage
-  id: 5
-  status: false
-- model: tissue_damage
-  id: 6
-  read_init: 1
-  state: 1
-  status: false
-  time_end: 18622.47003804366
-  time_start: 0.0
-- model: thrombectomy
-  id: 7
-  status: false
-- model: 1d-blood-flow
-  id: 8
-  status: false
-- model: perfusion_and_tissue_damage
-  id: 9
-  status: false
-- model: tissue_damage
-  id: 10
-  read_init: 2
-  state: 2
-  status: false
-  time_end: 22222.47003804366
-  time_start: 18622.47003804366
-- model: patient-outcome-model
-  id: 11
-  status: false
+events:
+- event: baseline
+  models:
+  - label: bloodflow
+  - label: perfusion
+    type: PERFUSION
+  - label: perfusion
+    type: OXYGEN
+- event: stroke
+  models:
+  - label: place_clot
+  - label: bloodflow
+  - label: perfusion
+    type: PERFUSION
+  - label: perfusion
+    type: OXYGEN
+- event: treatment
+  models:
+  - label: thrombectomy
+  - label: bloodflow
+  - evaluate_infarct_estimates: true
+    label: perfusion
+    type: PERFUSION
+  - label: perfusion
+    type: OXYGEN
+  - label: patient_outcome
+labels:
+  bloodflow: 1d-blood-flow
+  patient_outcome: patient-outcome-model
+  perfusion: perfusion_and_tissue_damage
+  place_clot: place_clot
+  thrombectomy: thrombectomy
+  thrombolysis: thrombolysis
+  tissue_damage: tissue_damage
 git_sha: 90745bc25f537cc326958ac7279c865bd0d140bb
 id: 0
 name: Lucas Jacket
@@ -307,17 +290,13 @@ random_seed: 577090037
 rr_syst: 181.3978800889115
 sex: 1.0
 sex_long: male
-status: false
+completed: -1
 """
 
 def test_patient_validate_config(tmp_path):
     config = yaml.load(document, yaml.SafeLoader)
     patient = Patient(tmp_path, **config)
     assert patient.validate()
-
-    # with wrong event key values
-    patient['models'][0]['id'] = 'faulty_string'
-    assert not patient.validate()
 
     # without any keys
     patient = Patient(tmp_path)

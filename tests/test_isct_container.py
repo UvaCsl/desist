@@ -143,7 +143,7 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
 
     # ensure the first status is now set to true
     patient = Patient.from_yaml(patient.dir)
-    assert patient['completed'] == 0
+    assert patient.completed == 0
 
 @pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
@@ -164,7 +164,7 @@ def test_terminate_failed_container(mock_which, mock_run,
 
     patient = Patient.from_yaml(patient.dir)
     assert patient.terminated
-    assert patient['completed'] < 0
+    assert patient.completed < 0
 
     # assert container can run; no failer after marked failed
     container(f"container run {event['container']} {patient.dir} 0".split())
