@@ -2,13 +2,13 @@
 Usage:
     isct container build DIR... [-v] [-x] [--singularity=PATH] [--gnu-parallel]
                         [--root]
-    isct container run CONTAINER PATIENT ID [-v] [-x] [--singularity=PATH]
+    isct container run CONTAINER ID PATIENT... [-v] [-x] [--singularity=PATH]
                         [--root]
 
 Arguments:
     DIR             Directory of the container to construct.
     CONTAINER       Tag of the container to run.
-    PATIENT         Run the container for this patient directory.
+    PATIENT         Run the container for all patient directories.
     ID              The ID of the event to be evaluated.
     PATH            The path containing the singularity images.
 
@@ -125,8 +125,7 @@ def run_container(args):
     s = schema.Schema({
         'CONTAINER':
         schema.Use(str),
-        'PATIENT':
-        schema.And(schema.Use(str), os.path.isdir),
+        'PATIENT': [schema.And(schema.Use(str), os.path.exists)],
         'ID':
         schema.And(schema.Use(int), lambda n: n >= 0),
         '--singularity':
@@ -151,7 +150,7 @@ def run_container(args):
 
     # ensure the container exists
     tag = args['CONTAINER']
-    p_dir = args['PATIENT']
+    p_dirs = args['PATIENT']
     event_id = args['ID']
 
     # assert the considered container exists
@@ -163,40 +162,42 @@ def run_container(args):
         sys.exit(1)
 
     # assert tag and event match: an event exists with the provided ID
-    patient = Patient.from_yaml(p_dir)
-    msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
-    assert patient.match_tag_id(tag, event_id), msg
+    for p_dir in p_dirs:
+        patient = Patient.from_yaml(p_dir)
+        msg = f"No match found for tag: '{tag}' and id: '{event_id}'."
+        assert patient.match_tag_id(tag, event_id), msg
 
-    # bind the patient directory to the container
-    c.bind_volume(patient.dir, "/patient")
+        # bind the patient directory to the container
+        c.bind_volume(patient.dir, "/patient")
 
-    # construct the container command with the desired arguments
-    inp = f"event -p /patient/ -e {args['ID']}"
-    cmd = c.run_image(tag, inp)
+        # construct the container command with the desired arguments
+        inp = f"event -p /patient/ -e {args['ID']}"
+        cmd = c.run_image(tag, inp)
 
-    if patient.terminated:
-        logging.critical(
-            "Patient has been flagged as terminated due to previous errors.\n"
-            "Skipping container execution")
+        if patient.terminated:
+            logging.critical(
+                "Patient has been flagged as terminated due to errors.\n"
+                "Skipping container execution...")
 
-    if not dry_run and not patient.terminated:
+        if not dry_run and not patient.terminated:
 
-        # evaluate command and stream its output to the logger
-        returncode = utilities.run_and_stream(cmd, logging)
+            # evaluate command and stream its output to the logger
+            returncode = utilities.run_and_stream(cmd, logging)
 
-        # mark event as complete for successful evaluation
-        if returncode == 0:
-            patient.completed_model(event_id)
-        else:
-            logging.critical(f"Container failed with exit code '{returncode}'")
-            logging.critical("Flagging patient to be terminated...")
-            patient.terminate()
+            # mark event as complete for successful evaluation
+            if returncode == 0:
+                patient.completed_model(event_id)
+            else:
+                logging.critical(
+                    f"Container failed with exit code '{returncode}'")
+                logging.critical("Flagging patient to be terminated...")
+                patient.terminate()
 
-        # update config file on disk
-        patient.to_yaml()
+            # update config file on disk
+            patient.to_yaml()
 
-    # update file permissions
-    c.set_permissions(patient.dir, tag, dry_run)
+        # update file permissions
+        c.set_permissions(patient.dir, tag, dry_run)
 
 
 def container(argv=None):

@@ -83,12 +83,12 @@ def test_container_no_docker(tmp_path, mocker):
 
 def test_run_container_invalid_path(trial_directory):
     with pytest.raises(SystemExit):
-        container(f"container run tag {trial_directory} 1 -x".split())
+        container(f"container run tag 1 {trial_directory} -x".split())
 
 def test_run_container_exit_without_docker(tmp_path, mocker):
     mocker.patch('shutil.which', return_value=None)
     with pytest.raises(SystemExit):
-        container(f"container run tag {tmp_path} 1 -x".split())
+        container(f"container run tag 1 {tmp_path} -x".split())
 
 def test_run_missing_container_exit(trial_directory):
     path = trial_directory.joinpath("patient_000")
@@ -96,7 +96,7 @@ def test_run_missing_container_exit(trial_directory):
     p = Patient(path, **{"name": "name", "id": "id"})
     p.to_yaml()
     with pytest.raises(SystemExit):
-        container(f"container run tag {path} 1 -v".split())
+        container(f"container run tag 1 {path} -v".split())
 
 @pytest.mark.skipif(shutil.which('docker') is None, reason="no docker")
 def test_run_container_valid_path(trial_directory, mocker):
@@ -118,7 +118,7 @@ def test_run_container_valid_path(trial_directory, mocker):
     with open(patient.joinpath("patient.yml"), "w") as configfile:
         yaml.dump(config, configfile)
 
-    container(f"container run tag {patient} 1 -x".split())
+    container(f"container run tag 1 {patient} -x".split())
 
 @pytest.mark.usefixtures('mock_check_output')
 @patch('subprocess.run', return_value=True)
@@ -136,7 +136,7 @@ def test_run_container_marks_event_as_complete(mock_which, mock_run, trial_direc
 
     # run the first dummy event (note: subprocess.run mocks the docker call)
     event = next(patient.models)
-    container(f"container run {event['container']} {patient.dir} 0".split())
+    container(f"container run {event['container']} 0 {patient.dir}".split())
 
     # make sure patient config still exist
     assert Patient.path_is_patient(patient.dir)
@@ -160,11 +160,11 @@ def test_terminate_failed_container(mock_which, mock_run,
     # assert patient terminate=True on non-zero exit code
     mocker.patch('subprocess.Popen', return_value=newpopen(returncode=1))
     event = next(patient.models)
-    container(f"container run {event['container']} {patient.dir} 0".split())
+    container(f"container run {event['container']} 0 {patient.dir}".split())
 
     patient = Patient.from_yaml(patient.dir)
     assert patient.terminated
     assert patient.completed < 0
 
     # assert container can run; no failer after marked failed
-    container(f"container run {event['container']} {patient.dir} 0".split())
+    container(f"container run {event['container']} 0 {patient.dir}".split())
