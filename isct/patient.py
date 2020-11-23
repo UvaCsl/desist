@@ -508,7 +508,11 @@ class Patient(dict):
 
     def match_tag_id(self, tag, model_id):
         for mid, model in enumerate(self.models):
-            if model.get('container', '') == tag and mid == model_id:
+            container = model.get('container', '')
+            # underscores to hyphens overcomes inconsistent tag naming
+            container, tag = [s.replace('_', '-') for s in [container, tag]]
+
+            if container == tag and mid == model_id:
                 return True
         return False
 
