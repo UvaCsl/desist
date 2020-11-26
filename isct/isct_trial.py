@@ -3,6 +3,7 @@ Usage:
   isct trial create TRIAL [--prefix=PATIENT] [--criteria=FILE] [-n=NUM] [-fv]
                           [--seed=SEED] [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
+  isct trial append TRIAL NUM [-v] [--root] [--singularity=DIR]
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
   isct trial reset TRIAL
@@ -263,6 +264,107 @@ def trial_create(args):
         p.to_xml()
 
 
+def trial_append(args):
+    s = schema.Schema({
+        '-v':
+        bool,
+        'TRIAL':
+        schema.And(schema.Use(str), os.path.isdir),
+        'NUM':
+        schema.And(schema.Use(int), lambda i: i > 0),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
+        str:
+        object,
+    })
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # trial's path
+    path = pathlib.Path(args['TRIAL'])
+    increment = args['NUM']
+
+    if args['-v']:
+        # print all info levels for user
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
+
+    # load trial original configuration
+    trial_config = utilities.read_yaml(path.joinpath("trial.yml"))
+    assert trial_config != {}, "cannot append to empty trial configuration"
+
+    # keys that _must_ be present
+    for k in ['sample_size', 'random_seed']:
+        assert k in trial_config, f"missing essential key '{k}'"
+
+    # increment sample size and store to disk
+    old_sample_size = trial_config['sample_size']
+    trial_config['sample_size'] += increment
+
+    # NOTE: the `trial_config` is only updated on disk at the end of this
+    # function, as we need to ensure successful evaluation of the virtual
+    # patient generation before incrementing the actual sample size.
+
+    # call virtual patient generation to add additional patients
+    num_patients = trial_config['sample_size']
+    seed = trial_config['random_seed']
+
+    # create template patient configuration files for new patients
+    for i in range(old_sample_size, num_patients):
+        cmd = [
+            'patient', 'create',
+            str(path.absolute()), '--id',
+            str(i), '--seed',
+            str(seed), '--config-only'
+        ]
+        patient_cmd(cmd)
+
+    # directories to batch fill configuration files using virtual patient model
+    dirs = ["/patients/" + os.path.basename(d[0]) for d in os.walk(path)][1:]
+    dirs.sort()
+    dirs = dirs[old_sample_size:]
+
+    c = new_container(args['--singularity'], args['--root'])
+    tag = "virtual_patient_generation"
+
+    c.bind_volume(path.absolute(), "/patients/")
+
+    # log command to be executed
+    logging.info(f' + {" ".join(cmd)}')
+
+    # only call into the container when its executable is present on a system
+    if not c.executable_present():
+        logging.critical(f"Cannot reach {c.type}.")
+        return
+
+    # check if `virtual-patient-generation` image is available
+    if not c.image_exists(tag):
+        sys.exit(1)
+
+    # form command to evaluate `virtual-patient-generation`
+    cmd = c.run_image(
+        tag, f"{' '.join(dirs)} --sample-size {num_patients} --seed {seed}")
+
+    # evaluate `virtual-patient-generation` model to fill config files
+    utilities.run_and_stream(cmd, logging)
+
+    # only update the trial's yaml if successfully written new patients,
+    # otherwise it's sample size increases without new patients present
+    utilities.write_yaml(trial_config, path.joinpath("trial.yml"))
+
+    # Create auxilary files for each patient.
+    # TODO: remove the XML export once transitioned to YAML
+    for d in [d[0] for d in os.walk(path)][1:]:
+        p = Patient.from_yaml(d)
+        p.update_defaults()
+        p.to_yaml()
+        p.to_xml()
+
+
 def trial_run(args):
     # validate run arguments
     s = schema.Schema({
@@ -484,6 +586,9 @@ def trial(argv):
 
     if args['create']:
         return trial_create(args)
+
+    if args['append']:
+        return trial_append(args)
 
     if args['outcome']:
         return trial_outcome(args)

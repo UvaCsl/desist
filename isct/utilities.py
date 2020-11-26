@@ -210,6 +210,11 @@ def read_yaml(path):
     if not path.is_file():
         return {}
 
-    with open(path) as config_file:
+    with open(path, "r") as config_file:
         config = yaml.load(config_file, yaml.SafeLoader)
     return config
+
+
+def write_yaml(dictionary, path):
+    with open(path, "w") as outfile:
+        yaml.dump(dictionary, outfile)
