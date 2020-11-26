@@ -1,7 +1,8 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [--criteria=FILE] [-n=NUM] [-fv]
-                          [--seed=SEED] [--singularity=DIR] [--root]
+  isct trial create TRIAL [--prefix=PATIENT] [-fv]
+                          (--criteria=FILE | ([-n=NUM] [--seed=SEED]))
+                          [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
   isct trial append TRIAL NUM [-v] [--root] [--singularity=DIR]
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
@@ -20,9 +21,10 @@ Options:
     -h, --help              Shows the usage of `isct trial`.
     --version               Shows the version number.
     --prefix=PATIENT        Prefix for patient directory [default: patient].
-    --criteria=FILE         YAML file defining inclusion criteria. These will
-                            overwrite any values specified by `--seed` and
-                            `-n` for the random seed and number of patients.
+    --criteria=FILE         YAML file defining inclusion criteria. Note: the
+                            criteria file _cannot_ be combined with either
+                            the `-n` or `--seed` flags, as the values in the
+                            criteria file are assumed to be leading.
     -n=NUM                  The number of patients to generate [default: 1].
     -f                      Force overwrite existing trial directory.
     -v                      Set verbose output.
@@ -187,9 +189,6 @@ def trial_create(args):
     if prefix == "''":
         prefix = "patient"
 
-    num_patients = args['-n']
-    seed = args['--seed']
-
     # require explicit -f to overwrite existing directories
     if os.path.isdir(path) and not overwrite:
         print(f"Trial '{path}' already exist. Provide -f to overwrite")
@@ -202,19 +201,24 @@ def trial_create(args):
     # setup trial folder
     os.makedirs(path, exist_ok=True)
 
+    # Load inclusion criteria if provided and update duplicate variables
+    criteria = utilities.read_yaml(args['--criteria'])
+
+    # sample size and random seed are extracted from the criteria file
+    # if this file is not present sample size `-n` has to be present and
+    # the random seed is either picked from `--seed` or the default value
+    num_patients = criteria.get('sample_size', args['-n'])
+    seed = criteria.get('random_seed', args['--seed'])
+
     # populate configuration file
     config = create_trial_config(path, prefix, num_patients, seed)
 
-    # Load inclusion criteria if provided and update duplicate variables
-    criteria = utilities.read_yaml(args['--criteria'])
+    # merge trial configuration template with in/exclusion criteria
     config = {**config, **criteria}
 
-    # sample size and random seed can be present in the criteria files
-    num_patients = config.get('sample_size', num_patients)
-    seed = config.get('random_seed', seed)
-
     # dump trial configuration to disk
-    with open(path.joinpath("trial.yml"), "w") as outfile:
+    trial_config = path.joinpath("trial.yml")
+    with open(trial_config, "w") as outfile:
         yaml.dump(config, outfile)
 
     # create patients configuration files
