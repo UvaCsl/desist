@@ -87,7 +87,7 @@ def patient_create(args):
 
     # construct patient directory
     patient_prefix = trial_config['prefix']
-    patient_postfix = f"{patient_id:03}"
+    patient_postfix = f"{patient_id:04}"
 
     # initialise the Patient
     patient = Patient(path.joinpath(f"{patient_prefix}_{patient_postfix}"))
