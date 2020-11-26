@@ -229,6 +229,9 @@ def trial_create(args):
             str(i), '--seed',
             str(seed), '--config-only'
         ]
+
+        # log command and execute
+        logging.info(f' + {" ".join(cmd)}')
         patient_cmd(cmd)
 
     # batch generate all configuration files
@@ -241,9 +244,6 @@ def trial_create(args):
 
     c.bind_volume(path.absolute(), "/patients/")
 
-    # log command to be executed
-    logging.info(f' + {" ".join(cmd)}')
-
     # only call into the container when its executable is present on a system
     if not c.executable_present():
         logging.critical(f"Cannot reach {c.type}.")
@@ -254,7 +254,12 @@ def trial_create(args):
         sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
-    cmd = c.run_image(tag, f"{' '.join(dirs)} --seed {seed}")
+    cmd = f"{' '.join(dirs)} -v "
+    if args.get('--criteria', None):
+        cmd += f"--config {pathlib.Path('/patients/').joinpath('trial.yml')}"
+    else:
+        cmd += f"--sample-size {num_patients} --seed {seed}"
+    cmd = c.run_image(tag, cmd)
 
     # evaluate `virtual-patient-generation` model to fill config files
     utilities.run_and_stream(cmd, logging)
@@ -312,6 +317,8 @@ def trial_append(args):
     # NOTE: the `trial_config` is only updated on disk at the end of this
     # function, as we need to ensure successful evaluation of the virtual
     # patient generation before incrementing the actual sample size.
+    tmp_trial_config = path.joinpath("tmp_trial.yml")
+    utilities.write_yaml(trial_config, tmp_trial_config)
 
     # call virtual patient generation to add additional patients
     num_patients = trial_config['sample_size']
@@ -325,6 +332,9 @@ def trial_append(args):
             str(i), '--seed',
             str(seed), '--config-only'
         ]
+
+        # log and execute
+        logging.info(f' + {" ".join(cmd)}')
         patient_cmd(cmd)
 
     # directories to batch fill configuration files using virtual patient model
@@ -337,28 +347,27 @@ def trial_append(args):
 
     c.bind_volume(path.absolute(), "/patients/")
 
-    # log command to be executed
-    logging.info(f' + {" ".join(cmd)}')
-
     # only call into the container when its executable is present on a system
     if not c.executable_present():
+        os.remove(str(tmp_trial_config))
         logging.critical(f"Cannot reach {c.type}.")
         return
 
     # check if `virtual-patient-generation` image is available
     if not c.image_exists(tag):
+        os.remove(str(tmp_trial_config))
         sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
-    cmd = c.run_image(
-        tag, f"{' '.join(dirs)} --sample-size {num_patients} --seed {seed}")
+    tmp_path = pathlib.Path('/patients/').joinpath('tmp_trial.yml')
+    cmd = c.run_image(tag, f"{' '.join(dirs)} -v --config {tmp_path}")
 
     # evaluate `virtual-patient-generation` model to fill config files
     utilities.run_and_stream(cmd, logging)
 
-    # only update the trial's yaml if successfully written new patients,
+    # only overwrite the trial's yaml if successfully written new patients,
     # otherwise it's sample size increases without new patients present
-    utilities.write_yaml(trial_config, path.joinpath("trial.yml"))
+    os.rename(str(tmp_trial_config), str(path.joinpath("trial.yml")))
 
     # Create auxilary files for each patient.
     # TODO: remove the XML export once transitioned to YAML

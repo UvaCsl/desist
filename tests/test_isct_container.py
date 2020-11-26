@@ -1,6 +1,5 @@
-import docopt
 import pytest
-import schema
+import shutil
 import subprocess
 import os
 import yaml
@@ -99,22 +98,23 @@ def test_run_missing_container_exit(trial_directory):
     with pytest.raises(SystemExit):
         container(f"container run tag {path} 1 -v".split())
 
+@pytest.mark.skipif(shutil.which('docker') is None, reason="no docker")
 def test_run_container_valid_path(trial_directory, mocker):
     # create config file
     path = trial_directory
     trial_cmd(f"trial create {path} -n 1".split())
-    patient = path.joinpath("patient_000")
+    patient = path.joinpath("patient_0000")
+    assert patient.exists()
 
-    mocker.patch("shutil.which", return_value="/mocker/bin/docker")
-
-    # exit if tag does not exit
-    with pytest.raises(AssertionError):
+    # `SystemExit` when no docker
+    # `AssertionError` if docker, but then tag is missing
+    with pytest.raises((SystemExit, AssertionError)):
         container(f"container run tag {patient} 1 -x".split())
 
     # mock tag exists
     config = {'labels': {'no-tag': 'no-tag', 'tag': 'tag'}, 'events': [
             {'event': 'baseline',
-            'models': [{'label': 'no-tag'}, {'label': 'tag'}]}]}
+             'models': [{'label': 'no-tag'}, {'label': 'tag'}]}]}
     with open(patient.joinpath("patient.yml"), "w") as configfile:
         yaml.dump(config, configfile)
 

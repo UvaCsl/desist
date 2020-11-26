@@ -335,6 +335,7 @@ def test_trial_reset(trial_directory):
         trial(f"trial reset '/none/existing/path'")
 
 
+@pytest.mark.skipif(shutil.which('docker') is None, reason="no docker")
 def test_trial_append(tmp_path, trial_directory):
     path = trial_directory
 
