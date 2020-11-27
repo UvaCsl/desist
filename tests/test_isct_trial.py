@@ -142,7 +142,7 @@ def test_trial_patient_prefix(trial_directory, t_prefix, prefix):
     assert config['sample_size'] == 1
     assert config['prefix'] == prefix
     assert config['patients_directory'] == str(path)
-    assert config['preprocessed'] == False
+    assert not config['preprocessed']
 
 
 @pytest.mark.parametrize("t_n, n", [("1", 1), ("5", 5), ("", SystemExit)])
