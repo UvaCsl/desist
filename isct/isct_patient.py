@@ -174,8 +174,8 @@ def patient_run(argv):
             "container",
             "run",
             model['container'],
-            str(patient.dir),
             str(i),
+            str(patient.dir),
         ]
 
         if dry_run:
