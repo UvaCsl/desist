@@ -1,8 +1,10 @@
 """
 Usage:
-  isct trial create TRIAL [--prefix=PATIENT] [--criteria=FILE] [-n=NUM] [-fv]
-                          [--seed=SEED] [--singularity=DIR] [--root]
+  isct trial create TRIAL [--prefix=PATIENT] [-fv]
+                          (--criteria=FILE | ([-n=NUM] [--seed=SEED]))
+                          [--singularity=DIR] [--root]
   isct trial ls TRIAL [-r | --recurse]
+  isct trial append TRIAL NUM [-v] [--root] [--singularity=DIR]
   isct trial outcome TRIAL [-xv] [--singularity=DIR] [--root]
   isct trial plot TRIAL [--show]
   isct trial reset TRIAL
@@ -19,9 +21,10 @@ Options:
     -h, --help              Shows the usage of `isct trial`.
     --version               Shows the version number.
     --prefix=PATIENT        Prefix for patient directory [default: patient].
-    --criteria=FILE         YAML file defining inclusion criteria. These will
-                            overwrite any values specified by `--seed` and
-                            `-n` for the random seed and number of patients.
+    --criteria=FILE         YAML file defining inclusion criteria. Note: the
+                            criteria file _cannot_ be combined with either
+                            the `-n` or `--seed` flags, as the values in the
+                            criteria file are assumed to be leading.
     -n=NUM                  The number of patients to generate [default: 1].
     -f                      Force overwrite existing trial directory.
     -v                      Set verbose output.
@@ -135,10 +138,6 @@ def create_trial_config(path, prefix, num_patients, seed):
     }
 
 
-def add_events(patient):
-    """Add list of events to a patient configuration file."""
-
-
 def trial_create(args):
     # schema for argument validation
     s = schema.Schema({
@@ -161,7 +160,7 @@ def trial_create(args):
         '--root':
         schema.Use(bool),
         '--criteria':
-        schema.Or(None, schema.And(schema.Use(str), os.path.isfile)),
+        schema.Or(None, schema.And(schema.Use(pathlib.Path), os.path.isfile)),
         str:
         object,  # all other inputs don't matter
     })
@@ -186,9 +185,6 @@ def trial_create(args):
     if prefix == "''":
         prefix = "patient"
 
-    num_patients = args['-n']
-    seed = args['--seed']
-
     # require explicit -f to overwrite existing directories
     if os.path.isdir(path) and not overwrite:
         print(f"Trial '{path}' already exist. Provide -f to overwrite")
@@ -201,58 +197,160 @@ def trial_create(args):
     # setup trial folder
     os.makedirs(path, exist_ok=True)
 
+    # extract criteria
+    criteria_file = args.get('--criteria', None)
+    criteria = utilities.read_yaml(criteria_file)
+
+    # sample size and random seed are extracted from the criteria file
+    # if this file is not present sample size `-n` has to be present and
+    # the random seed is either picked from `--seed` or the default value
+    num_patients = criteria.get('sample_size', args['-n'])
+    seed = criteria.get('random_seed', args['--seed'])
+
     # populate configuration file
     config = create_trial_config(path, prefix, num_patients, seed)
 
-    # Load inclusion criteria if provided and update duplicate variables
-    criteria = utilities.read_yaml(args['--criteria'])
+    # merge trial configuration template with in/exclusion criteria
     config = {**config, **criteria}
 
-    # sample size and random seed can be present in the criteria files
-    num_patients = config.get('sample_size', num_patients)
-    seed = config.get('random_seed', seed)
-
     # dump trial configuration to disk
-    with open(path.joinpath("trial.yml"), "w") as outfile:
+    trial_config = path.joinpath("trial.yml")
+    with open(trial_config, "w") as outfile:
         yaml.dump(config, outfile)
 
+    # create patients and insert properties from virtual patient model
+    config = trial_config if criteria_file else None
+    create_virtual_patients(args, num_patients, seed, path, config)
+
+
+def trial_append(args):
+    s = schema.Schema({
+        '-v':
+        bool,
+        'TRIAL':
+        schema.And(schema.Use(str), os.path.isdir),
+        'NUM':
+        schema.And(schema.Use(int), lambda i: i > 0),
+        '--singularity':
+        schema.Or(None, schema.And(schema.Use(str), os.path.isdir)),
+        '--root':
+        schema.Use(bool),
+        str:
+        object,
+    })
+    try:
+        args = s.validate(args)
+    except schema.SchemaError as e:
+        logging.critical(e)
+        sys.exit(__doc__)
+
+    # trial's path
+    path = pathlib.Path(args['TRIAL'])
+    increment = args['NUM']
+
+    if args['-v']:
+        # print all info levels for user
+        logging.getLogger().handlers[0].setLevel(logging.INFO)
+
+    # load trial original configuration
+    trial_config_file = path.joinpath("trial.yml")
+    trial_config = utilities.read_yaml(trial_config_file)
+    assert trial_config != {}, "cannot append to empty trial configuration"
+
+    # keys that _must_ be present
+    for k in ['sample_size', 'random_seed']:
+        assert k in trial_config, f"missing essential key '{k}'"
+
+    # increment sample size and store to disk
+    old_sample_size = trial_config['sample_size']
+    sample_size = old_sample_size + increment
+    trial_config['sample_size'] = sample_size
+
+    # NOTE: the `trial_config` is only updated on disk at the end of this
+    # function, as we need to ensure successful evaluation of the virtual
+    # patient generation before incrementing the actual sample size.
+    tmp_trial_config_file = path.joinpath("tmp_trial.yml")
+    utilities.write_yaml(trial_config, tmp_trial_config_file)
+
+    # create patients and insert properties from virtual patient model
+    create_virtual_patients(args,
+                            sample_size,
+                            trial_config['random_seed'],
+                            path,
+                            tmp_trial_config_file,
+                            rename=trial_config_file,
+                            old_sample_size=old_sample_size)
+
+
+def create_virtual_patients(args, sample_size, seed, path, criteria_file=None,
+                            rename=None, old_sample_size=0):
+    """Helper routine to generate patients.
+
+    This routine invokes `isct patient create` with the flag `--config-only`
+    to initialise the patient configuration files for a desired sample size
+    of patients. Additionally, the virtual patient generation model is called
+    to fill the patient configuration files with patient specific data.
+
+    A path to a criterial file can be provided to use the in/exclusion
+    criteria therin to sample from that specific trial definition.
+
+    When invoked to append patients to existing trials, the argument `rename`
+    can be provided, to rename the trial configuration file _after_ the
+    virtual patient model was evaluated successfully. This avoids possible
+    additions to the trial configuration before the operations were
+    completed.
+    """
+
     # create patients configuration files
-    for i in range(num_patients):
+    for i in range(old_sample_size, sample_size):
         cmd = [
             'patient', 'create',
             str(path.absolute()), '--id',
             str(i), '--seed',
             str(seed), '--config-only'
         ]
+
+        # log command and execute
+        logging.info(f' + {" ".join(cmd)}')
         patient_cmd(cmd)
 
-    # batch generate all configuration files
-    # this runs through docker only once; and not for every patient
+    # form all patient paths and sort in order (_0000 ... _9999)
     dirs = ["/patients/" + os.path.basename(d[0]) for d in os.walk(path)][1:]
     dirs.sort()
 
+    # only keep new patient files: `old_sample_size:sample_size`
+    dirs = dirs[old_sample_size:]
+
     c = new_container(args['--singularity'], args['--root'])
     tag = "virtual_patient_generation"
-
     c.bind_volume(path.absolute(), "/patients/")
 
-    # log command to be executed
-    logging.info(f' + {" ".join(cmd)}')
-
     # only call into the container when its executable is present on a system
+    # check if `virtual-patient-generation` image is available
     if not c.executable_present():
         logging.critical(f"Cannot reach {c.type}.")
+        if rename:
+            criteria_file.unlink()
         return
-
-    # check if `virtual-patient-generation` image is available
     if not c.image_exists(tag):
+        if rename:
+            criteria_file.unlink()
         sys.exit(1)
 
     # form command to evaluate `virtual-patient-generation`
-    cmd = c.run_image(tag, f"{' '.join(dirs)} --seed {seed}")
+    cmd = f"{' '.join(dirs)} -v "
+    if criteria_file:
+        cmd += f"--config {'/patients/' + criteria_file.name}"
+    else:
+        cmd += f"--sample-size {sample_size} --seed {seed}"
+
+    cmd = c.run_image(tag, cmd)
 
     # evaluate `virtual-patient-generation` model to fill config files
     utilities.run_and_stream(cmd, logging)
+
+    if rename:
+        os.rename(str(criteria_file), str(rename))
 
     # Create auxilary files for each patient.
     # TODO: remove the XML export once transitioned to YAML
@@ -484,6 +582,9 @@ def trial(argv):
 
     if args['create']:
         return trial_create(args)
+
+    if args['append']:
+        return trial_append(args)
 
     if args['outcome']:
         return trial_outcome(args)
