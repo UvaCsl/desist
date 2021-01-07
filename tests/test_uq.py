@@ -1,12 +1,22 @@
+import pytest
 import numpy as np
 import os
 import pathlib
-import pytest
 
-from easyvvuq.decoders.yaml import YAMLDecoder
-from tests.test_isct_trial import trial_directory
 from isct.patient import Patient
-from isct.uq import ISCTDecoder
+
+# skip tests when `easyvvuq` is not present
+pytest.importorskip("easyvvuq")
+
+# attempt to load modules with requiring extra feature `vvuq`
+try:
+    from isct.uq import ISCTDecoder
+    from easyvvuq.decoders.yaml import YAMLDecoder
+except ImportError:
+    import warnings
+    warnings.warn('depencey `EasyVVUQ` not found: '
+                  'please install with feature `vvuq` enabled')
+    pass
 
 
 @pytest.mark.parametrize('dat', [{'scalar': 1}, {'vector': [1, 2, 3]}])
