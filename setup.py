@@ -5,6 +5,12 @@ with open("README.md", "r") as fh:
 
 _isct_packages = find_packages('isct/')
 
+_dev = ['yapf', 'tox', 'flake8', 'numpy']
+_test = ['mock', 'pytest', 'pytest-cov', 'pytest-mock']
+_vvuq = ['easyvvuq']
+_all = _dev + _test + _vvuq
+
+
 setup(
     name="isct",
     version="0.0.1",
@@ -24,8 +30,9 @@ setup(
         'schema>=0.7',
     ],
     extras_require={
-        'dev': ['yapf', 'tox', 'flake8', 'numpy'],
-        'test':  ['mock', 'pytest', 'pytest-cov', 'pytest-mock'],
-        'vvuq': ['easyvvuq'],
+        'all': _all,
+        'dev': _dev,
+        'test': _test,
+        'vvuq': _vvuq,
     },
 )
