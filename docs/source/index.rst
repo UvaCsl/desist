@@ -11,6 +11,7 @@ custom trials.
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
    trial
    example
@@ -19,3 +20,4 @@ custom trials.
 
 * :ref:`genindex`
 * :ref:`modindex`
+* :ref:`search`
