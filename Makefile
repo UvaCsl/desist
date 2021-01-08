@@ -18,6 +18,14 @@ venv:
 test:
 	tox 
 
+.PHONY: docs
+docs:
+	sphinx-build -b html docs/source/ docs/build/
+
+.PHONY: docsclean
+docsclean:
+	rm -rf docs/build/
+
 .PHONY: distclean
 distclean:
 	rm -rf $(VENV)/
