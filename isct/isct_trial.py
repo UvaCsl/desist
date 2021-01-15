@@ -60,63 +60,6 @@ from .patient import Patient, patients_from_trial
 from .isct_patient import patient as patient_cmd
 
 
-def trail_plot(args):
-    """Generate a graph-like visualisation of the trial directory."""
-
-    s = schema.Schema({
-        'TRIAL': schema.And(schema.Use(str), os.path.isdir),
-        str: object,
-    })
-    try:
-        args = s.validate(args)
-    except schema.SchemaError as e:
-        print(e)
-        sys.exit(__doc__)
-
-    # import graphviz here, as only `trail_plot` depends on it.
-    try:
-        from graphviz import Digraph
-    except ImportError:
-        sys.exit("Cannot import 'graphviz' package")
-
-    # check if `dot` is present, cannot generate graph without it
-    renderPlot = True
-    if shutil.which("dot") is None:
-        renderPlot = False
-        print("The `dot` from graphviz is not present: no figure is rendered.")
-
-    # create graph instance of trial
-    path = pathlib.Path(args['TRIAL'])
-    trial_name = os.path.basename(path)
-    g = Digraph(trial_name, filename=path.joinpath("graph.gv").absolute())
-    g.attr(rankdir="LR")
-
-    # populate graph from trial -> patient ->  status
-    for trial, patients, files in os.walk(path):
-
-        # patients are sorted, such that output graph is sorted as well
-        patients.sort()
-
-        for patient in patients:
-
-            # patient parameters from configuration file
-            c = Patient.from_yaml(pathlib.Path(trial).joinpath(patient))
-
-            # setup label and attach to graph
-            label = f"{patient}/ | id: {c['id']} | done: {c['status']}"
-            g.node(patient, shape="record", label=label)
-            g.edge(trial_name, patient)
-
-        break  # prevent recursion of `os.walk()`
-
-    # write `graph.gv`, this can run without `dot` as it does not render yet
-    g.save()
-
-    if renderPlot:
-        # write `graph.gv.pdf`, this requires `dot` executable
-        g.render(view=args['--show'])
-
-
 def create_trial_config(path, prefix, num_patients, seed):
     """Initialise a dictionary as trial configuration."""
 
@@ -588,9 +531,6 @@ def trial(argv):
 
     if args['outcome']:
         return trial_outcome(args)
-
-    if args['plot']:
-        return trail_plot(args)
 
     if args['run']:
         return trial_run(args)

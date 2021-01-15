@@ -162,48 +162,6 @@ def test_trial_number_of_patients(trial_directory, t_n, n):
             trial(f"trial create {path} -n ".split() + [t_n])
 
 
-@pytest.mark.skipif(importlib_util.find_spec('graphviz') is None,
-                    reason="requires `graphviz` and `dot` to be present")
-def test_trial_plot(trial_directory, mocker):
-    """Assert a `.gv` file is found, eventhough `dot` might not be present."""
-    path = trial_directory
-    trial(f"trial create {path}".split())
-    assert os.path.isdir(path)
-
-    trial(f"trial plot {path}".split())
-    assert os.path.isfile(path.joinpath("graph.gv"))
-
-    # test output is present when dot is not there
-    os.remove(path.joinpath("graph.gv"))
-    assert not os.path.isfile(path.joinpath("graph.gv"))
-
-    mocker.patch("shutil.which", return_value=None)
-    trial(f"trial plot {path}".split())
-    assert os.path.isfile(path.joinpath("graph.gv"))
-
-
-@pytest.mark.skipif(importlib_util.find_spec('graphviz') is None
-                    or shutil.which("dot") is None,
-                    reason="requires `graphviz` and `dot` to be present")
-def test_trial_plot_pdf_render(trial_directory):
-    """Assert a pdf is obtained when `graphviz` and `dot` are present."""
-    path = trial_directory
-    trial(f"trial create {path}".split())
-    assert os.path.isdir(path)
-
-    trial(f"trial plot {path}".split())
-    assert os.path.isfile(path.joinpath("graph.gv"))
-    assert os.path.isfile(path.joinpath("graph.gv.pdf"))
-
-
-@pytest.mark.skipif(importlib_util.find_spec('graphviz') is None,
-                    reason="requires `graphviz` and `dot` to be present")
-def test_trail_plot_invalid_directory(trial_directory):
-    path = trial_directory
-    with pytest.raises(SystemExit):
-        trial(f"trial plot {path}".split())
-
-
 def test_trial_run(trial_directory, mocker):
     path = trial_directory
     trial(f"trial create {path} -n 1".split())
