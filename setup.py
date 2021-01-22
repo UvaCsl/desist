@@ -20,12 +20,12 @@ setup(
     keywords=['in-silico'],
     entry_points={
         'console_scripts': [
-            'isct = isct.isct:main',
+            'isct = isct.isct:cli',
         ],
     },
     python_requires='>=3.8, <4',
     install_requires=[
-        'docopt>=0.6',
+        'click>=7.1.2',
         'PyYAML>=5.3',
         'schema>=0.7',
     ],
