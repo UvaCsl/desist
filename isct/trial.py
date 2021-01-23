@@ -4,40 +4,46 @@ import os
 from .patient import Patient, patient_config
 from .container import create_container
 from .config import Config
-from .runner import LocalRunner
+from .runner import LocalRunner, Logger
 
 trial_config = 'trial.yml'
 
 
 class Trial(Config):
     """Representation of a trial."""
-    # FIXME:
-    # - provide often used properties through @property?
-    # - provide function to obtain all patients, i.e. iterator?
-    # - split `self.path` and `self.dir`?
-
-    def __init__(self, path, sample_size=1, random_seed=1, config={},
+    def __init__(self,
+                 path,
+                 sample_size=1,
+                 random_seed=1,
+                 config={},
                  runner=LocalRunner()):
         """Initialise a trial from given path."""
 
+        # path to patient configuration file `path/trial.yml`
         path = pathlib.Path(path).joinpath(trial_config)
 
-        # merge configuration
-        config = {
-            **{
-                'sample_size': sample_size,
-                'random_seed': random_seed
-            },
-            **config
+        # overwrite defaults with read `config`
+        defaults = {
+            'sample_size': sample_size,
+            'random_seed': random_seed,
+            'prefix': 'patient'
         }
-        super().__init__(path, config)
+        defaults.update(config)
 
-        # set often used properties
-        # FIXME: remove these settings, or change to `@property`; shorten
-        self.prefix = self.get('prefix', 'patient')
-        self.sample_size = self.get('sample_size', sample_size)
-        self.random_seed = self.get('random_seed', random_seed)
+        # parse default configuration
+        super().__init__(path, defaults)
+
+        # store the runner type
         self.runner = runner
+
+    @classmethod
+    def read(cls, path, runner=Logger()):
+        config = super().read(path)
+        return cls(path.parent,
+                   sample_size=config['sample_size'],
+                   random_seed=config['random_seed'],
+                   config=dict(config),
+                   runner=runner)
 
     @property
     def patients(self):
@@ -47,18 +53,19 @@ class Trial(Config):
 
     def create(self):
         """Create a trial and patients."""
+
         # write configuration to disk
         self.write()
 
         # create patients
-        for i in range(0, self.sample_size):
+        for i in range(0, self.get('sample_size')):
             self.append_patient(i)
 
-        self.sample_virtual_patient(0, self.sample_size)
+        self.sample_virtual_patient(0, self.get('sample_size'))
 
     def append_patient(self, idx):
         """Append a virtual patient to trial."""
-        patient = Patient(self.path.parent, idx, prefix=self.prefix)
+        patient = Patient(self.path.parent, idx=idx, prefix=self.get('prefix'))
         patient.create()
 
     def sample_virtual_patient(self, lower, upper):

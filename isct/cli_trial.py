@@ -4,7 +4,6 @@ import pathlib
 from .trial import Trial, trial_config
 from .runner import create_runner
 
-
 # FIXME: add `trial status` to show current status of the problem
 
 
@@ -23,10 +22,12 @@ def trial():
 def create(trial, num_patients, dry):
     """Create trials."""
 
-    # FIXME: insert warning if directory already exists
-    # FIXME: provide argument that allows for overwriting or not?
-    #        it might be nicer to avoid the `os.unlink` of complete
-    #        directories, just to prevent accidental dropping
+    # Although more convenient, the option to overwrite directories is not
+    # included to prevent accidentally dropping large directories.
+    # FIXME: consider adding user-based confirmation to overwrite?
+    if pathlib.Path(trial).exists():
+        raise click.UsageError(
+            click.style(f'Trial `{trial}` already exists', fg="red"))
 
     runner = create_runner(dry)
     trial = Trial(trial, sample_size=num_patients, runner=runner)
@@ -41,10 +42,7 @@ def append(trial, num, dry):
     """Append patient to existing trial."""
 
     path = pathlib.Path(trial).joinpath(trial_config)
-    trial = Trial.read(path)
-
-    # FIXME: insert the `runner` more elegantly into the trial
-    trial.runner = create_runner(dry)
+    trial = Trial.read(path, runner=create_runner(dry))
 
     sample_size = trial.get('sample_size')
     for i in range(sample_size, sample_size + num):

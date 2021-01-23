@@ -1,7 +1,8 @@
 import click
 import pathlib
 
-from .patient import Patient, patient_config
+from .patient import Patient
+from .runner import create_runner
 
 
 @click.group()
@@ -11,15 +12,12 @@ def patient():
 
 @patient.command()
 @click.argument('patient', type=click.Path(exists=True))
-def run(patient):
+@click.option('-x', '--dry', is_flag=True, default=False)
+def run(patient, dry):
     """Run patients."""
 
-    # TODO:
-    # - create patient instance
-    # - run patient instance
-
-    path = pathlib.Path(patient).joinpath(patient_config)
-    patient = Patient.read(path)
+    path = pathlib.Path(patient)
+    patient = Patient.read(path, runner=create_runner(dry))
     patient.run()
 
 

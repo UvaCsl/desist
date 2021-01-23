@@ -7,7 +7,6 @@ from isct.cli_trial import create, append, run
 from isct.trial import Trial, trial_config
 
 # FIXME: `dry` run does still create all directories though...
-# FIXME: these tets still have issues with paths...
 
 
 @pytest.mark.parametrize('n', [1, 5])
@@ -27,10 +26,21 @@ def test_trial_create(n):
             assert f'trial/{patient}' in result.output
 
 
+def test_trial_overwrite():
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    with runner.isolated_filesystem():
+        os.makedirs(path)
+        result = runner.invoke(create, [str(path), '-x'])
+        # should raise `UsageError`, not `sys.exit`
+        assert result.exit_code == 2
+        assert "already exists" in result.output
+
+
 @pytest.mark.parametrize('n', [1, 5])
 def test_trial_append(tmpdir, n):
     runner = CliRunner()
-    path = pathlib.Path(tmpdir)
+    path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
         result_c = runner.invoke(create, [str(path), '-n', n, '-x'])
         assert result_c.exit_code == 0
@@ -53,7 +63,7 @@ def test_trial_append(tmpdir, n):
 @pytest.mark.parametrize('num_patients', [2])
 def test_trial_run(tmpdir, num_patients):
     runner = CliRunner()
-    path = pathlib.Path(tmpdir)
+    path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
         result = runner.invoke(create, [str(path), '-n', num_patients], '-x')
         assert result.exit_code == 0
