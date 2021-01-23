@@ -15,8 +15,8 @@ class Config(dict):
 
     @classmethod
     def read(cls, path):
+        path = pathlib.Path(path)
         try:
-            path = pathlib.Path(path)
             with open(path, 'r') as config_file:
                 config = yaml.safe_load(config_file)
                 return cls(path.parent, config=config)
@@ -24,6 +24,8 @@ class Config(dict):
             sys.exit(f'Configuration `{path}` should be a file.')
         except FileNotFoundError:
             sys.exit(f'Configuration `{path}` not found.')
+        except Exception as err:
+            sys.exit(f'Loading `{path}` raised: `{err}`.')
 
     def write(self):
         path, _ = os.path.split(self.path)
