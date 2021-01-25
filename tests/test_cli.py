@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import pytest
 
 from click.testing import CliRunner
@@ -28,3 +29,14 @@ def test_isct_cli_logger():
         result = runner.invoke(cli, cmd)
         assert result.exit_code == 0
         assert len(logger.handlers) == count + 1
+
+
+def test_isct_cli_log_location():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        path = pathlib.Path('tmp.log')
+        assert not path.exists()
+        cmd = ['--log', str(path), 'trial', 'create', '--help']
+        result = runner.invoke(cli, cmd)
+        assert result.exit_code == 0
+        assert path.exists()

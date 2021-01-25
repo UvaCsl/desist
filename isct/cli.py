@@ -13,11 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 @click.group()
-@click.option('-v', '--verbose', is_flag=True, default=False)
-def cli(verbose):
+@click.option('-v',
+              '--verbose',
+              is_flag=True,
+              default=False,
+              help="Increase verbosity.")
+@click.option('--log',
+              type=click.Path(writable=True),
+              default=str(logfile),
+              help="Path where logs are stored.")
+def cli(verbose, log):
     """des-ist."""
-
-    # FIXME: add `click.argument` to dictate the log file location
 
     # Setup the basic logger with a rotating logger to rotate the logfiles
     # every 100kB, cycling through 10 backups.
@@ -26,7 +32,7 @@ def cli(verbose):
         format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
         handlers=[
             # The logfiles rotate every 100kB.
-            RotatingFileHandler(str(logfile), maxBytes=10000, backupCount=10)
+            RotatingFileHandler(log, maxBytes=10000, backupCount=10)
         ],
     )
 
