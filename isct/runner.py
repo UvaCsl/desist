@@ -1,9 +1,10 @@
 import abc
+import click
 import subprocess
+import logging
 
 # FIXME: add `ParallelRunner`: push the output over `stdout` for `gnu parallel`
 # FIXME: rename constructors to `new_runner`?
-# FIXME: make `verbose` mean a local runner with output to logger;
 
 
 def create_runner(verbose):
@@ -29,22 +30,45 @@ class Logger(Runner):
 
     def run(self, cmd, check=True):
         """Prints the commands to `stdout`."""
-        print(cmd)
+        msg = ' '.join(cmd)
+        logging.info(msg)
+        click.echo(msg)
 
 
-# FIXME: add `verbose` argument:
-#        insert `cmd` into the logging
-#        insert `output` into the logging
 class LocalRunner(Runner):
-    """A runner evaluating commands on the local machine."""
+    """A runner evaluating commands on the local machine.
+
+    The commands and its output are echoed into the logs, which can be enabled
+    by passing `-v` argument to the main command.
+    """
     def __init__(self):
         super().__init__()
 
     def run(self, cmd, check=True):
         """Prints the commands to `stdout`."""
+        msg = ' '.join(cmd)
+        logging.info(msg)
+
         try:
-            subprocess.run(cmd, check=check)
-        except subprocess.CalledProcessError:
+            process = subprocess.run(cmd,
+                                     check=check,
+                                     shell=False,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT)
+
+        except subprocess.CalledProcessError as e:
+            msg = f'Command: `{msg}` failed with error: `{e}`.'
+            logging.critical(f'Subprocess failed: {e}.')
+            logging.critical(f'Captured output: {e.stdout.decode().rstrip()}')
+
+            # report to console
+            click.echo(click.style(msg, fg="red"))
+
             if check:
                 return False
+
+        # capture the output of the subcommand in the logs
+        for line in process.stdout.decode().split('\n'):
+            logging.info(line)
+
         return True
