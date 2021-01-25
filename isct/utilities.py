@@ -2,6 +2,9 @@ import enum
 import sys
 
 
+# FIXME: support Windows environment
+
+
 @enum.unique
 class OS(enum.Enum):
     LINUX = "linux"

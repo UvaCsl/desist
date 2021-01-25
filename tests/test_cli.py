@@ -1,6 +1,5 @@
 import logging
 import pathlib
-import pytest
 
 from click.testing import CliRunner
 from isct.cli import cli

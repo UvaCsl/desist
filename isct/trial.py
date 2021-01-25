@@ -7,6 +7,7 @@ from .config import Config
 from .runner import LocalRunner, Logger
 
 trial_config = 'trial.yml'
+trial_path = pathlib.Path('/trial')
 
 
 class Trial(Config):
@@ -71,14 +72,13 @@ class Trial(Config):
     def sample_virtual_patient(self, lower, upper):
         """Evaluate the virtual patient model."""
 
-        local_path = pathlib.Path('/trial')
-        patients = [local_path.joinpath(p) for p in self.patients]
+        patients = [trial_path.joinpath(p) for p in self.patients]
 
         # FIXME: generalise this model
         model = 'virtual-patient-generation'
 
         container = create_container(model, runner=self.runner)
-        container.bind(self.path.parent, local_path)
+        container.bind(self.path.parent, trial_path)
         container.run(args=' '.join(map(str, patients)))
 
     def run(self):

@@ -5,6 +5,7 @@ import os
 
 from isct.cli_trial import create, append, run
 from isct.trial import Trial, trial_config
+from isct.utilities import OS
 
 # FIXME: `dry` run does still create all directories though...
 
@@ -60,13 +61,16 @@ def test_trial_append(tmpdir, n):
                 assert f'trial/{patient}' in result_a.output
 
 
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('parallel', [True, False])
 @pytest.mark.parametrize('num_patients', [1, 2, 5])
-def test_trial_run(tmpdir, num_patients, parallel):
+def test_trial_run(mocker, tmpdir, platform, num_patients, parallel):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-n', num_patients], '-x')
+        result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
         assert result.exit_code == 0
 
         cmd = [str(path), '-x']

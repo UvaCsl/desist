@@ -6,6 +6,7 @@ from .runner import Logger
 from .events import Events, default_events
 
 patient_config = 'patient.yml'
+patient_path = pathlib.Path('/patient')
 
 
 class Patient(Config):
@@ -54,5 +55,5 @@ class Patient(Config):
 
         for idx, model in enumerate(events.models):
             container = create_container(f'{model}', runner=self.runner)
-            container.bind(self.path.parent, '/patient')
+            container.bind(self.path.parent, patient_path)
             container.run(args=f'event --patient /patient --event {idx}')

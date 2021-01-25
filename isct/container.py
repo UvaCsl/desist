@@ -1,6 +1,7 @@
 import abc
 import os
 import pathlib
+import subprocess
 import sys
 
 from .utilities import OS
@@ -19,14 +20,16 @@ class Container(abc.ABC):
         parent, base = path.parent, os.path.basename(path)
         self.path = parent.joinpath(base)
 
+        self.hosts = []
+        self.locals = []
         self.volumes = []
         self.runner = runner
 
     def bind(self, host, local):
         """Bind volume from host to local."""
-        host = pathlib.Path(host).absolute()
-        local = pathlib.Path(local)
-        self.volumes.append(f'{host}:{local}')
+        self.hosts.append(pathlib.Path(host).absolute())
+        self.locals.append(pathlib.Path(local))
+        self.volumes.append(f'{self.hosts[-1]}:{self.locals[-1]}')
 
     @abc.abstractmethod
     def run(self, args=''):
@@ -47,6 +50,7 @@ class Docker(Container):
         super().__init__(path, runner=runner)
         # FIXME: make this a general routine on `Container`
         self.tag = os.path.basename(self.path).replace("_", "-")
+        self.docker_group = docker_group
 
         # Docker requires `sudo` when no part of user group; only on Linux
         self.sudo = ''
@@ -64,6 +68,60 @@ class Docker(Container):
 
     def run(self, args=''):
         volumes = ' '.join(map(lambda s: f'-v {s}', self.volumes))
+
         cmd = f'{self.sudo} docker run {volumes} {self.tag} {args}'
+        permissions_cmd = self.update_file_permissions()
+
+        if permissions_cmd is not None:
+            cmd = f'{cmd} && {permissions_cmd}'
+
         return self.runner.run(cmd.split())
-        # FIXME: fix permissions
+
+    def update_file_permissions(self):
+        """Update file permissions for files created within Docker on Linux.
+
+        FIXME: insert docstring
+        """
+
+        if OS.from_platform(sys.platform) != OS.LINUX:
+            return None
+
+        # If no volumes were written, no permissions have to be updated
+        if self.volumes == []:
+            return None
+
+        if not self.docker_group:
+
+            # convert ownership of the files to ownership of the current user
+            user = subprocess.check_output(['whoami']).strip().decode('utf-8')
+
+            # Loop over all volumes that were bound to the container to
+            # identify the patient's container, i.e. the path that was
+            # explicitly linked to the local `/patient` or `/trial` paths.
+            # Docker will write files in this directory with root permissions,
+            # which we undo.
+            #
+            # FIXME: resolve these hardcoded paths
+            for host, local in zip(self.hosts, self.locals):
+                if '/patient' in str(local) or '/trial' in str(local):
+                    permission_path = host
+                    break
+
+            return f'sudo chown -R {user}:{user} {str(permission_path)}'
+
+        # In the remaining situation, the user has permissions to run Docker,
+        # as the user is part of the "docker group". However, there are no
+        # permissions to use `sudo` to reset the file permissions. Thus, to
+        # still reset these permissions, well call into the Docker container
+        # again specifically to reset these file permissions. Thus, inside the
+        # Docker container---with root permissions---we change the ownership
+        # of all documents within `/patient/*` to match the ownership of
+        # the actual `/patient` directory on the host system.
+        #
+        # FIXME: it would be much nicer to avoid these operations...
+        #
+        # Reference discussions at: https://stackoverflow.com/a/29584184
+        volumes = ' '.join(map(lambda s: f'-v {s}', self.volumes))
+        return (f"docker run --entrypoint /bin/sh {volumes}"
+                f""" {self.tag} -c """
+                f"""chown -R `stat -c "%u:%g" /patient` /patient""")
