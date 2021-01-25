@@ -20,7 +20,7 @@ setup(
     keywords=['in-silico'],
     entry_points={
         'console_scripts': [
-            'isct = isct.isct:cli',
+            'isct = isct.cli:cli',
         ],
     },
     python_requires='>=3.8, <4',

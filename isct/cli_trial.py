@@ -18,7 +18,13 @@ def trial():
                                 writable=True,
                                 resolve_path=True))
 @click.option('-n', '--num-patients', type=int, default=1)
-@click.option('-x', '--dry', is_flag=True, default=False)
+@click.option(
+    '-x',
+    '--dry',
+    is_flag=True,
+    default=False,
+    help="Logs container commands to `stdout` rather than evaluating directly."
+)
 def create(trial, num_patients, dry):
     """Create trials."""
 
