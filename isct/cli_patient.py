@@ -2,7 +2,7 @@ import click
 import pathlib
 
 from .patient import Patient
-from .runner import create_runner
+from .runner import new_runner
 
 
 @click.group()
@@ -17,7 +17,7 @@ def run(patient, dry):
     """Run patients."""
 
     path = pathlib.Path(patient)
-    patient = Patient.read(path, runner=create_runner(dry))
+    patient = Patient.read(path, runner=new_runner(dry))
     patient.run()
 
 
@@ -26,6 +26,6 @@ def run(patient, dry):
 # def reset(patient):
 #     """Reset patients."""
 
-    # TODO:
-    # - create patient instance
-    # - reset patient instance
+# TODO:
+# - create patient instance
+# - reset patient instance

@@ -1,8 +1,8 @@
 import click
 import pathlib
 
-from .trial import Trial, trial_config
-from .runner import create_runner
+from .trial import Trial, ParallelTrial, trial_config
+from .runner import new_runner
 
 # FIXME: add `trial status` to show current status of the problem
 
@@ -35,7 +35,7 @@ def create(trial, num_patients, dry):
         raise click.UsageError(
             click.style(f'Trial `{trial}` already exists', fg="red"))
 
-    runner = create_runner(dry)
+    runner = new_runner(dry)
     trial = Trial(trial, sample_size=num_patients, runner=runner)
     trial.create()
 
@@ -48,7 +48,7 @@ def append(trial, num, dry):
     """Append patient to existing trial."""
 
     path = pathlib.Path(trial).joinpath(trial_config)
-    trial = Trial.read(path, runner=create_runner(dry))
+    trial = Trial.read(path, runner=new_runner(dry))
 
     sample_size = trial.get('sample_size')
     for i in range(sample_size, sample_size + num):
@@ -62,10 +62,17 @@ def append(trial, num, dry):
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
-def run(trial, dry):
+@click.option('--parallel', is_flag=True, default=False)
+def run(trial, dry, parallel):
     """Run trials."""
-    trial = Trial(trial)
-    trial.runner = create_runner(dry)
+
+    runner = new_runner(dry, parallel=parallel)
+
+    if parallel:
+        trial = ParallelTrial(trial, runner=runner)
+    else:
+        trial = Trial(trial, runner=runner)
+
     trial.run()
 
 

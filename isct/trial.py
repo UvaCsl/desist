@@ -85,6 +85,19 @@ class Trial(Config):
         """Run the full trial simulation."""
 
         patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
-        for i, path in enumerate(patient_paths):
-            patient = Patient.read(path.joinpath(patient_config), self.runner)
+        for i, path in enumerate(sorted(list(patient_paths))):
+            patient = Patient.read(path.joinpath(patient_config),
+                                   runner=self.runner)
             patient.run()
+
+
+class ParallelTrial(Trial):
+    # For parallel execution _enumerate_ the required patient
+    # commands that need to be considered for the current trial.
+    def run(self):
+        patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
+        for i, path in enumerate(sorted(list(patient_paths))):
+            patient = Patient.read(path.joinpath(patient_config),
+                                   runner=self.runner)
+            cmd = f'isct --log {path}/isct.log patient run {patient.path}'
+            self.runner.run(cmd.split())

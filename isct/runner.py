@@ -2,16 +2,15 @@ import abc
 import click
 import subprocess
 import logging
-
-# FIXME: add `ParallelRunner`: push the output over `stdout` for `gnu parallel`
-# FIXME: rename constructors to `new_runner`?
+import sys
 
 
-def create_runner(verbose):
+def new_runner(verbose, parallel=False):
     if verbose:
-        return Logger()
+        runner = Logger()
     else:
-        return LocalRunner()
+        runner = ParallelRunner() if parallel else LocalRunner()
+    return runner
 
 
 class Runner(abc.ABC):
@@ -72,3 +71,13 @@ class LocalRunner(Runner):
             logging.info(line)
 
         return True
+
+
+class ParallelRunner(Runner):
+    def __init__(self):
+        super().__init__()
+
+    def run(self, cmd):
+        msg = ' '.join(cmd)
+        logging.info(msg)
+        sys.stdout.write(f'{msg}\n')

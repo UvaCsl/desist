@@ -1,7 +1,7 @@
 import click
 
 from .container import create_container
-from .runner import create_runner
+from .runner import new_runner
 
 
 @click.group()
@@ -17,7 +17,7 @@ def create(path, singularity, dry):
     """Create Docker/Singularity container from PATH."""
 
     for p in path:
-        container = create_container(p, runner=create_runner(dry))
+        container = create_container(p, runner=new_runner(dry))
         container.create()
 
 
@@ -34,7 +34,7 @@ def run(container, id, patient, dry):
     # - verify container present
 
     for p in patient:
-        container = create_container(p, runner=create_runner(dry))
+        container = create_container(p, runner=new_runner(dry))
         container.run()
 
         # - create patient instance

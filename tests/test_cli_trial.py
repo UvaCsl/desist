@@ -60,19 +60,25 @@ def test_trial_append(tmpdir, n):
                 assert f'trial/{patient}' in result_a.output
 
 
-@pytest.mark.parametrize('num_patients', [2])
-def test_trial_run(tmpdir, num_patients):
+@pytest.mark.parametrize('parallel', [True, False])
+@pytest.mark.parametrize('num_patients', [1, 2, 5])
+def test_trial_run(tmpdir, num_patients, parallel):
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
         result = runner.invoke(create, [str(path), '-n', num_patients], '-x')
         assert result.exit_code == 0
 
-        result = runner.invoke(run, [str(path), '-x'])
+        cmd = [str(path), '-x']
+        cmd = cmd + ['--parallel'] if parallel else cmd
+        result = runner.invoke(run, cmd)
         assert result.exit_code == 0
 
         for i in range(num_patients):
             assert f'patient_{i:05}' in result.output
 
-        for k in ['docker', 'run']:
-            assert k in result.output
+        if parallel:
+            assert 'docker' not in result.output
+        else:
+            for k in ['docker', 'run']:
+                assert k in result.output
