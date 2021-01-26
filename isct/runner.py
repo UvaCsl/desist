@@ -17,8 +17,14 @@ class Runner(abc.ABC):
     def __init__(self):
         pass
 
+    def format(self, cmd):
+        """Formatting for the command for logging."""
+        if isinstance(cmd, list):
+            return ' '.join(cmd)
+        return cmd
+
     @abc.abstractmethod
-    def run(self, cmd, check=True):
+    def run(self, cmd, check=True, shell=False):
         """Run command. Report on result if check == True"""
 
 
@@ -27,9 +33,9 @@ class Logger(Runner):
     def __init__(self):
         super().__init__()
 
-    def run(self, cmd, check=True):
+    def run(self, cmd, check=True, shell=False):
         """Prints the commands to `stdout`."""
-        msg = ' '.join(cmd)
+        msg = self.format(cmd)
         logging.info(msg)
         click.echo(msg)
 
@@ -43,15 +49,15 @@ class LocalRunner(Runner):
     def __init__(self):
         super().__init__()
 
-    def run(self, cmd, check=True):
+    def run(self, cmd, check=True, shell=False):
         """Prints the commands to `stdout`."""
-        msg = ' '.join(cmd)
+        msg = self.format(cmd)
         logging.info(msg)
 
         try:
             process = subprocess.run(cmd,
                                      check=check,
-                                     shell=False,
+                                     shell=shell,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.STDOUT)
 
@@ -78,6 +84,6 @@ class ParallelRunner(Runner):
         super().__init__()
 
     def run(self, cmd):
-        msg = ' '.join(cmd)
+        msg = self.format(cmd)
         logging.info(msg)
         sys.stdout.write(f'{msg}\n')

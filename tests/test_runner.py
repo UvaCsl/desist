@@ -12,7 +12,7 @@ class DummyRunner(Runner):
     def __contains__(self, string):
         return any([string in output for output in self.output])
 
-    def run(self, cmd, check=True):
+    def run(self, cmd, check=True, shell=False):
         self.output.append(cmd)
         return cmd
 
