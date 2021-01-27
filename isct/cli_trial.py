@@ -7,6 +7,13 @@ from .runner import new_runner
 # FIXME: add `trial status` to show current status of the problem
 
 
+def assert_container_path(trial):
+    if trial.container_path and not trial.container_path.exists():
+        msg = (f'Container path `{trial.container_path}` not present.\n'
+               f'Update key `container-path` in `{trial.path.absolute()}`.')
+        raise click.UsageError(click.style(msg, fg='red'))
+
+
 @click.group()
 def trial():
     """Trial"""
@@ -25,7 +32,8 @@ def trial():
     default=False,
     help="Logs container commands to `stdout` rather than evaluating directly."
 )
-def create(trial, num_patients, dry):
+@click.option('-s', '--singularity', type=click.Path(exists=True))
+def create(trial, num_patients, dry, singularity):
     """Create trials."""
 
     # Although more convenient, the option to overwrite directories is not
@@ -36,7 +44,17 @@ def create(trial, num_patients, dry):
             click.style(f'Trial `{trial}` already exists', fg="red"))
 
     runner = new_runner(dry)
-    trial = Trial(trial, sample_size=num_patients, runner=runner)
+    config = {}
+
+    # update configuration file with provided path to Singularity containers
+    if singularity:
+        container_path = pathlib.Path(singularity).absolute()
+        config = {'container-path': str(container_path)}
+
+    trial = Trial(trial,
+                  sample_size=num_patients,
+                  runner=runner,
+                  config=config)
     trial.create()
 
 
@@ -49,6 +67,9 @@ def append(trial, num, dry):
 
     path = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(path, runner=new_runner(dry))
+
+    # enforce container directory from configuration is valid
+    assert_container_path(trial)
 
     sample_size = trial.get('sample_size')
     for i in range(sample_size, sample_size + num):
@@ -67,12 +88,17 @@ def run(trial, dry, parallel):
     """Run trials."""
 
     runner = new_runner(dry, parallel=parallel)
+    config = pathlib.Path(trial).joinpath(trial_config)
 
     if parallel:
-        trial = ParallelTrial(trial, runner=runner)
+        trial = ParallelTrial.read(config, runner=runner)
     else:
-        trial = Trial(trial, runner=runner)
+        trial = Trial.read(config, runner=runner)
 
+    # enforce container directory from configuration is valid
+    assert_container_path(trial)
+
+    # evaluate all simulations in trial
     trial.run()
 
 

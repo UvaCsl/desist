@@ -22,9 +22,52 @@ def test_trial_create(n):
         trial = Trial.read(path.joinpath(trial_config))
         assert trial.get('sample_size') == n
         assert f'{os.path.basename(trial.dir)}:/trial' in result.output
+        assert 'container-path' in trial
+        assert trial['container-path'] is None
 
         for patient in trial.patients:
             assert f'trial/{patient}' in result.output
+
+
+@pytest.mark.parametrize('n', [1, 5])
+def test_trial_create_singularity(n):
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    singularity = pathlib.Path('singularity')
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            create, [str(path), '-n', n, '-x', '-s',
+                     str(singularity)])
+        assert result.exit_code == 2
+
+        os.makedirs(singularity)
+        result = runner.invoke(
+            create, [str(path), '-n', n, '-x', '-s',
+                     str(singularity)])
+        assert result.exit_code == 0
+
+        trial = Trial.read(path.joinpath(trial_config))
+        assert trial.get('sample_size') == n
+        assert f'{os.path.basename(trial.dir)}:/trial' in result.output
+        assert 'container-path' in trial
+        assert trial['container-path'] == str(singularity.absolute())
+
+        for patient in trial.patients:
+            assert f'trial/{patient}' in result.output
+
+        # modified container path in configuration, should fail on append
+        trial['container-path'] = 'path/does/not/exist'
+        trial.write()
+
+        # appending should fail: missing container path
+        result = runner.invoke(append, [str(path), '-x'])
+        assert result.exit_code == 2
+        assert '`path/does/not/exist` not present' in result.output
+
+        # appending should fail: missing container path
+        result = runner.invoke(run, [str(path), '-x'])
+        assert result.exit_code == 2
+        assert '`path/does/not/exist` not present' in result.output
 
 
 def test_trial_overwrite():

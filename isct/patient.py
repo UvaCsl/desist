@@ -10,7 +10,11 @@ patient_path = pathlib.Path('/patient')
 
 
 class Patient(Config):
-    def __init__(self, path, idx=0, prefix='patient', config={},
+    def __init__(self,
+                 path,
+                 idx=0,
+                 prefix='patient',
+                 config={},
                  runner=Logger()):
         """Initialise a Patient: path either basename or to patient.yml"""
 
@@ -23,10 +27,15 @@ class Patient(Config):
         self.runner = runner
 
         # merges properties into config
-        defaults = {'prefix': prefix, 'id': idx,
-                    'events': default_events.to_dict(),
-                    # FIXME: the labels _have_ to be generated/generic?
-                    'labels': {'place-clot': 'place-clot'}}
+        defaults = {
+            'prefix': prefix,
+            'id': idx,
+            'events': default_events.to_dict(),
+            # FIXME: the labels _have_ to be generated/generic?
+            'labels': {
+                'place-clot': 'place-clot'
+            }
+        }
         config = {**defaults, **config}
         super().__init__(path, config)
 
@@ -41,19 +50,24 @@ class Patient(Config):
         path = path.parent.parent
         idx, prefix = config['id'], config['prefix']
 
-        return cls(path, idx=idx, prefix=prefix, config=dict(config),
+        return cls(path,
+                   idx=idx,
+                   prefix=prefix,
+                   config=dict(config),
                    runner=runner)
 
     def create(self):
         """Create a patient directory with configuration files."""
         self.write()
 
-    def run(self):
+    def run(self, container_path=None):
         """Evaluate simulation of virtual patient."""
 
         events = Events(self.get('events'))
 
         for idx, model in enumerate(events.models):
-            container = create_container(f'{model}', runner=self.runner)
+            container = create_container(f'{model}',
+                                         container_path=container_path,
+                                         runner=self.runner)
             container.bind(self.path.parent, patient_path)
             container.run(args=f'event --patient /patient --event {idx}')

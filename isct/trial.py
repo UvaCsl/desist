@@ -25,16 +25,17 @@ class Trial(Config):
 
         # overwrite defaults with read `config`
         defaults = {
-            'sample_size': sample_size,
+            'container-path': None,
+            'prefix': 'patient',
             'random_seed': random_seed,
-            'prefix': 'patient'
+            'sample_size': sample_size,
         }
         defaults.update(config)
 
         # parse default configuration
         super().__init__(path, defaults)
 
-        # store the runner type
+        # store the runner and container type
         self.runner = runner
 
     @classmethod
@@ -45,6 +46,13 @@ class Trial(Config):
                    random_seed=config['random_seed'],
                    config=dict(config),
                    runner=runner)
+
+    @property
+    def container_path(self):
+        path = self.get('container-path', None)
+        if path:
+            return pathlib.Path(path)
+        return None
 
     @property
     def patients(self):
@@ -77,7 +85,9 @@ class Trial(Config):
         # FIXME: generalise this model
         model = 'virtual-patient-generation'
 
-        container = create_container(model, runner=self.runner)
+        container = create_container(model,
+                                     container_path=self.container_path,
+                                     runner=self.runner)
         container.bind(self.path.parent, trial_path)
         container.run(args=' '.join(map(str, patients)))
 
@@ -86,9 +96,9 @@ class Trial(Config):
 
         patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
         for i, path in enumerate(sorted(list(patient_paths))):
-            patient = Patient.read(path.joinpath(patient_config),
-                                   runner=self.runner)
-            patient.run()
+            config = path.joinpath(patient_config)
+            patient = Patient.read(config, runner=self.runner)
+            patient.run(container_path=self.container_path)
 
 
 class ParallelTrial(Trial):
@@ -97,7 +107,8 @@ class ParallelTrial(Trial):
     def run(self):
         patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
         for i, path in enumerate(sorted(list(patient_paths))):
-            patient = Patient.read(path.joinpath(patient_config),
-                                   runner=self.runner)
+            config = path.joinpath(patient_config)
+            patient = Patient.read(config, runner=self.runner)
+
             cmd = f'isct --log {path}/isct.log patient run {patient.path}'
             self.runner.run(cmd.split())
