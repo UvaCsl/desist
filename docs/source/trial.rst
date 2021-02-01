@@ -1,6 +1,4 @@
-Trial
-=====
+Trial class
+===========
 
 .. automodule:: isct.trial
-   :members:
-   :undoc-members:

@@ -1,3 +1,21 @@
+"""Trial configuration class
+
+This module contains two classes to represent an *in silico* trial of virtual
+patients: :class:`Trial` and :class:`ParallelTrial`. Fundamentally, these
+classes are a ``dict`` containing the configuration data for a *in silico*
+trial. The trials are layed out as a single trial directory with subdirectories
+for each virtual patient (see :class:`~isct.patient.Patient`). The trial's
+configuration is stored at :attr:`isct.trial.trial_config` in YAML format.
+
+:class:`Trial` provides routines to create :meth:`Trial.create` and run
+:meth:`Trial.run` trials. For parallel evaluation of the patient simulation
+pipelines :class:`ParallelTrial` provides functionality pipe the required
+commands over ``stdout`` for evalation using `GNU Parallel`_.
+
+.. _GNU Parallel:
+    https://www.gnu.org/software/parallel/
+"""
+
 import pathlib
 import os
 
@@ -7,21 +25,37 @@ from .config import Config
 from .runner import LocalRunner, Logger
 
 trial_config = 'trial.yml'
+"""str: Trial configuration filename and suffix."""
+
 trial_path = pathlib.Path('/trial')
+"""pathlib.Path: Trial directory inside the containerised environment.
+
+In containerised environments the trial's directory will be bound to a local
+path, here ``/trial`` that maps towards the trial directory on the host
+machine. For details, see :meth:`isct.container.Container.bind`.
+"""
 
 # FIXME: generalise this model
 virtual_patient_model = 'virtual-patient-generation'
 
 
 class Trial(Config):
-    """Representation of a trial."""
+    """Representation of an *in silico* trial."""
     def __init__(self,
                  path,
                  sample_size=1,
                  random_seed=1,
                  config={},
                  runner=LocalRunner()):
-        """Initialise a trial from given path."""
+        """Initialise a trial from given path and options.
+
+        Args:
+            path (str): Path to YAML file.
+            sample_size (int): Number of patients to consider in the trial.
+            random_seed (int): The random seed to use in the trial.
+            config (dict): Dictionary with default configurations values.
+            runner (:class:`~isct.runner.Runner`, optional): Command runner.
+        """
 
         # path to patient configuration file `path/trial.yml`
         path = pathlib.Path(path).joinpath(trial_config)
@@ -71,6 +105,11 @@ class Trial(Config):
 
     @classmethod
     def read(cls, path, runner=Logger()):
+        """Initialises :class:`Trial` from the provided YAML file.
+
+        First the basic :class:`~isct.config.Config` is initialised, afterwhich
+        a :class:`Trial` instance is created from the discovered parameters.
+        """
         config = super().read(path)
         return cls(path.parent,
                    sample_size=config['sample_size'],
@@ -80,6 +119,11 @@ class Trial(Config):
 
     @property
     def container_path(self):
+        """Returns ``container-path`` if present in :class:`Trial`.
+
+        The ``container-path`` stores the directory containing the Singularity
+        containers, see :class:`~isct.singularity.Singularity`.
+        """
         path = self.get('container-path', None)
         if path:
             return pathlib.Path(path)
@@ -91,12 +135,24 @@ class Trial(Config):
 
     @property
     def patients(self):
+        """Iterator yielding all patient paths of the trial."""
         for patient in os.listdir(self.dir):
             if os.path.isdir(self.dir.joinpath(patient)):
                 yield patient
 
     def create(self):
-        """Create a trial and patients."""
+        """Create a trial and the virtual patients.
+
+        Creates a trial directory including the trial's configuration file
+        :attr:`isct.trial.trial_config` in YAML format. For each patient
+        a patient directory is initialised with a patient configuration
+        present.
+
+        The patient configuration are filled with statistical samples from the
+        ``virtual patient model`` by invoking
+        :meth:`Trial.sample_virtual_patient`.
+
+        """
 
         # write configuration to disk
         self.write()
@@ -107,13 +163,31 @@ class Trial(Config):
 
         self.sample_virtual_patient(0, self.get('sample_size'))
 
-    def append_patient(self, idx):
-        """Append a virtual patient to trial."""
+    def append_patient(self, idx: int):
+        """Extend the trial with a single virtual patient.
+
+        Args:
+            idx (int): integer value of the to be appended patient.
+        """
         patient = Patient(self.path.parent, idx=idx, prefix=self.get('prefix'))
         patient.create()
 
-    def sample_virtual_patient(self, lower, upper):
-        """Evaluate the virtual patient model."""
+    def sample_virtual_patient(self, lower: int, upper: int):
+        """Update patients' configurations using the virtual patient model.
+
+        For each virtual patient with their index between ``lower`` and
+        ``upper`` the ``virtual patient model`` is evaluated. This model
+        provides statistical samples for the virtual
+        :class:`~isct.patient.Patient`. If the configuration files already
+        exist, the statistical samples are overwritten.
+
+        Args:
+            lower (int): lower bound of the range of patients to sample.
+            upper (int): upper bound of the range of patients to sample.
+
+        TODO:
+            FIXME: The ``lower`` and ``upper`` ranges are not yet enforced!
+        """
 
         patients = [trial_path.joinpath(p) for p in self.patients]
 
@@ -124,7 +198,12 @@ class Trial(Config):
         container.run(args=' '.join(map(str, patients)))
 
     def run(self):
-        """Invokes the simulation pipeline for each patient in the trial."""
+        """Runs the full trial simulation.
+
+        Evaluates the simulation of all virtual patients present in the
+        current trial. The patients are evaluated in sorted order, where the
+        patients are sorted based on the patient directories.
+        """
 
         # exhaust all patients present in the iterator
         for patient in self:
@@ -132,9 +211,20 @@ class Trial(Config):
 
 
 class ParallelTrial(Trial):
-    # For parallel execution _enumerate_ the required patient
-    # commands that need to be considered for the current trial.
+    """Parallel evaluation of patient simulations using `GNU Parallel`_."""
     def run(self):
+        """Pipe the simulation commands over ``stdout``.
+
+        Rather than directly evaluating the patient simulations, as done
+        in :meth:`Trial.run`, the patient run
+        (:meth:`~isct.patient.Patient.run`) commands are piped over ``stdout``.
+        This stream of commands is intended to be piped into `GNU Parallel`_,
+        which then takes control over the parallel evaluation of the patient
+        simulations.
+
+        Examples:
+            >>> isct -v trial run --parallel | parallel -j 4
+        """
         for p in self:
             cmd = f'isct --log {p.dir}/isct.log patient run {p.path}'
             self.runner.run(cmd.split())

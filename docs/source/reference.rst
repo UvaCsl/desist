@@ -9,5 +9,7 @@ This is some documentation on ...
     :maxdepth: 2
 
     config
-    trial
+    container
     patient
+    trial
+    runner
