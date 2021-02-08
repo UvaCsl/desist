@@ -20,6 +20,7 @@ class Container(abc.ABC):
         path = pathlib.Path(path)
         parent, base = path.parent, os.path.basename(path)
         self.path = parent.joinpath(base)
+        self.tag = os.path.basename(self.path).replace("_", "-")
 
         self.bind_volumes = []
         self.bind_flag: str = NotImplemented

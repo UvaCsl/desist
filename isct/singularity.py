@@ -1,5 +1,4 @@
 import pathlib
-import os
 
 from .container import Container
 from .runner import Logger
@@ -9,7 +8,6 @@ class Singularity(Container):
     def __init__(self, path, container_path, runner=Logger()):
         super().__init__(path, runner=runner)
         self.container_path = pathlib.Path(container_path).absolute()
-        self.tag = os.path.basename(self.path).replace("_", "-")
         self.sudo = 'sudo'
         self.bind_flag = '-B'
 

@@ -1,4 +1,3 @@
-import os
 import subprocess
 import sys
 
@@ -11,8 +10,6 @@ class Docker(Container):
     """Docker environment."""
     def __init__(self, path, docker_group=False, runner=Logger()):
         super().__init__(path, runner=runner)
-        # FIXME: make this a general routine on `Container`
-        self.tag = os.path.basename(self.path).replace("_", "-")
         self.docker_group = docker_group
         self.bind_flag = '-v'
 
@@ -42,7 +39,29 @@ class Docker(Container):
     def update_file_permissions(self):
         """Update file permissions for files created within Docker on Linux.
 
-        FIXME: insert docstring
+        This routine aims to fix the file permissions for files generated
+        within Docker containers, specifically when running on Linux-based
+        operating systems on the host machine. The issue arrises from the
+        permissions set within the container, as all newly created files have
+        root permissions (i.e. the permissions within the Docker environment).
+
+        This creates a problem when the user on the host machine does *not*
+        have root permissions as well. In this case, the user is *not* able to
+        change the permissions of these newly created files, nor remove them
+        from their system.
+
+        This routine considers two scenarios:
+
+        1. The host does have root permissions.
+        2. The host does not have root permissions.
+
+        In the first case, we evaluate a `chown` operation to reset the
+        permissions from `root:root` back to `user:user`.
+
+        In the second case, we apply some trickery: the Docker container is
+        invoked another time to evaluate the `chown` operation where the
+        permissions are set to match the original permissions of the volume
+        on the host machine.
         """
 
         if OS.from_platform(sys.platform) != OS.LINUX:
