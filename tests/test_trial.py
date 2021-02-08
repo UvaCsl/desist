@@ -58,3 +58,16 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
     read = Trial.read(trial.path)
     for k, v in trial.items():
         assert read.get(k) == v
+
+
+def test_trial_container_path(tmpdir):
+    singularity = pathlib.Path(tmpdir).joinpath('singularity/')
+    config = {'container-path': str(singularity)}
+    trial = Trial(tmpdir, config=config)
+
+    # should be invalid: the container path does _not_ exist
+    assert trial.invalid_container_path()
+
+    # should be valid: the container path _does_ exist
+    os.makedirs(singularity)
+    assert not trial.invalid_container_path()

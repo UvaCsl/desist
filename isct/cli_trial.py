@@ -8,7 +8,7 @@ from .runner import new_runner
 
 
 def assert_container_path(trial):
-    if trial.container_path and not trial.container_path.exists():
+    if trial.invalid_container_path():
         msg = (f'Container path `{trial.container_path}` not present.\n'
                f'Update key `container-path` in `{trial.path.absolute()}`.')
         raise click.UsageError(click.style(msg, fg='red'))
@@ -38,7 +38,6 @@ def create(trial, num_patients, dry, singularity):
 
     # Although more convenient, the option to overwrite directories is not
     # included to prevent accidentally dropping large directories.
-    # FIXME: consider adding user-based confirmation to overwrite?
     if pathlib.Path(trial).exists():
         raise click.UsageError(
             click.style(f'Trial `{trial}` already exists', fg="red"))

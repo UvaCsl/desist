@@ -54,6 +54,10 @@ class Trial(Config):
             return pathlib.Path(path)
         return None
 
+    def invalid_container_path(self):
+        """Returns true when no or invalide container paths are encountered."""
+        return self.container_path and not self.container_path.exists()
+
     @property
     def patients(self):
         for patient in os.listdir(self.dir):
