@@ -8,7 +8,7 @@ from .cli_patient import patient
 from .cli_trial import trial
 
 # default path for logs
-logfile = pathlib.Path('/tmp/isct.log')
+logfile = pathlib.Path('/tmp/desist.log')
 logger = logging.getLogger(__name__)
 
 
@@ -17,13 +17,20 @@ logger = logging.getLogger(__name__)
               '--verbose',
               is_flag=True,
               default=False,
-              help="Increase verbosity.")
+              help="Increase verbosity: shows all `DEBUG` logs.")
 @click.option('--log',
               type=click.Path(writable=True),
               default=str(logfile),
-              help="Path where logs are stored.")
+              help="Path where log files are written to.")
 def cli(verbose, log):
-    """des-ist."""
+    """des-ist
+
+    Discrete Event Simulation for In Silico computational Trials.
+
+    This command-line utility supports evaluation of in silico simulation
+    of virtual patient cohorts. The utility provides commands to create,
+    run, and analyse in silico trials.
+    """
 
     # Setup the basic logger with a rotating logger to rotate the logfiles
     # every 100kB, cycling through 10 backups.

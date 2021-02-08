@@ -9,14 +9,22 @@ from .cli_trial import assert_container_path
 
 @click.group()
 def patient():
-    """Patient"""
+    """Patient
+
+    The `patient` command provides commands to interact with specific patients
+    present in an in silico computational trial.
+    """
 
 
 @patient.command()
 @click.argument('patient', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
 def run(patient, dry):
-    """Run patients."""
+    """Run a patient's simulation pipeline.
+
+    The complete simulation pipeline is evaluated for the patient located
+    at the provided PATIENT path.
+    """
 
     # read patient configuration
     path = pathlib.Path(patient)
@@ -38,6 +46,6 @@ def run(patient, dry):
 # def reset(patient):
 #     """Reset patients."""
 
-# TODO:
+# FIXME:
 # - create patient instance
 # - reset patient instance

@@ -9,10 +9,29 @@ from .runner import new_runner
 
 @click.group()
 def trial():
-    """Trial"""
+    """Trial
+
+    The `trial` command provides interaction with in silico computational
+    trials. This command allows to create cohorts of virtual patients, run
+    all simulation pipelines for the considered cohort, and analyse the
+    outcome of a specific trial.
+    """
 
 
 def assert_container_path(trial):
+    """Raises `UsageError` for invalid Singularity container paths.
+
+    The trial configuration `/path/trial.yml` can contain a key relating to the
+    filesystem path where the Singularity containers are stored. If this key
+    is missing or if the key equals `null` in YAML (i.e. None in Python), it
+    is assumed Docker container formats are used.
+
+    However, if the `container-path` key is present in the trial configuration,
+    the path points towards the directory where the considered Singularity
+    containers were stored. If this path is missing, we need to raise a
+    `UsageError` as the simulations cannot be executed, i.e. the Singularity
+    containers cannot be found if this path is missing.
+    """
     if trial.invalid_container_path():
         msg = (f'Container path `{trial.container_path}` not present.\n'
                f'Update key `container-path` in `{trial.path.absolute()}`.')
@@ -34,7 +53,22 @@ def assert_container_path(trial):
 )
 @click.option('-s', '--singularity', type=click.Path(exists=True))
 def create(trial, num_patients, dry, singularity):
-    """Create trials."""
+    """Create trials and their virtual cohorts.
+
+    This creates a new in silico trial on the filesystem located at TRIAL. This
+    command raises an `UsageError` if the TRIAL directory already exists and
+    requires to user to either provide a different path or remove the
+    conflicting directory.
+
+    On construction the user can provide the sample size, i.e. the number of
+    virtual patients to consider in the cohort, as well as to provide a the
+    desired container type. By default Docker containers are used. The chosen
+    container environment will be stored inside the trial's configuration.
+
+    Once the directory for the virtual trial are set up, the
+    `virtual-patient-generation` model is evaluated to sample the statistical
+    model and fill the patient configuration with their properties.
+    """
 
     # Although more convenient, the option to overwrite directories is not
     # included to prevent accidentally dropping large directories.
@@ -62,7 +96,13 @@ def create(trial, num_patients, dry, singularity):
 @click.option('-n', '--num', type=int)
 @click.option('-x', '--dry', is_flag=True, default=False)
 def append(trial, num, dry):
-    """Append patient to existing trial."""
+    """Append a number of virtual patients to the existing trial at TRIAL.
+
+    This appends new virtual patients to an existing trial. The new patient
+    directories are created, continuing with the original numbering. Again,
+    the `virtual-patient-model` is evaluated, now only for the newly appended
+    patients, to evaluated their statistical properties.
+    """
 
     path = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(path, runner=new_runner(dry))
@@ -70,10 +110,12 @@ def append(trial, num, dry):
     # enforce container directory from configuration is valid
     assert_container_path(trial)
 
+    # append the new patients
     sample_size = trial.get('sample_size')
     for i in range(sample_size, sample_size + num):
         trial.append_patient(i)
 
+    # update the newly appended patient properties
     trial.sample_virtual_patient(sample_size, sample_size + num)
     trial.update({'sample_size': sample_size + num})
     trial.write()
@@ -84,7 +126,19 @@ def append(trial, num, dry):
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option('--parallel', is_flag=True, default=False)
 def run(trial, dry, parallel):
-    """Run trials."""
+    """Run all simulations for the patients in the in silico trial at TRIAL.
+
+    The compute simulation pipeline is evaluated for each patient considered
+    in the virtual cohort. The patients can be evaluated in parallel as well
+    as sequentially. For sequential evalaution `desist` will display a simple
+    progress bar in the terminal, indicating a rough estimate for the remaining
+    simulation time till completion. For parallel evaluation this is disabled
+    and the parallel evaluation of running the simulations is handled
+    explicitly through `GNU Parallel`.
+
+    FIXME: link documentation to example files
+
+    """
 
     runner = new_runner(dry, parallel=parallel)
     config = pathlib.Path(trial).joinpath(trial_config)
