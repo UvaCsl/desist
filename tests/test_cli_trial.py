@@ -116,8 +116,8 @@ def test_trial_run(mocker, tmpdir, platform, num_patients, parallel):
         result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
         assert result.exit_code == 0
 
-        cmd = [str(path), '-x']
-        cmd = cmd + ['--parallel'] if parallel else cmd
+        cmd = [str(path)]
+        cmd = cmd + ['--parallel'] if parallel else cmd + ['-x']
         result = runner.invoke(run, cmd)
         assert result.exit_code == 0
 

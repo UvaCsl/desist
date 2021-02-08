@@ -9,6 +9,9 @@ from .runner import LocalRunner, Logger
 trial_config = 'trial.yml'
 trial_path = pathlib.Path('/trial')
 
+# FIXME: generalise this model
+virtual_patient_model = 'virtual-patient-generation'
+
 
 class Trial(Config):
     """Representation of a trial."""
@@ -37,6 +40,26 @@ class Trial(Config):
 
         # store the runner and container type
         self.runner = runner
+
+    def __iter__(self):
+        """Iterable over the patients in the trial.
+
+        The iterator of `Trial` yields a patient instance for each patient
+        present in the trial. The patients are yielded in sorted order, where
+        the sort is based on their directory.
+        """
+
+        patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
+        for path in sorted(list(patient_paths)):
+            config_path = path.joinpath(patient_config)
+            patient = Patient.read(config_path, runner=self.runner)
+
+            # Insert the `container-path` directory from the trial config file
+            # into the patient configuration to propagate the container
+            # directory into the patient instance.
+            patient |= {'container-path': self.container_path}
+
+            yield patient
 
     @classmethod
     def read(cls, path, runner=Logger()):
@@ -86,33 +109,24 @@ class Trial(Config):
 
         patients = [trial_path.joinpath(p) for p in self.patients]
 
-        # FIXME: generalise this model
-        model = 'virtual-patient-generation'
-
-        container = create_container(model,
+        container = create_container(virtual_patient_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
         container.bind(self.path.parent, trial_path)
         container.run(args=' '.join(map(str, patients)))
 
     def run(self):
-        """Run the full trial simulation."""
+        """Invokes the simulation pipeline for each patient in the trial."""
 
-        patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
-        for i, path in enumerate(sorted(list(patient_paths))):
-            config = path.joinpath(patient_config)
-            patient = Patient.read(config, runner=self.runner)
-            patient.run(container_path=self.container_path)
+        # exhaust all patients present in the iterator
+        for patient in self:
+            patient.run()
 
 
 class ParallelTrial(Trial):
     # For parallel execution _enumerate_ the required patient
     # commands that need to be considered for the current trial.
     def run(self):
-        patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
-        for i, path in enumerate(sorted(list(patient_paths))):
-            config = path.joinpath(patient_config)
-            patient = Patient.read(config, runner=self.runner)
-
-            cmd = f'isct --log {path}/isct.log patient run {patient.path}'
+        for p in self:
+            cmd = f'isct --log {p.dir}/isct.log patient run {p.path}'
             self.runner.run(cmd.split())

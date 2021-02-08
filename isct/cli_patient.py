@@ -29,7 +29,8 @@ def run(patient, dry):
     assert_container_path(trial)
 
     # run patient
-    patient.run(container_path=trial.container_path)
+    patient |= {'container-path': trial.container_path}
+    patient.run()
 
 
 # @patient.command()

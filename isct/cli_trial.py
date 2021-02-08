@@ -1,4 +1,5 @@
 import click
+import logging
 import pathlib
 
 from .trial import Trial, ParallelTrial, trial_config
@@ -7,16 +8,16 @@ from .runner import new_runner
 # FIXME: add `trial status` to show current status of the problem
 
 
+@click.group()
+def trial():
+    """Trial"""
+
+
 def assert_container_path(trial):
     if trial.invalid_container_path():
         msg = (f'Container path `{trial.container_path}` not present.\n'
                f'Update key `container-path` in `{trial.path.absolute()}`.')
         raise click.UsageError(click.style(msg, fg='red'))
-
-
-@click.group()
-def trial():
-    """Trial"""
 
 
 @trial.command()
@@ -97,8 +98,23 @@ def run(trial, dry, parallel):
     # enforce container directory from configuration is valid
     assert_container_path(trial)
 
-    # evaluate all simulations in trial
-    trial.run()
+    # For parallel evaluation or when running with explicit debug logging
+    # enabled, the trial is evaluated _without_ a progress bar. This prevents
+    # that print statements written to the console interrupt the printing of
+    # Click's progress bar.
+    if parallel or logging.DEBUG >= logging.root.level:
+        return trial.run()
+
+    # Exhaust all patients in the trial's iterator within Click's progress bar.
+    # This displays a basic progress bar in the terminal with ETA estimate and
+    # shows the last completed patient.
+    with click.progressbar(
+            trial,
+            show_eta=True,
+            item_show_func=lambda x: f'{x.dir}' if x else None,
+    ) as bar:
+        for patient in bar:
+            patient.run()
 
 
 @trial.command()

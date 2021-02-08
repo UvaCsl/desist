@@ -15,7 +15,8 @@ class Patient(Config):
                  idx=0,
                  prefix='patient',
                  config={},
-                 runner=Logger()):
+                 runner=Logger(),
+                 ):
         """Initialise a Patient: path either basename or to patient.yml"""
 
         # form patient path from prefix and ID
@@ -60,10 +61,11 @@ class Patient(Config):
         """Create a patient directory with configuration files."""
         self.write()
 
-    def run(self, container_path=None):
+    def run(self):
         """Evaluate simulation of virtual patient."""
 
         events = Events(self.get('events'))
+        container_path = self.get('container-path')
 
         for idx, model in enumerate(events.models):
             container = create_container(f'{model}',
