@@ -1,3 +1,4 @@
+import pathlib
 import pytest
 
 from isct.container import create_container
@@ -42,7 +43,16 @@ def test_bind_volume(container, host, local):
         c = container(".", "./container", runner=DummyRunner())
         flag = '-B'
 
-    assert c.volumes == []
+    assert c.volumes == ''
     c.bind(host, local)
-    assert c.volumes[0] == f'{host}:{local}'
+
+    # add host/local pair
+    host = pathlib.Path(host).absolute()
+    local = pathlib.Path(local)
+    assert c.bind_volumes[0] == (host, local)
+
+    # ensure `:` formatting
+    assert f'{host}:{local}' in c.volumes
+
+    # ensure correct `bind_flag` is present
     assert flag in ' '.join(c.run())

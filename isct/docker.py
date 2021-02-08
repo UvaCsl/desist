@@ -14,6 +14,7 @@ class Docker(Container):
         # FIXME: make this a general routine on `Container`
         self.tag = os.path.basename(self.path).replace("_", "-")
         self.docker_group = docker_group
+        self.bind_flag = '-v'
 
         # Docker requires `sudo` when no part of user group; only on Linux
         self.sudo = ''
@@ -30,9 +31,7 @@ class Docker(Container):
         return self.runner.run(cmd.split())
 
     def run(self, args=''):
-        volumes = ' '.join(map(lambda s: f'-v {s}', self.volumes))
-
-        cmd = f'{self.sudo} docker run {volumes} {self.tag} {args}'
+        cmd = f'{self.sudo} docker run {self.volumes} {self.tag} {args}'
         permissions_cmd = self.update_file_permissions()
 
         if permissions_cmd is not None:
@@ -50,7 +49,7 @@ class Docker(Container):
             return None
 
         # If no volumes were written, no permissions have to be updated
-        if self.volumes == []:
+        if len(self.bind_volumes) == 0:
             return None
 
         if not self.docker_group:
@@ -65,7 +64,7 @@ class Docker(Container):
             # which we undo.
             #
             # FIXME: resolve these hardcoded paths
-            for host, local in zip(self.hosts, self.locals):
+            for (host, local) in self.bind_volumes:
                 if '/patient' in str(local) or '/trial' in str(local):
                     permission_path = host
                     break
@@ -84,7 +83,6 @@ class Docker(Container):
         # FIXME: it would be much nicer to avoid these operations...
         #
         # Reference discussions at: https://stackoverflow.com/a/29584184
-        volumes = ' '.join(map(lambda s: f'-v {s}', self.volumes))
-        return (f"docker run --entrypoint /bin/sh {volumes}"
+        return (f"docker run --entrypoint /bin/sh {self.volumes}"
                 f""" {self.tag} -c """
                 f"""chown -R `stat -c "%u:%g" /patient` /patient""")

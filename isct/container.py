@@ -14,11 +14,6 @@ def create_container(path, container_path=None, runner=Logger()):
     return Docker(path, runner=runner)
 
 
-# FIXME: consider making `self.volumes` a `@property` of the class, as the
-# routine is the same for `Docker` and `Singularity` except the flags `-v` and
-# `-B`.
-
-
 class Container(abc.ABC):
     """Abstract base class for container environments. """
     def __init__(self, path, runner=Logger()):
@@ -26,16 +21,35 @@ class Container(abc.ABC):
         parent, base = path.parent, os.path.basename(path)
         self.path = parent.joinpath(base)
 
-        self.hosts = []
-        self.locals = []
-        self.volumes = []
+        self.bind_volumes = []
+        self.bind_flag: str = NotImplemented
+
         self.runner = runner
 
     def bind(self, host, local):
-        """Bind volume from host to local."""
-        self.hosts.append(pathlib.Path(host).absolute())
-        self.locals.append(pathlib.Path(local))
-        self.volumes.append(f'{self.hosts[-1]}:{self.locals[-1]}')
+        """Add a `(host, local)` path pair to the bind volumes.
+
+        The absolute host path is paired with the local path and appended to
+        the list of already appended `(host, local)` pairs.
+        """
+        host = pathlib.Path(host).absolute()
+        local = pathlib.Path(local)
+        self.bind_volumes.append((host, local))
+
+    @property
+    def volumes(self):
+        """Return an argument list of the bind volumes.
+
+        The volumes are typically attached with an specific option flag, e.g.
+        `-v` or `-B` for Docker or Singularity. These are variadic arguments,
+        that can be repeated any number of times to add multiple pairs of
+        `host` to `local` path pairs.
+        """
+        if len(self.bind_volumes) == 0:
+            return ''
+
+        pairs = [f'{host}:{local}' for (host, local) in self.bind_volumes]
+        return ' '.join(map(lambda s: f'{self.bind_flag} {s}', pairs))
 
     @abc.abstractmethod
     def run(self, args=''):

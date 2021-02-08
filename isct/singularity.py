@@ -11,6 +11,7 @@ class Singularity(Container):
         self.container_path = pathlib.Path(container_path).absolute()
         self.tag = os.path.basename(self.path).replace("_", "-")
         self.sudo = 'sudo'
+        self.bind_flag = '-B'
 
         self.container = self.container_path.joinpath(f'{self.tag}.sif')
 
@@ -36,6 +37,5 @@ class Singularity(Container):
         return self.runner.run(cmd.split(), check=True)
 
     def run(self, args=''):
-        volumes = ' '.join(map(lambda s: f'-B {s}', self.volumes))
-        cmd = f'singularity run {volumes} {self.container} {args}'
+        cmd = f'singularity run {self.volumes} {self.container} {args}'
         return self.runner.run(cmd.split())
