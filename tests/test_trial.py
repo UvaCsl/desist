@@ -26,6 +26,13 @@ def test_trial_exists(tmpdir):
     Trial.read(trial.path)
 
 
+@pytest.mark.parametrize('sample_size', [1, 10])
+def test_trial_length(tmpdir, sample_size):
+    trial = Trial(tmpdir, sample_size, runner=Logger())
+    trial.create()
+    assert len(trial) == sample_size
+
+
 @pytest.mark.parametrize('config', [{}, {
     'a': 1
 }, {

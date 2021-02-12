@@ -61,6 +61,14 @@ class Trial(Config):
 
             yield patient
 
+    def __len__(self):
+        """Returns the number of virtual patients considered in the trial.
+
+        Counts the number of patients by exhausting the
+        :meth:`~isct.trial.Trial.patients` generator.
+        """
+        return len(list(self.patients))
+
     @classmethod
     def read(cls, path, runner=Logger()):
         config = super().read(path)
