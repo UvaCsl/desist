@@ -3,7 +3,7 @@ import pathlib
 import pytest
 import os
 
-from isct.cli_trial import create, append, run
+from isct.cli_trial import create, append, run, list_key
 from isct.trial import Trial, trial_config
 from isct.utilities import OS
 
@@ -129,3 +129,35 @@ def test_trial_run(mocker, tmpdir, platform, num_patients, parallel):
         else:
             for k in ['docker', 'run']:
                 assert k in result.output
+
+
+@pytest.mark.parametrize('num_patients', [1, 2, 5])
+def test_trial_list(tmpdir, num_patients):
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
+        assert result.exit_code == 0
+
+        # prefix is uniform: should be counted equal to number of patients
+        result = runner.invoke(list_key, [str(path), 'prefix'])
+        assert result.exit_code == 0
+        assert "'prefix'" in result.output
+        assert f"'patient' ({num_patients})" in result.output
+
+        # id is unique: should be counted only once per patient
+        result = runner.invoke(list_key, [str(path), 'id'])
+        assert result.exit_code == 0
+        assert "'id'" in result.output
+        for i in range(num_patients):
+            assert f"'{i}' (1)" in result.output
+
+        # when restricting the number of outputted entries, these are sorted
+        # so this should only display the zero ID and not the others
+        result = runner.invoke(list_key, [str(path), 'id', '-n', 1])
+        assert result.exit_code == 0
+        assert "'id'" in result.output
+        assert "'0' (1)" in result.output
+        for i in range(1, num_patients):
+            assert f"'{i}' (1)" not in result.output

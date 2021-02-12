@@ -1,11 +1,10 @@
 import click
+import collections
 import logging
 import pathlib
 
 from .trial import Trial, ParallelTrial, trial_config
 from .runner import new_runner
-
-# FIXME: add `trial status` to show current status of the problem
 
 
 @click.group()
@@ -115,6 +114,39 @@ def run(trial, dry, parallel):
     ) as bar:
         for patient in bar:
             patient.run()
+
+
+@trial.command()
+@click.argument('trial', type=click.Path(exists=True))
+@click.argument('key', type=str)
+@click.option('-n', type=int, help="Lists `n` most common elements only.")
+def list_key(trial, key, n):
+    """Lists the values corresponding to KEY for each patient in TRIAL.
+
+    This routine iterats all patient configurations encountered in the
+    specified trial. For each configuration the provided KEY is extracted and
+    its occurrences are counted for duplicate keys. By default all uniquely
+    encountered values, and their count, are reported to the user.
+
+    The `-n` option can be provided to list only the `n` most common elements
+    in the list of unique elements.
+    """
+
+    # extract patients from trial
+    config = pathlib.Path(trial).joinpath(trial_config)
+    trial = Trial.read(config)
+
+    # count occurrences of all values of `key` in patient configurations
+    counter = collections.Counter([p.get(key) for p in trial])
+
+    # ensure the sum matches the number of patients
+    err = "Counted '{total=}' does not match patient count {len(patients)}"
+    assert sum(counter.values()) == len(trial), err
+
+    # report the most common keys
+    click.echo(f"Encountered key '{key}' in {len(trial)} patients:")
+    for (value, count) in counter.most_common(n):
+        click.echo(f"'{value}' ({count})")
 
 
 @trial.command()
