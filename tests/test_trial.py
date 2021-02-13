@@ -2,7 +2,7 @@ import os
 import pathlib
 import pytest
 
-from isct.trial import Trial, trial_config
+from isct.trial import Trial, ParallelTrial, trial_config
 from isct.patient import Patient
 from isct.runner import Logger
 from isct.utilities import OS
@@ -69,14 +69,15 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
         assert read.get(k) == v
 
 
+@pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-def test_trial_run(mocker, tmpdir, platform):
+def test_trial_run(mocker, tmpdir, trial_cls, platform):
     """Ensure trial run does not fail, capture commands inside runner."""
     mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
 
     sample_size = 5
-    runner = DummyRunner()
-    trial = Trial(tmpdir, sample_size, runner=runner)
+    runner = DummyRunner(write_config=True)
+    trial = trial_cls(tmpdir, sample_size, runner=runner)
 
     trial.create()
     assert os.path.isdir(trial.path.parent)
@@ -85,6 +86,22 @@ def test_trial_run(mocker, tmpdir, platform):
     # these tests could be more extensive
     trial.run()
     assert 'run' in runner
+    for patient in trial:
+        assert f'{patient.path.parent}' in runner
+
+    # reset output and ensure skippable patients are skipped
+    runner.clear()
+
+    # Parallel is not actually evaluated, i.e. we do not go through gnu
+    # parallel in tests, thus we manually set it to completed
+    if trial_cls == ParallelTrial:
+        for patient in trial:
+            patient.completed = True
+            patient.write()
+
+    trial.run(skip_completed=True)
+    for patient in trial:
+        assert f'{patient.path.parent}' not in runner
 
 
 def test_trial_container_path(tmpdir):

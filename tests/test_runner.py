@@ -5,14 +5,37 @@ from isct.runner import new_runner
 
 
 class DummyRunner(Runner):
-    def __init__(self):
+    """A dummy implementation of the runner capturing all outputs.
+
+    All outputs that would normally be evaluated as commands are captured in
+    the `self.output` attribute. This enables testing if the right commands are
+    emitted by the classes. The `__contains__` routine is implemented to easily
+    test if commands were emitted.
+
+    >>> runner = DummyRunner()
+    >>> ...
+    >>> assert 'some specific command' in runner, 'command not emitted'
+
+    """
+    def __init__(self, write_config=False):
         super().__init__()
         self.output = []
+        self.write_config = write_config
+
+    def __str__(self):
+        """String representation of stored commands, one per line."""
+        return '\n'.join([' '.join(string) for string in self.output])
 
     def __contains__(self, string):
-        return any([string in output for output in self.output])
+        """Test if the string is contained in any of the captured commands."""
+        return any([string in ' '.join(output) for output in self.output])
+
+    def clear(self):
+        """Clears the stored commands in `self.output`."""
+        self.output = []
 
     def run(self, cmd, check=True, shell=False):
+        """Mocks the command by appending the command to `self.output`."""
         self.output.append(cmd)
         return cmd
 

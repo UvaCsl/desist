@@ -23,7 +23,9 @@ def run(patient, dry):
     """Run a patient's simulation pipeline.
 
     The complete simulation pipeline is evaluated for the patient located
-    at the provided PATIENT path.
+    at the provided PATIENT path. The simulation is evaluated regardless of
+    the completed flag, i.e. the simulation is _always_ invoked when
+    specifically called with this command.
     """
 
     # read patient configuration
@@ -36,8 +38,10 @@ def run(patient, dry):
     # ensure the container path for singularity exists
     assert_container_path(trial)
 
-    # run patient
+    # only set container path if present
     patient |= {'container-path': trial.container_path}
+
+    # run patient
     patient.run()
 
 

@@ -32,6 +32,7 @@ class Patient(Config):
             'prefix': prefix,
             'id': idx,
             'events': default_events.to_dict(),
+            'completed': False,
             # FIXME: the labels _have_ to be generated/generic?
             'labels': {
                 'place-clot': 'place-clot'
@@ -39,6 +40,16 @@ class Patient(Config):
         }
         config = {**defaults, **config}
         super().__init__(path, config)
+
+    @property
+    def completed(self):
+        """Indicates if all simulations are completed."""
+        return self.get('completed', False)
+
+    @completed.setter
+    def completed(self, value: bool):
+        """Setter routine for :meth:`~isct.patient.Patient.completed`."""
+        self['completed'] = value
 
     @classmethod
     def read(cls, path, runner=Logger()):
@@ -73,3 +84,17 @@ class Patient(Config):
                                          runner=self.runner)
             container.bind(self.path.parent, patient_path)
             container.run(args=f'event --patient /patient --event {idx}')
+
+        # FIXME: assert that all simulations worked as intended
+
+        # Update the local configuration file only when the runner is able
+        # to actually invoke the simulations, i.e. do not update the config
+        # files when running with a verbose runner, e.g. a `Logger`.
+        if self.runner.write_config:
+
+            # FIXME: the marking of a patient simulation as `completed` could
+            # be make more general by storing a completed boolean per event.
+            # So, we can then set here
+            # `self.completed = all([e.completed for e in events.models])
+            self.completed = True
+            self.write()

@@ -125,7 +125,9 @@ def append(trial, num, dry):
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option('--parallel', is_flag=True, default=False)
-def run(trial, dry, parallel):
+@click.option('--skip-completed', is_flag=True, default=False,
+              help="Skip previously completed patient simulations.")
+def run(trial, dry, parallel, skip_completed):
     """Run all simulations for the patients in the in silico trial at TRIAL.
 
     The compute simulation pipeline is evaluated for each patient considered
@@ -156,13 +158,16 @@ def run(trial, dry, parallel):
     # that print statements written to the console interrupt the printing of
     # Click's progress bar.
     if parallel or logging.DEBUG >= logging.root.level:
-        return trial.run()
+        return trial.run(skip_completed=skip_completed)
 
     # Exhaust all patients in the trial's iterator within Click's progress bar.
     # This displays a basic progress bar in the terminal with ETA estimate and
-    # shows the last completed patient.
+    # shows the last completed patient. The patients are filtered on using
+    # `skip_completed` and their `patient.completed` status to improve the ETA
+    # estimate by dropping all skippable patients (this results in a more
+    # accurate length of the progress bar's iterator count).
     with click.progressbar(
-            trial,
+            [p for p in trial if not (skip_completed and p.completed)],
             show_eta=True,
             item_show_func=lambda x: f'{x.dir}' if x else None,
     ) as bar:

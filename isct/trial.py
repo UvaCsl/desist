@@ -205,22 +205,27 @@ class Trial(Config):
         container.bind(self.path.parent, trial_path)
         container.run(args=' '.join(map(str, patients)))
 
-    def run(self):
+    def run(self, skip_completed=False):
         """Runs the full trial simulation.
 
         Evaluates the simulation of all virtual patients present in the
         current trial. The patients are evaluated in sorted order, where the
         patients are sorted based on the patient directories.
+
+        Args:
+            skip_completed (bool): Skip already completed patients
         """
 
         # exhaust all patients present in the iterator
         for patient in self:
+            if skip_completed and patient.completed:
+                continue
             patient.run()
 
 
 class ParallelTrial(Trial):
     """Parallel evaluation of patient simulations using `GNU Parallel`_."""
-    def run(self):
+    def run(self, skip_completed=False):
         """Pipe the simulation commands over ``stdout``.
 
         Rather than directly evaluating the patient simulations, as done
@@ -230,9 +235,14 @@ class ParallelTrial(Trial):
         which then takes control over the parallel evaluation of the patient
         simulations.
 
+        Args:
+            skip_completed (bool): Skip already completed patients.
+
         Examples:
             >>> isct -v trial run --parallel | parallel -j 4
         """
         for p in self:
+            if skip_completed and p.completed:
+                continue
             cmd = f'isct --log {p.dir}/isct.log patient run {p.path}'
             self.runner.run(cmd.split())

@@ -14,8 +14,20 @@ def new_runner(verbose, parallel=False):
 
 
 class Runner(abc.ABC):
+    """Abstract implementation of a command runner.
+
+    The `Runner` classes are in charge of evaluating the provided commands and
+    many variations can be imagined, ranging from locally running the commands,
+    to merely logging the commands to the console.
+
+    The `write_config` attribute determines if the runner allows that a patient
+    configuration is updated and the updates written to disk. For scenarios
+    where the commands are only logged, i.e. the are not evaluated, the config
+    files should probably not be updated. This behaviour is controlled by
+    setting the `write_config` attribute in child implementations.
+    """
     def __init__(self):
-        pass
+        self.write_config = False
 
     def format(self, cmd):
         """Formatting for the command for logging."""
@@ -48,6 +60,7 @@ class LocalRunner(Runner):
     """
     def __init__(self):
         super().__init__()
+        self.write_config = True
 
     def run(self, cmd, check=True, shell=False):
         """Prints the commands to `stdout`."""

@@ -70,3 +70,8 @@ def test_patient_run(tmpdir):
 
     patient.run()
     assert f'{patient.path.parent}:/patient' in runner
+    assert not patient.completed, "verbose runner should not update the config"
+
+    runner.write_config = True
+    patient.run()
+    assert patient.completed, "non-verbose runner should update the config"
