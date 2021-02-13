@@ -35,8 +35,9 @@ path, here ``/trial`` that maps towards the trial directory on the host
 machine. For details, see :meth:`isct.container.Container.bind`.
 """
 
-# FIXME: generalise this model
+# FIXME: generalise these model
 virtual_patient_model = 'virtual-patient-generation'
+trial_outcome_model = 'in-silico-trial-outcome'
 
 
 class Trial(Config):
@@ -204,6 +205,14 @@ class Trial(Config):
                                      runner=self.runner)
         container.bind(self.path.parent, trial_path)
         container.run(args=' '.join(map(str, patients)))
+
+    def outcome(self):
+        """Evaluate the trial outcome model"""
+        container = create_container(trial_outcome_model,
+                                     container_path=self.container_path,
+                                     runner=self.runner)
+        container.bind(self.path.parent, trial_path)
+        container.run()
 
     def run(self, skip_completed=False):
         """Runs the full trial simulation.

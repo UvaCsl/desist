@@ -82,7 +82,7 @@ def create(trial, num_patients, dry, singularity):
     # update configuration file with provided path to Singularity containers
     if singularity:
         container_path = pathlib.Path(singularity).absolute()
-        config = {'container-path': str(container_path)}
+        config |= {'container-path': str(container_path)}
 
     trial = Trial(trial,
                   sample_size=num_patients,
@@ -125,7 +125,9 @@ def append(trial, num, dry):
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option('--parallel', is_flag=True, default=False)
-@click.option('--skip-completed', is_flag=True, default=False,
+@click.option('--skip-completed',
+              is_flag=True,
+              default=False,
               help="Skip previously completed patient simulations.")
 def run(trial, dry, parallel, skip_completed):
     """Run all simulations for the patients in the in silico trial at TRIAL.
@@ -167,7 +169,7 @@ def run(trial, dry, parallel, skip_completed):
     # estimate by dropping all skippable patients (this results in a more
     # accurate length of the progress bar's iterator count).
     with click.progressbar(
-            [p for p in trial if not (skip_completed and p.completed)],
+        [p for p in trial if not (skip_completed and p.completed)],
             show_eta=True,
             item_show_func=lambda x: f'{x.dir}' if x else None,
     ) as bar:
@@ -213,3 +215,30 @@ def list_key(trial, key, n):
 def reset(trial):
     """Reset trials."""
     # FIXME: implement resetting of patients
+
+
+@trial.command()
+@click.argument('trial', type=click.Path(exists=True))
+@click.option(
+    '-x',
+    '--dry',
+    is_flag=True,
+    default=False,
+    help='Logs container commands to `stdout` rather than evaluating directly')
+def outcome(trial, dry):
+    """Evaluates the trial outcome model for TRIAL.
+
+    This invokes the defined `trial_outcome_model` for the trial located
+    at the provided TRIAL path on the file system.
+    """
+
+    # extract the runner and configuration
+    runner = new_runner(dry)
+    config = pathlib.Path(trial).joinpath(trial_config)
+
+    # read the trial's configuration
+    trial = Trial.read(config, runner=runner)
+    assert_container_path(trial)
+
+    # evaluate the outcome model
+    trial.outcome()

@@ -3,7 +3,7 @@ import pathlib
 import pytest
 import os
 
-from isct.cli_trial import create, append, run, list_key
+from isct.cli_trial import create, append, run, list_key, outcome
 from isct.trial import Trial, trial_config
 from isct.utilities import OS
 
@@ -129,6 +129,20 @@ def test_trial_run(mocker, tmpdir, platform, num_patients, parallel):
         else:
             for k in ['docker', 'run']:
                 assert k in result.output
+
+
+@pytest.mark.parametrize('num_patients', [5])
+def test_trial_outcome(tmpdir, num_patients):
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
+        assert result.exit_code == 0
+
+        trial = Trial.read(path.joinpath(trial_config))
+        result = runner.invoke(outcome, [str(path), '-x'])
+        assert result.exit_code == 0
+        assert f'{trial.dir}:/trial' in result.output
 
 
 @pytest.mark.parametrize('num_patients', [1, 2, 5])

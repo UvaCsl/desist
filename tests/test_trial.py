@@ -69,6 +69,27 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
         assert read.get(k) == v
 
 
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+@pytest.mark.parametrize('sample_size', [5])
+def test_trial_outcome(mocker, tmpdir, sample_size, platform):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    runner = DummyRunner(write_config=True)
+    trial = Trial(tmpdir, sample_size, runner=runner)
+    trial.create()
+
+    assert os.path.isdir(trial.path.parent)
+    assert os.path.isfile(trial.path)
+
+    # evaluate outcome; only check the emitted command
+    runner.clear()
+    trial.outcome()
+
+    # assert some expected snippets are present
+    for substring in ['run', f'{trial.dir}:/trial', 'trial-outcome']:
+        assert substring in runner, f'missing {substring} in {runner}'
+
+
 @pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_run(mocker, tmpdir, trial_cls, platform):
