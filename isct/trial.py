@@ -123,15 +123,23 @@ class Trial(Config):
 
         The ``container-path`` stores the directory containing the Singularity
         containers, see :class:`~isct.singularity.Singularity`.
+
+        The container path is not resolved to an complete absolute path to
+        allow passing a symbolic link as the container path that points to
+        different locations on various systems:
+
+            >>> "$HOME"/containers/ -> /local/user/path/to/containers
+            >>>                     -> /mount/user/path/to/containers
         """
-        path = self.get('container-path', None)
-        if path:
-            return pathlib.Path(path)
+        # FIXME: assert behaviour with symbolic links through additional tests
+
+        if path := self.get('container-path', None):
+            return path
         return None
 
     def invalid_container_path(self):
         """Returns true when no or invalide container paths are encountered."""
-        return self.container_path and not self.container_path.exists()
+        return self.container_path and not os.path.exists(self.container_path)
 
     @property
     def patients(self):
