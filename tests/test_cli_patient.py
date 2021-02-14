@@ -26,7 +26,10 @@ def test_patient_run(mocker, tmpdir, platform):
 
         for k in ['docker', 'run', '-v', ':/patient']:
             assert k in result.output
-        assert all([m in result.output for m in default_events.models])
+
+        # FIXME: this tag conversion should be improved
+        tags = [event.replace("_", "-") for event in default_events.models]
+        assert all([m in result.output for m in tags])
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
@@ -49,7 +52,10 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
 
         for k in ['singularity', 'run', '-B', ':/patient']:
             assert k in result.output
-        assert all([m in result.output for m in default_events.models])
+
+        # FIXME: this tag conversion should be improved
+        tags = [event.replace("_", "-") for event in default_events.models]
+        assert all([m in result.output for m in tags])
 
         # if the singularity directory is not present, the running should fail
         os.rmdir(singularity)

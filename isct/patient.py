@@ -3,7 +3,7 @@ import pathlib
 from .config import Config
 from .container import create_container
 from .runner import Logger
-from .events import Events, default_events
+from .events import Events, default_events, default_labels
 
 patient_config = 'patient.yml'
 patient_path = pathlib.Path('/patient')
@@ -32,11 +32,8 @@ class Patient(Config):
             'prefix': prefix,
             'id': idx,
             'events': default_events.to_dict(),
+            'labels': default_labels,
             'completed': False,
-            # FIXME: the labels _have_ to be generated/generic?
-            'labels': {
-                'place-clot': 'place-clot'
-            }
         }
         config = {**defaults, **config}
         super().__init__(path, config)

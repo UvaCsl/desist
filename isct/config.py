@@ -37,6 +37,8 @@ class Config(dict):
         self.dir = self.path.parent
         super().__init__(**config)
 
+        # FIXME: consider storing a `isct` version / git hash by default
+
     def __fspath__(self) -> str:
         """Return the file system path of the :class:`Config`."""
         return str(self.path)

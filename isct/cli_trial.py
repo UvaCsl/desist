@@ -193,6 +193,11 @@ def list_key(trial, key, n):
     in the list of unique elements.
     """
 
+    # FIXME: we need to raise a usage warning for non-hashable entries, e.g.
+    # lists and dicts, that cannot be placed into the `Counter` easily. Either
+    # change behaviour to simply list all of them (maybe sorted?) or inform
+    # the user somehow, maybe `UsageError`?
+
     # extract patients from trial
     config = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(config)
