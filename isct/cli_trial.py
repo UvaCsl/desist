@@ -82,7 +82,7 @@ def create(trial, num_patients, dry, singularity):
     # update configuration file with provided path to Singularity containers
     if singularity:
         container_path = pathlib.Path(singularity).absolute()
-        config |= {'container-path': str(container_path)}
+        config['container-path'] = str(container_path)
 
     trial = Trial(trial,
                   sample_size=num_patients,

@@ -92,7 +92,7 @@ class Trial(Config):
             # Insert the `container-path` directory from the trial config file
             # into the patient configuration to propagate the container
             # directory into the patient instance.
-            patient |= {'container-path': self.container_path}
+            patient['container-path'] = self.container_path
 
             yield patient
 

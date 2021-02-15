@@ -39,7 +39,7 @@ def run(patient, dry):
     assert_container_path(trial)
 
     # only set container path if present
-    patient |= {'container-path': trial.container_path}
+    patient['container-path'] = trial.container_path
 
     # run patient
     patient.run()
