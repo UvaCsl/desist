@@ -7,6 +7,7 @@ from isct.cli_patient import run
 from isct.cli_trial import create
 from isct.utilities import OS
 from isct.events import default_events
+from isct.trial import Trial, trial_config
 from isct.patient import patient_config
 
 
@@ -20,8 +21,10 @@ def test_patient_run(mocker, tmpdir, platform):
         result = runner.invoke(create, [str(path), '-x'])
         assert result.exit_code == 0
 
-        patient = path.joinpath(f'patient_00000/{patient_config}')
-        result = runner.invoke(run, [str(patient), '-x'])
+        trial = Trial.read(path.joinpath(trial_config))
+        patient = list(trial)[0]
+
+        result = runner.invoke(run, [str(patient.dir), '-x'])
         assert result.exit_code == 0
 
         for k in ['docker', 'run', '-v', ':/patient']:
@@ -46,8 +49,10 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
             [str(path), '-x', '-s', str(singularity)])
         assert result.exit_code == 0
 
-        patient = path.joinpath(f'patient_00000/{patient_config}')
-        result = runner.invoke(run, [str(patient), '-x'])
+        trial = Trial.read(path.joinpath(trial_config))
+        patient = list(trial)[0]
+
+        result = runner.invoke(run, [str(patient.dir), '-x'])
         assert result.exit_code == 0
 
         for k in ['singularity', 'run', '-B', ':/patient']:
@@ -59,6 +64,6 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
 
         # if the singularity directory is not present, the running should fail
         os.rmdir(singularity)
-        result = runner.invoke(run, [str(patient), '-x'])
+        result = runner.invoke(run, [str(patient.dir), '-x'])
         assert result.exit_code == 2
         assert f'`{str(singularity.absolute())}` not present' in result.output

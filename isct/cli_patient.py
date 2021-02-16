@@ -2,7 +2,7 @@ import click
 import pathlib
 
 from .trial import Trial, trial_config
-from .patient import Patient
+from .patient import Patient, patient_config
 from .runner import new_runner
 from .cli_trial import assert_container_path
 
@@ -29,7 +29,7 @@ def run(patient, dry):
     """
 
     # read patient configuration
-    path = pathlib.Path(patient)
+    path = pathlib.Path(patient).joinpath(patient_config)
     patient = Patient.read(path, runner=new_runner(dry))
 
     # extract trial configuration
