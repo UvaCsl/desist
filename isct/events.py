@@ -55,9 +55,6 @@ baseline_event = Event({
     }, {
         'label': 'perfusion_and_tissue_damage',
         'type': 'PERFUSION'
-    }, {
-        'label': 'perfusion_and_tissue_damage',
-        'type': 'OXYGEN'
     }]
 })
 
@@ -71,9 +68,6 @@ stroke_event = Event({
     }, {
         'label': 'perfusion_and_tissue_damage',
         'type': 'PERFUSION'
-    }, {
-        'label': 'perfusion_and_tissue_damage',
-        'type': 'OXYGEN'
     }]
 })
 
@@ -85,11 +79,9 @@ treatment_event = Event({
     }, {
         'label': '1d-blood-flow',
     }, {
+        'evaluate_infarct_estimates': True,
         'label': 'perfusion_and_tissue_damage',
         'type': 'PERFUSION'
-    }, {
-        'label': 'perfusion_and_tissue_damage',
-        'type': 'OXYGEN'
     }, {
         'label': 'patient-outcome-model'
     }]
