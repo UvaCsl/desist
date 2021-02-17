@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-_isct_packages = find_packages('isct/')
+_isct_packages = find_packages(include=['isct'])
 
 _dev = [
     'yapf', 'tox', 'flake8', 'numpy', 'sphinx', 'sphinx_rtd_theme',
