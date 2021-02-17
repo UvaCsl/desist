@@ -3,7 +3,7 @@ import pathlib
 import pytest
 
 from isct.trial import Trial, ParallelTrial, trial_config
-from isct.patient import Patient
+from isct.patient import Patient, LowStoragePatient
 from isct.runner import Logger
 from isct.utilities import OS
 
@@ -90,15 +90,21 @@ def test_trial_outcome(mocker, tmpdir, sample_size, platform):
         assert substring in runner, f'missing {substring} in {runner}'
 
 
+@pytest.mark.parametrize('keep_files, patient_cls',
+                         [(True, Patient), (False, LowStoragePatient)])
 @pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-def test_trial_run(mocker, tmpdir, trial_cls, platform):
+def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
+                   patient_cls):
     """Ensure trial run does not fail, capture commands inside runner."""
     mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
 
     sample_size = 5
     runner = DummyRunner(write_config=True)
-    trial = trial_cls(tmpdir, sample_size, runner=runner)
+    trial = trial_cls(tmpdir,
+                      sample_size,
+                      runner=runner,
+                      keep_files=keep_files)
 
     trial.create()
     assert os.path.isdir(trial.path.parent)
@@ -107,8 +113,10 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform):
     # these tests could be more extensive
     trial.run()
     assert 'run' in runner
+
     for patient in trial:
         assert f'{patient.path.parent}' in runner
+        assert isinstance(patient, patient_cls)
 
     # reset output and ensure skippable patients are skipped
     runner.clear()
@@ -122,6 +130,7 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform):
 
     trial.run(skip_completed=True)
     for patient in trial:
+        assert patient.completed
         assert f'{patient.path.parent}' not in runner
 
 

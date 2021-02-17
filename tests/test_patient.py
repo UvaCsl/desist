@@ -3,7 +3,7 @@ import pathlib
 import pytest
 
 
-from isct.patient import Patient, patient_config
+from isct.patient import Patient, patient_config, LowStoragePatient
 from test_runner import DummyRunner
 
 
@@ -75,3 +75,13 @@ def test_patient_run(tmpdir):
     runner.write_config = True
     patient.run()
     assert patient.completed, "non-verbose runner should update the config"
+
+
+def test_lowstorage_patient(tmpdir):
+    path = pathlib.Path(tmpdir)
+    patient = Patient(path, runner=DummyRunner())
+    patient.create()
+    ls_patient = LowStoragePatient.from_patient(patient)
+    assert ls_patient == patient
+    assert ls_patient.path == patient.path
+    assert ls_patient.runner == patient.runner

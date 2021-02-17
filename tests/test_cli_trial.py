@@ -6,7 +6,7 @@ import os
 from isct.config import Config
 from isct.cli_trial import create, append, run, list_key, outcome
 from isct.trial import Trial, trial_config
-from isct.utilities import OS
+from isct.utilities import OS, MAX_FILE_SIZE
 
 # FIXME: `dry` run does still create all directories though...
 
@@ -129,31 +129,46 @@ def test_trial_append(tmpdir, n):
                 assert f'trial/{patient}' in result_a.output
 
 
+@pytest.mark.parametrize('keep_files', [True, False])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('parallel', [True, False])
-@pytest.mark.parametrize('num_patients', [1, 2, 5])
-def test_trial_run(mocker, tmpdir, platform, num_patients, parallel):
+@pytest.mark.parametrize('num', [1, 2, 5])
+def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
     mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    keep_cmd = '--keep-files' if keep_files else '--clean-files'
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
+        result = runner.invoke(create, [str(path), '-n', num, '-x'])
         assert result.exit_code == 0
 
         cmd = [str(path)]
         cmd = cmd + ['--parallel'] if parallel else cmd + ['-x']
+        cmd = cmd + [keep_cmd]
+
+        # create a large file in one of the patients
+        trial = Trial.read(path.joinpath(trial_config))
+        large_file = list(trial)[0].dir.joinpath('large-file')
+        with open(large_file, 'wb') as outfile:
+            outfile.seek(MAX_FILE_SIZE + 10)
+            outfile.write(b"\0")
+        assert large_file.exists()
+
         result = runner.invoke(run, cmd)
         assert result.exit_code == 0
 
-        for i in range(num_patients):
+        for i in range(num):
             assert f'patient_{i:05}' in result.output
 
         if parallel:
             assert 'docker' not in result.output
+            assert keep_cmd in result.output
         else:
             for k in ['docker', 'run']:
                 assert k in result.output
+            assert keep_files == large_file.exists()
 
 
 @pytest.mark.parametrize('num_patients', [5])

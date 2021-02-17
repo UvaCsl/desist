@@ -139,11 +139,15 @@ def append(trial, num, dry):
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option('--parallel', is_flag=True, default=False)
+@click.option(
+    '--keep-files/--clean-files',
+    default=True,
+    help=("Keep or clean large files after evaluating all simulations."))
 @click.option('--skip-completed',
               is_flag=True,
               default=False,
               help="Skip previously completed patient simulations.")
-def run(trial, dry, parallel, skip_completed):
+def run(trial, dry, parallel, keep_files, skip_completed):
     """Run all simulations for the patients in the in silico trial at TRIAL.
 
     The compute simulation pipeline is evaluated for each patient considered
@@ -162,9 +166,11 @@ def run(trial, dry, parallel, skip_completed):
     config = pathlib.Path(trial).joinpath(trial_config)
 
     if parallel:
-        trial = ParallelTrial.read(config, runner=runner)
+        trial = ParallelTrial.read(config,
+                                   runner=runner,
+                                   keep_files=keep_files)
     else:
-        trial = Trial.read(config, runner=runner)
+        trial = Trial.read(config, runner=runner, keep_files=keep_files)
 
     # enforce container directory from configuration is valid
     assert_container_path(trial)

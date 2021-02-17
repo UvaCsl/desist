@@ -4,19 +4,21 @@ from .config import Config
 from .container import create_container
 from .runner import Logger
 from .events import Events, default_events, default_labels
+from .utilities import clean_large_files
 
 patient_config = 'patient.yml'
 patient_path = pathlib.Path('/patient')
 
 
 class Patient(Config):
-    def __init__(self,
-                 path,
-                 idx=0,
-                 prefix='patient',
-                 config={},
-                 runner=Logger(),
-                 ):
+    def __init__(
+            self,
+            path,
+            idx=0,
+            prefix='patient',
+            config={},
+            runner=Logger(),
+    ):
         """Initialise a Patient: path either basename or to patient.yml"""
 
         # form patient path from prefix and ID
@@ -96,3 +98,22 @@ class Patient(Config):
             # `self.completed = all([e.completed for e in events.models])
             self.completed = True
             self.write()
+
+
+class LowStoragePatient(Patient):
+    """A low storage variant of the patient.
+
+    After the simulation pipeline is completed, all files larger than
+    `isct.utilities.MAX_FILE_SIZE` are deleted. This ensures litte data is
+    aggregated along large cohorts of virtual patients.
+    """
+
+    @classmethod
+    def from_patient(cls, patient):
+        """Initialise a LowStoragePatient from a patient class."""
+        return cls.read(patient.path, runner=patient.runner)
+
+    def run(self):
+        """Cleans simulation output after all models are completed."""
+        super().run()
+        clean_large_files(self.dir)

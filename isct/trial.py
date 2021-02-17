@@ -19,7 +19,7 @@ commands over ``stdout`` for evalation using `GNU Parallel`_.
 import pathlib
 import os
 
-from .patient import Patient, patient_config
+from .patient import Patient, LowStoragePatient, patient_config
 from .container import create_container
 from .config import Config
 from .runner import LocalRunner, Logger
@@ -47,7 +47,9 @@ class Trial(Config):
                  sample_size=1,
                  random_seed=1,
                  config={},
-                 runner=LocalRunner()):
+                 runner=LocalRunner(),
+                 keep_files=True,
+                 ):
         """Initialise a trial from given path and options.
 
         Args:
@@ -76,6 +78,9 @@ class Trial(Config):
         # store the runner and container type
         self.runner = runner
 
+        # store the behaviour to keep/clean files after patient simulations
+        self.keep_files = keep_files
+
     def __iter__(self):
         """Iterable over the patients in the trial.
 
@@ -94,6 +99,9 @@ class Trial(Config):
             # directory into the patient instance.
             patient['container-path'] = self.container_path
 
+            if not self.keep_files:
+                patient = LowStoragePatient.from_patient(patient)
+
             yield patient
 
     def __len__(self):
@@ -105,7 +113,7 @@ class Trial(Config):
         return len(list(self.patients))
 
     @classmethod
-    def read(cls, path, runner=Logger()):
+    def read(cls, path, runner=Logger(), keep_files=True):
         """Initialises :class:`Trial` from the provided YAML file.
 
         First the basic :class:`~isct.config.Config` is initialised, afterwhich
@@ -116,7 +124,8 @@ class Trial(Config):
                    sample_size=config['sample_size'],
                    random_seed=config['random_seed'],
                    config=dict(config),
-                   runner=runner)
+                   runner=runner,
+                   keep_files=keep_files)
 
     @property
     def container_path(self):
@@ -235,6 +244,7 @@ class Trial(Config):
         for patient in self:
             if skip_completed and patient.completed:
                 continue
+
             patient.run()
 
 
@@ -256,8 +266,12 @@ class ParallelTrial(Trial):
         Examples:
             >>> isct -v trial run --parallel | parallel -j 4
         """
+
+        # additional flags to pass into the emitted instructions
+        flags = '--keep-files' if self.keep_files else '--clean-files'
+
         for p in self:
             if skip_completed and p.completed:
                 continue
-            cmd = f'isct --log {p.dir}/isct.log patient run {p.dir}'
+            cmd = f'isct --log {p.dir}/isct.log patient run {flags} {p.dir}'
             self.runner.run(cmd.split())

@@ -2,7 +2,7 @@ import click
 import pathlib
 
 from .trial import Trial, trial_config
-from .patient import Patient, patient_config
+from .patient import Patient, LowStoragePatient, patient_config
 from .runner import new_runner
 from .cli_trial import assert_container_path
 
@@ -19,7 +19,11 @@ def patient():
 @patient.command()
 @click.argument('patient', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
-def run(patient, dry):
+@click.option(
+    '--keep-files/--clean-files',
+    default=True,
+    help=("Keep or clean large files after evaluating all simulations."))
+def run(patient, dry, keep_files):
     """Run a patient's simulation pipeline.
 
     The complete simulation pipeline is evaluated for the patient located
@@ -30,7 +34,12 @@ def run(patient, dry):
 
     # read patient configuration
     path = pathlib.Path(patient).joinpath(patient_config)
+
+    # define the patient type
     patient = Patient.read(path, runner=new_runner(dry))
+
+    if not keep_files:
+        patient = LowStoragePatient.from_patient(patient)
 
     # extract trial configuration
     trial = Trial.read(patient.dir.parent.joinpath(trial_config))
