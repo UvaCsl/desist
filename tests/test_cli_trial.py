@@ -3,6 +3,7 @@ import pathlib
 import pytest
 import os
 
+from isct.config import Config
 from isct.cli_trial import create, append, run, list_key, outcome
 from isct.trial import Trial, trial_config
 from isct.utilities import OS
@@ -27,6 +28,30 @@ def test_trial_create(n):
 
         for patient in trial.patients:
             assert f'trial/{patient}' in result.output
+
+
+@pytest.mark.parametrize('n', [1, 5])
+def test_trial_from_criteria_file(tmpdir, n):
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    with runner.isolated_filesystem():
+        criteria = Config('{tmpdir}/criteria.yml',
+                          {'sample_size': n, 'testkey': True})
+        criteria.write()
+        assert os.path.exists(criteria.path)
+
+        result = runner.invoke(create,
+                               [str(path), '-c', str(criteria.path), '-x'])
+        assert result.exit_code == 0
+        assert len(list(filter(lambda p: p.is_dir(), path.iterdir()))) == n
+
+        # ensure the config is passed to the virtual patient model
+        assert '--config' in result.output
+
+        # assert keys from criteria file end up in trial configurations
+        trial = Trial.read(path.joinpath(trial_config))
+        assert trial.get('sample_size') == n
+        assert trial.get('testkey', False)
 
 
 @pytest.mark.parametrize('n', [1, 5])

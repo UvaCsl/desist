@@ -3,6 +3,7 @@ import collections
 import logging
 import pathlib
 
+from .config import Config
 from .trial import Trial, ParallelTrial, trial_config
 from .runner import new_runner
 
@@ -43,6 +44,11 @@ def assert_container_path(trial):
                 type=click.Path(dir_okay=True,
                                 writable=True,
                                 resolve_path=True))
+# FIXME: ideally are `--criteria` and `--num-patients` exclusive arguments
+@click.option('-c',
+              '--criteria',
+              type=click.Path(exists=True),
+              help="Criteria file with trial properties")
 @click.option('-n', '--num-patients', type=int, default=1)
 @click.option(
     '-x',
@@ -52,7 +58,7 @@ def assert_container_path(trial):
     help="Logs container commands to `stdout` rather than evaluating directly."
 )
 @click.option('-s', '--singularity', type=click.Path(exists=True))
-def create(trial, num_patients, dry, singularity):
+def create(trial, criteria, num_patients, dry, singularity):
     """Create trials and their virtual cohorts.
 
     This creates a new in silico trial on the filesystem located at TRIAL. This
@@ -77,7 +83,11 @@ def create(trial, num_patients, dry, singularity):
             click.style(f'Trial `{trial}` already exists', fg="red"))
 
     runner = new_runner(dry)
+
+    # read configuration file and pass as input configuration to trial
     config = {}
+    if criteria:
+        config = Config.read(criteria)
 
     # update configuration file with provided path to Singularity containers
     if singularity:
@@ -115,10 +125,14 @@ def append(trial, num, dry):
     for i in range(sample_size, sample_size + num):
         trial.append_patient(i)
 
-    # update the newly appended patient properties
-    trial.sample_virtual_patient(sample_size, sample_size + num)
+    # write updated trial size to configuration file, such that properties
+    # are present in the `trial.yml`, as used by the virtual patient
+    # generation
     trial.update({'sample_size': sample_size + num})
     trial.write()
+
+    # evaluate the virtual patient model for the provided set of new patients
+    trial.sample_virtual_patient(sample_size, sample_size + num)
 
 
 @trial.command()

@@ -204,7 +204,13 @@ class Trial(Config):
                                      container_path=self.container_path,
                                      runner=self.runner)
         container.bind(self.path.parent, trial_path)
-        container.run(args=' '.join(map(str, patients)))
+
+        # The trial.yml config file is passes as the criteria file for the
+        # virtual patient model.
+        args = ' '.join(map(str, patients))
+        args = f"{args} --config {str(trial_path.joinpath(trial_config))}"
+
+        container.run(args=args)
 
     def outcome(self):
         """Evaluate the trial outcome model"""
