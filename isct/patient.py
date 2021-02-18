@@ -32,6 +32,7 @@ class Patient(Config):
             'prefix': prefix,
             'id': idx,
             'events': default_events.to_dict(),
+            'pipeline_length': len(list(default_events.models)),
             'labels': default_labels,
             'completed': False,
         }

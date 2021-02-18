@@ -259,5 +259,5 @@ class ParallelTrial(Trial):
         for p in self:
             if skip_completed and p.completed:
                 continue
-            cmd = f'isct --log {p.dir}/isct.log patient run {p.path}'
+            cmd = f'isct --log {p.dir}/isct.log patient run {p.dir}'
             self.runner.run(cmd.split())
