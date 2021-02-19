@@ -1,7 +1,9 @@
 import click
 import collections
 import logging
+import os
 import pathlib
+import shutil
 
 from .config import Config
 from .trial import Trial, ParallelTrial, trial_config
@@ -267,3 +269,52 @@ def outcome(trial, dry):
 
     # evaluate the outcome model
     trial.outcome()
+
+
+@trial.command()
+@click.argument('trial', type=click.Path(exists=True))
+@click.argument('archive', type=click.Path(writable=True))
+def archive(trial, archive):
+    """Archive configuration file from TRIAL to ARCHIVE."""
+
+    # prevent the files are not copied into an already populated directory
+    archive = pathlib.Path(archive)
+    if archive.exists():
+        raise click.UsageError(
+            click.style(f'Archive `{archive}` already exists', fg="red"))
+
+    # ensure the trial can be read
+    config = pathlib.Path(trial).joinpath(trial_config)
+    trial = Trial.read(config)
+
+    # prepare the archive
+    archive.mkdir()
+
+    # copy trial configuration
+    shutil.copy2(trial.path, archive)
+
+    # copy trial output if present
+    for fn in ['trial_data.RData', 'trial_outcome.Rmd', 'trial_outcome.html']:
+        fn = trial.dir.joinpath(fn)
+        try:
+            shutil.copy2(fn, archive)
+        except FileNotFoundError:
+            pass
+
+    # copy directory structure for patients
+    for patient in trial:
+        folder = archive.joinpath(os.path.basename(patient.dir))
+        folder.mkdir()
+
+        # transfer the configuration and outcome YAML files
+        for filename in ['patient.yml', 'patient_outcome.yml']:
+            src = patient.dir.joinpath(filename)
+            dst = folder.joinpath(filename)
+
+            # if the file is not there, that is OK, maybe the archive call
+            # is evaluated before the simulations are done, e.g. to share
+            # the virtual cohort
+            try:
+                shutil.copy2(src, dst)
+            except FileNotFoundError:
+                pass

@@ -4,7 +4,7 @@ import pytest
 import os
 
 from isct.config import Config
-from isct.cli_trial import create, append, run, list_key, outcome
+from isct.cli_trial import create, append, run, list_key, outcome, archive
 from isct.trial import Trial, trial_config
 from isct.utilities import OS, MAX_FILE_SIZE
 
@@ -215,3 +215,58 @@ def test_trial_list(tmpdir, num_patients):
         assert "'0' (1)" in result.output
         for i in range(1, num_patients):
             assert f"'{i}' (1)" not in result.output
+
+
+@pytest.mark.parametrize('num_patients', [1, 2, 5])
+def test_trial_archive(tmpdir, num_patients):
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    # create a dummy trial
+    result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
+    assert result.exit_code == 0
+
+    # simulate trial outcome files
+    trial = Trial.read(path.joinpath('trial.yml'))
+
+    outfiles = ['trial_data.RData', 'trial_outcome.Rmd', 'trial_outcome.html']
+    for fn in outfiles:
+        fn = trial.dir.joinpath(fn)
+        fn.touch()
+
+    # simulate present of patient_outcome.yml results
+    for patient in trial:
+        patient.dir.joinpath('patient_outcome.yml').touch()
+
+    # ensure the desired files are present in the resulting archive
+    with runner.isolated_filesystem():
+        arxiv = pathlib.Path().joinpath('archive')
+        result = runner.invoke(archive, [str(path), str(arxiv)])
+        assert result.exit_code == 0
+
+        # trial configuration should be copied
+        assert arxiv.joinpath('trial.yml').exists()
+
+        for patient in trial:
+            # assert folder structure is replicated
+            folder = arxiv.joinpath(os.path.basename(patient.dir))
+            assert folder.exists()
+
+            # assert configurations are copied
+            for p in ['patient.yml', 'patient_outcome.yml']:
+                assert folder.joinpath(p).exists()
+
+    # ensure no failure without a subset of files, and,
+    # ensure a failure when output folder already populated
+    with runner.isolated_filesystem():
+        for patient in trial:
+            patient.dir.joinpath('patient_outcome.yml').unlink()
+
+        for fn in outfiles:
+            trial.dir.joinpath(fn).unlink()
+
+        result = runner.invoke(archive, [str(path), str(arxiv)])
+        assert result.exit_code == 0
+
+        result = runner.invoke(archive, [str(path), str(arxiv)])
+        assert result.exit_code == 2
