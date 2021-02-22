@@ -1,3 +1,6 @@
+"""Helper implementation for simulation events and their models."""
+
+
 # FIXME: write separate documentation page on format of events/models
 # FIXME: improve documentation
 class Events(list):
@@ -13,25 +16,25 @@ class Events(list):
 
     @property
     def models(self):
+        """Yield the models present all events."""
         for event in self:
             for m in Event(event).models:
                 yield m
 
     def to_dict(self):
+        """Convert a list of ``Events`` into a ``key:value`` dictionary."""
         return [dict(Event(event)) for event in self]
 
 
 # FIXME: improve documentation
 class Event(dict):
-    """Event represents a dictionary of labels and models.
-    - FIXME: improve doc
-    - listing of all present models
-    """
+    """An event represented as key:value dictionary of labels and models."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @property
     def models(self):
+        """Yield the labels of the available models in the current event."""
         for model in self.get('models'):
             yield model.get('label')
 

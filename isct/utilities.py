@@ -1,3 +1,5 @@
+"""General utility routines for ``isct``."""
+
 import enum
 import logging
 import os
@@ -13,11 +15,13 @@ MAX_FILE_SIZE = 2**20
 
 @enum.unique
 class OS(enum.Enum):
+    """An enumeration to detect the operating system."""
     LINUX = "linux"
     MACOS = "darwin"
 
     @classmethod
-    def from_platform(cls, platform):
+    def from_platform(cls, platform: str):
+        """Return a :class:`~isct.utilities.OS` from a file system string."""
         if platform == "darwin":
             return cls.MACOS
         elif platform == "linux" or platform == "linux2":
@@ -27,7 +31,7 @@ class OS(enum.Enum):
 
 
 def clean_large_files(path):
-    """Removes any files larger than 1MB
+    """Removes any files larger than 1MB.
 
     The routine recursively walks all files in the provided directory. Anyfile
     that is larger than `MAX_FILE_SIZE` is deleted.
@@ -35,7 +39,6 @@ def clean_large_files(path):
     Files with suffix either `.yml` or `.xml` are skipped, i.e. the will not
     be deleted, even when their size is above the max size threshold.
     """
-
     cnt = saved = 0
     skip_suffix = ['.yml', '.xml']
 

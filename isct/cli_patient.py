@@ -1,3 +1,4 @@
+"""The subcommand for the command-line interface regarding patients."""
 import click
 import pathlib
 
@@ -9,7 +10,7 @@ from .cli_trial import assert_container_path
 
 @click.group()
 def patient():
-    """Patient
+    """The patient subcommand.
 
     The `patient` command provides commands to interact with specific patients
     present in an in silico computational trial.
@@ -31,7 +32,6 @@ def run(patient, dry, keep_files):
     the completed flag, i.e. the simulation is _always_ invoked when
     specifically called with this command.
     """
-
     # read patient configuration
     path = pathlib.Path(patient).joinpath(patient_config)
 

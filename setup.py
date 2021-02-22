@@ -6,8 +6,8 @@ with open("README.md", "r") as fh:
 _isct_packages = find_packages(include=['isct'])
 
 _dev = [
-    'yapf', 'tox', 'flake8', 'numpy', 'sphinx', 'sphinx_rtd_theme',
-    'sphinxcontrib-napoleon', 'sphinx_click'
+    'yapf', 'tox', 'flake8', 'pydocstyle', 'numpy', 'sphinx',
+    'sphinx_rtd_theme', 'sphinxcontrib-napoleon', 'sphinx_click'
 ]
 _test = ['mock', 'pytest', 'pytest-cov', 'pytest-mock']
 _vvuq = ['easyvvuq']

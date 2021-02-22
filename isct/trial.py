@@ -1,4 +1,4 @@
-"""Trial configuration class
+"""Trial configuration class.
 
 This module contains two classes to represent an *in silico* trial of virtual
 patients: :class:`Trial` and :class:`ParallelTrial`. Fundamentally, these
@@ -58,8 +58,8 @@ class Trial(Config):
             random_seed (int): The random seed to use in the trial.
             config (dict): Dictionary with default configurations values.
             runner (:class:`~isct.runner.Runner`, optional): Command runner.
+            keep_files (bool): If large files should be kept or deleted.
         """
-
         # path to patient configuration file `path/trial.yml`
         path = pathlib.Path(path).joinpath(trial_config)
 
@@ -88,7 +88,6 @@ class Trial(Config):
         present in the trial. The patients are yielded in sorted order, where
         the sort is based on their directory.
         """
-
         patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
         for path in sorted(list(patient_paths)):
             config_path = path.joinpath(patient_config)
@@ -169,9 +168,7 @@ class Trial(Config):
         The patient configuration are filled with statistical samples from the
         ``virtual patient model`` by invoking
         :meth:`Trial.sample_virtual_patient`.
-
         """
-
         # write configuration to disk
         self.write()
 
@@ -203,10 +200,9 @@ class Trial(Config):
             lower (int): lower bound of the range of patients to sample.
             upper (int): upper bound of the range of patients to sample.
 
-        TODO:
+        Todo:
             FIXME: The ``lower`` and ``upper`` ranges are not yet enforced!
         """
-
         patients = [trial_path.joinpath(p) for p in self.patients]
 
         container = create_container(virtual_patient_model,
@@ -222,7 +218,7 @@ class Trial(Config):
         container.run(args=args)
 
     def outcome(self):
-        """Evaluate the trial outcome model"""
+        """Evaluate the trial outcome model."""
         container = create_container(trial_outcome_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
@@ -239,7 +235,6 @@ class Trial(Config):
         Args:
             skip_completed (bool): Skip already completed patients
         """
-
         # exhaust all patients present in the iterator
         for patient in self:
             if skip_completed and patient.completed:
@@ -266,7 +261,6 @@ class ParallelTrial(Trial):
         Examples:
             >>> isct -v trial run --parallel | parallel -j 4
         """
-
         # additional flags to pass into the emitted instructions
         flags = '--keep-files' if self.keep_files else '--clean-files'
 

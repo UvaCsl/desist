@@ -1,3 +1,5 @@
+"""The base class representing a virtualised container environment."""
+
 import abc
 import os
 import pathlib
@@ -6,6 +8,13 @@ from .runner import Logger
 
 
 def create_container(path, container_path=None, runner=Logger()):
+    """Returns a specific, initialised container class.
+
+    Args:
+        path: The directory of the container on the file system.
+        container_path: The directory where to store the resulting container.
+        runner: The runner to evaluate the commands.
+    """
     if container_path:
         from .singularity import Singularity
         return Singularity(path, container_path, runner=runner)
@@ -15,7 +24,7 @@ def create_container(path, container_path=None, runner=Logger()):
 
 
 class Container(abc.ABC):
-    """Abstract base class for container environments. """
+    """Abstract base class for container environments."""
     def __init__(self, path, runner=Logger()):
         path = pathlib.Path(path)
         parent, base = path.parent, os.path.basename(path)

@@ -1,3 +1,4 @@
+"""The subcommand for the command-line interface regarding containers."""
 import click
 
 from .container import create_container
@@ -6,7 +7,7 @@ from .runner import new_runner
 
 @click.group()
 def container():
-    """Container
+    """The container subcommand.
 
     The `container` command interacts with containerised virtual environment,
     such as Docker and Singularity containers. This provides an uniform
@@ -47,7 +48,6 @@ def run(container, id, patient, singularity, dry):
     container. The patient is located at PATIENT path and the event
     corresponding to the event's ID is evaluated.
     """
-
     # FIXME:
     # - create container instance
     # - verify container present

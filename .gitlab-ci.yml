@@ -18,6 +18,7 @@ before_script:
 stages:
   - build
   - test
+  - docs
 
 build_isct:
   stage: build
@@ -42,6 +43,11 @@ test_isct_vvuq:
     - tox -e py39-vvuq
 
 lint_isct:
-  stage: test
+  stage: docs
   script:
     - tox -e flake8
+
+lint_docs:
+  stage: docs
+  script:
+    - tox -e pydocstyle

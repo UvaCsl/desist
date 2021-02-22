@@ -1,4 +1,4 @@
-"""Configuration dictionary class
+"""Configuration dictionary class.
 
 This module contains the base configuration class for
 :class:`~isct.patient.Patient` and :class:`~isct.trial.Trial`. The

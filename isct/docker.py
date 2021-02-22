@@ -1,3 +1,4 @@
+""":class:`~isct.container.Container` implemementation for ``Docker``."""
 import subprocess
 import sys
 
@@ -7,7 +8,7 @@ from .runner import Logger
 
 
 class Docker(Container):
-    """Docker environment."""
+    """Implements :class:`~isct.container.Container` for ``Docker``."""
     def __init__(self, path, docker_group=False, runner=Logger()):
         super().__init__(path, runner=runner)
         self.docker_group = docker_group
@@ -20,14 +21,17 @@ class Docker(Container):
                 self.sudo = 'sudo'
 
     def exists(self):
+        """Returns ``True`` if the Docker container exists."""
         cmd = f'{self.sudo} docker image inspect {self.tag}'.split()
         return self.runner.run(cmd, check=True)
 
     def create(self):
+        """Create a Docker container."""
         cmd = f'{self.sudo} docker build {self.path.absolute()} -t {self.tag}'
         return self.runner.run(cmd.split())
 
     def run(self, args=''):
+        """Evaluate the Docker command."""
         cmd = f'{self.sudo} docker run {self.volumes} {self.tag} {args}'
         permissions_cmd = self.update_file_permissions()
 
@@ -63,7 +67,6 @@ class Docker(Container):
         permissions are set to match the original permissions of the volume
         on the host machine.
         """
-
         if OS.from_platform(sys.platform) != OS.LINUX:
             return None
 

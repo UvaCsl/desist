@@ -1,3 +1,5 @@
+"""The main entry point for the command-line interface."""
+
 import click
 import logging
 from logging.handlers import RotatingFileHandler
@@ -17,7 +19,7 @@ from .cli_trial import trial
               type=click.Path(writable=True),
               help="Path where log files are written to.")
 def cli(verbose, log):
-    """des-ist
+    """des-ist.
 
     Discrete Event Simulation for In Silico computational Trials.
 
@@ -25,7 +27,6 @@ def cli(verbose, log):
     of virtual patient cohorts. The utility provides commands to create,
     run, and analyse in silico trials.
     """
-
     if log:
         # Setup the basic logger with a rotating logger to rotate the logfiles
         # every 100kB, cycling through 10 backups.

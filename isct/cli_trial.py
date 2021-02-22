@@ -1,3 +1,5 @@
+"""The subcommand for the command-line interface regarding trials."""
+
 import click
 import collections
 import logging
@@ -12,7 +14,7 @@ from .runner import new_runner
 
 @click.group()
 def trial():
-    """Trial
+    """The trial subcommand.
 
     The `trial` command provides interaction with in silico computational
     trials. This command allows to create cohorts of virtual patients, run
@@ -77,7 +79,6 @@ def create(trial, criteria, num_patients, dry, singularity):
     `virtual-patient-generation` model is evaluated to sample the statistical
     model and fill the patient configuration with their properties.
     """
-
     # Although more convenient, the option to overwrite directories is not
     # included to prevent accidentally dropping large directories.
     if pathlib.Path(trial).exists():
@@ -115,7 +116,6 @@ def append(trial, num, dry):
     the `virtual-patient-model` is evaluated, now only for the newly appended
     patients, to evaluated their statistical properties.
     """
-
     path = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(path, runner=new_runner(dry))
 
@@ -163,7 +163,6 @@ def run(trial, dry, parallel, keep_files, skip_completed):
     FIXME: link documentation to example files
 
     """
-
     runner = new_runner(dry, parallel=parallel)
     config = pathlib.Path(trial).joinpath(trial_config)
 
@@ -214,7 +213,6 @@ def list_key(trial, key, n):
     The `-n` option can be provided to list only the `n` most common elements
     in the list of unique elements.
     """
-
     # FIXME: we need to raise a usage warning for non-hashable entries, e.g.
     # lists and dicts, that cannot be placed into the `Counter` easily. Either
     # change behaviour to simply list all of them (maybe sorted?) or inform
@@ -258,7 +256,6 @@ def outcome(trial, dry):
     This invokes the defined `trial_outcome_model` for the trial located
     at the provided TRIAL path on the file system.
     """
-
     # extract the runner and configuration
     runner = new_runner(dry)
     config = pathlib.Path(trial).joinpath(trial_config)
@@ -276,7 +273,6 @@ def outcome(trial, dry):
 @click.argument('archive', type=click.Path(writable=True))
 def archive(trial, archive):
     """Archive configuration file from TRIAL to ARCHIVE."""
-
     # prevent the files are not copied into an already populated directory
     archive = pathlib.Path(archive)
     if archive.exists():

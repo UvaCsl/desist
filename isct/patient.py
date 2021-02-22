@@ -1,3 +1,8 @@
+"""A patient configuration.
+
+Extends the configuration functionality :class:`~isct.config.Config` with
+additional patient specific functionality.
+"""
 import pathlib
 
 from .config import Config
@@ -11,6 +16,7 @@ patient_path = pathlib.Path('/patient')
 
 
 class Patient(Config):
+    """A virtual patient represented by its configuration file."""
     def __init__(
             self,
             path,
@@ -19,8 +25,15 @@ class Patient(Config):
             config={},
             runner=Logger(),
     ):
-        """Initialise a Patient: path either basename or to patient.yml"""
+        """Initialise a virtual patient.
 
+        Args:
+            path: The directory where the patient is stored on the file system.
+            idx: The index of the current patient, i.e. the patient's ID.
+            prefix: The directory prefix.
+            config: A default patient configuration to extend.
+            runner: The desired command evaluation.
+        """
         # form patient path from prefix and ID
         path = pathlib.Path(path)
         path = path.joinpath(f'{prefix}_{idx:05}')
@@ -54,7 +67,6 @@ class Patient(Config):
     @classmethod
     def read(cls, path, runner=Logger()):
         """Reads an existing patient configuration."""
-
         # obtain config from provided filepath
         config = super().read(path)
 
@@ -74,7 +86,6 @@ class Patient(Config):
 
     def run(self):
         """Evaluate simulation of virtual patient."""
-
         events = Events(self.get('events'))
         container_path = self.get('container-path')
 
