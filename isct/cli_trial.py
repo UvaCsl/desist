@@ -271,7 +271,11 @@ def outcome(trial, dry):
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.argument('archive', type=click.Path(writable=True))
-def archive(trial, archive):
+@click.option('-a', '--add',
+              type=click.Path(file_okay=True),
+              multiple=True,
+              help="Add files to extract from each patient directory")
+def archive(trial, archive, add):
     """Archive configuration file from TRIAL to ARCHIVE."""
     # prevent the files are not copied into an already populated directory
     archive = pathlib.Path(archive)
@@ -297,15 +301,23 @@ def archive(trial, archive):
         except FileNotFoundError:
             pass
 
+    # the files to be extracted from each patient directory: `trial/patient_*/`
+    outfiles = ['patient.yml', 'patient_outcome.yml']
+    if add:
+        outfiles.extend(add)
+
     # copy directory structure for patients
     for patient in trial:
         folder = archive.joinpath(os.path.basename(patient.dir))
         folder.mkdir()
 
         # transfer the configuration and outcome YAML files
-        for filename in ['patient.yml', 'patient_outcome.yml']:
+        for filename in outfiles:
             src = patient.dir.joinpath(filename)
             dst = folder.joinpath(filename)
+
+            # ensure the folder is present on the archive
+            os.makedirs(dst.parent, exist_ok=True)
 
             # if the file is not there, that is OK, maybe the archive call
             # is evaluated before the simulations are done, e.g. to share

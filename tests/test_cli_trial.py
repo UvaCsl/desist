@@ -35,13 +35,16 @@ def test_trial_from_criteria_file(tmpdir, n):
     runner = CliRunner()
     path = pathlib.Path('test')
     with runner.isolated_filesystem():
-        criteria = Config('{tmpdir}/criteria.yml',
-                          {'sample_size': n, 'testkey': True})
+        criteria = Config('{tmpdir}/criteria.yml', {
+            'sample_size': n,
+            'testkey': True
+        })
         criteria.write()
         assert os.path.exists(criteria.path)
 
-        result = runner.invoke(create,
-                               [str(path), '-c', str(criteria.path), '-x'])
+        result = runner.invoke(
+            create,
+            [str(path), '-c', str(criteria.path), '-x'])
         assert result.exit_code == 0
         assert len(list(filter(lambda p: p.is_dir(), path.iterdir()))) == n
 
@@ -270,3 +273,41 @@ def test_trial_archive(tmpdir, num_patients):
 
         result = runner.invoke(archive, [str(path), str(arxiv)])
         assert result.exit_code == 2
+
+
+@pytest.mark.parametrize('num_patients', [1, 2, 5])
+def test_trial_archive_custom_file(tmpdir, num_patients):
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    # create a dummy trial
+    result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
+    assert result.exit_code == 0
+
+    # simulate trial outcome files
+    trial = Trial.read(path.joinpath('trial.yml'))
+
+    targets = ['subdir/custom_file_1.yml', 'subdir/custom_file_2.yml']
+
+    # simulate present of patient_outcome.yml results
+    for patient in trial:
+        patient.dir.joinpath('patient_outcome.yml').touch()
+        patient.dir.joinpath('subdir').mkdir()
+        patient.dir.joinpath(targets[0]).touch()
+        patient.dir.joinpath(targets[1]).touch()
+
+    with runner.isolated_filesystem():
+        arxiv = pathlib.Path().joinpath('archive')
+        result = runner.invoke(
+            archive,
+            [str(path),
+             str(arxiv), '-a', targets[0], '-a', targets[1]])
+        assert result.exit_code == 0
+
+        for patient in trial:
+            folder = arxiv.joinpath(os.path.basename(patient.dir))
+            assert folder.exists()
+
+            # ensure custom targets are present
+            for t in targets:
+                assert folder.joinpath(t).exists()
