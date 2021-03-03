@@ -40,7 +40,8 @@ def clean_large_files(path):
     be deleted, even when their size is above the max size threshold.
     """
     cnt = saved = 0
-    skip_suffix = ['.yml', '.xml']
+    skip_suffix = ['.yml']
+    skip_files = ['config.xml']
 
     path = pathlib.Path(path)
     if not path.exists():
@@ -48,9 +49,9 @@ def clean_large_files(path):
 
     for (parent, subdirs, files) in os.walk(path.absolute()):
         for name in files:
-            filename = pathlib.Path(parent).joinpath(name)
 
-            if filename.suffix in skip_suffix:
+            filename = pathlib.Path(parent).joinpath(name)
+            if name in skip_files or filename.suffix in skip_suffix:
                 continue
 
             if (filesize := filename.stat().st_size) > MAX_FILE_SIZE:

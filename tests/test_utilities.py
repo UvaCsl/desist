@@ -1,7 +1,7 @@
 import pathlib
 import pytest
 
-from isct.utilities import OS, clean_large_files
+from isct.utilities import OS, clean_large_files, MAX_FILE_SIZE
 
 
 @pytest.mark.parametrize("string, platform", [("darwin", OS.MACOS),
@@ -13,18 +13,28 @@ def test_OS_enum(string, platform):
         OS.from_platform("windows")
 
 
-def test_remove_large_files(tmpdir):
+@pytest.mark.parametrize('fn, delta, remains', [('removes.txt', +10, False),
+                                                ('remains.txt', -10, True),
+                                                ('remains.yml', +10, True),
+                                                ('config.xml', +10, True),
+                                                ('anyother.xml', +10, False)])
+def test_remove_large_files(tmpdir, fn, delta, remains):
     path = pathlib.Path(tmpdir)
-    names = ['removes.txt', 'remains.txt', 'remains.yml']
-    files = [path.joinpath(fn) for fn in names]
+    filename = path.joinpath(fn)
+    filesize = MAX_FILE_SIZE + delta
 
-    for (fn, delta) in zip(files, [+10, -10, +10]):
-        with open(fn, "wb") as outfile:
-            outfile.seek(2**20 + delta)
-            outfile.write(b"\0")
+    with open(filename, "wb") as outfile:
+        outfile.seek(filesize - 1)
+        outfile.write(b"\0")
 
-    assert all(map(lambda p: p.exists(), files))
-    assert clean_large_files(path) == (1, 2**20 + 10 + 1)
-    assert list(map(lambda p: p.exists(), files)) == [False, True, True]
+    assert filename.exists(), "Test file should be present at start"
+
+    cnt, size = clean_large_files(path)
+    assert filename.exists() == remains, "Should match desired remain flag"
+
+    if remains:
+        assert (cnt, size) == (0, 0), f"'{fn}' should not be removed"
+    else:
+        assert (cnt, size) == (1, filesize)
 
     assert clean_large_files(path.joinpath("not/existing")) is None
