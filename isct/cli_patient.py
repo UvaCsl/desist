@@ -18,40 +18,41 @@ def patient():
 
 
 @patient.command()
-@click.argument('patient', type=click.Path(exists=True))
+@click.argument('patients', type=click.Path(exists=True), nargs=-1)
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option(
     '--keep-files/--clean-files',
     default=True,
     help=("Keep or clean large files after evaluating all simulations."))
-def run(patient, dry, keep_files):
+def run(patients, dry, keep_files):
     """Run a patient's simulation pipeline.
 
     The complete simulation pipeline is evaluated for the patient located
-    at the provided PATIENT path. The simulation is evaluated regardless of
+    at the provided PATIENTS path. The simulation is evaluated regardless of
     the completed flag, i.e. the simulation is _always_ invoked when
     specifically called with this command.
     """
-    # read patient configuration
-    path = pathlib.Path(patient).joinpath(patient_config)
+    for p in patients:
+        # read patient configuration
+        path = pathlib.Path(p).joinpath(patient_config)
 
-    # define the patient type
-    patient = Patient.read(path, runner=new_runner(dry))
+        # define the patient type
+        patient = Patient.read(path, runner=new_runner(dry))
 
-    if not keep_files:
-        patient = LowStoragePatient.from_patient(patient)
+        if not keep_files:
+            patient = LowStoragePatient.from_patient(patient)
 
-    # extract trial configuration
-    trial = Trial.read(patient.dir.parent.joinpath(trial_config))
+        # extract trial configuration
+        trial = Trial.read(patient.dir.parent.joinpath(trial_config))
 
-    # ensure the container path for singularity exists
-    assert_container_path(trial)
+        # ensure the container path for singularity exists
+        assert_container_path(trial)
 
-    # only set container path if present
-    patient['container-path'] = trial.container_path
+        # only set container path if present
+        patient['container-path'] = trial.container_path
 
-    # run patient
-    patient.run()
+        # run patient
+        patient.run()
 
 
 # @patient.command()
