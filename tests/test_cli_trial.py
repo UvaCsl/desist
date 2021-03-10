@@ -220,6 +220,10 @@ def test_trial_list(tmpdir, num_patients):
         for i in range(1, num_patients):
             assert f"'{i}' (1)" not in result.output
 
+        result = runner.invoke(list_key, [str(path), 'events'])
+        assert result.exit_code == 2
+        assert 'not supported' in result.output
+
 
 @pytest.mark.parametrize('num_patients', [1, 2, 5])
 def test_trial_archive(tmpdir, num_patients):

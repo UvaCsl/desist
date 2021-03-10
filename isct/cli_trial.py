@@ -204,20 +204,27 @@ def list_key(trial, key, n):
     its occurrences are counted for duplicate keys. By default all uniquely
     encountered values, and their count, are reported to the user.
 
+    Note: here it is assumed the provided key is ``Hashable`` and can be
+    counted within the dictionary. This excludes nested dictionaries or lists
+    at the moment.
+
     The `-n` option can be provided to list only the `n` most common elements
     in the list of unique elements.
     """
-    # FIXME: we need to raise a usage warning for non-hashable entries, e.g.
-    # lists and dicts, that cannot be placed into the `Counter` easily. Either
-    # change behaviour to simply list all of them (maybe sorted?) or inform
-    # the user somehow, maybe `UsageError`?
-
     # extract patients from trial
     config = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(config)
 
     # count occurrences of all values of `key` in patient configurations
-    counter = collections.Counter([p.get(key) for p in trial])
+    occurrences = [p.get(key) for p in trial]
+    try:
+        counter = collections.Counter(occurrences)
+    except TypeError:
+        key_type = type(occurrences[0])
+        msg = (f'Key `{key}` cannot be listed.\n'
+               f'The entry is of type: `{key_type}`, currently not supported')
+        raise click.UsageError(
+            click.style(msg, fg="red"))
 
     # ensure the sum matches the number of patients
     err = "Counted '{total=}' does not match patient count {len(patients)}"
