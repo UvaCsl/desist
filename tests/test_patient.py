@@ -3,6 +3,7 @@ import pathlib
 import pytest
 
 
+from isct.utilities import OS
 from isct.patient import Patient, patient_config, LowStoragePatient
 from test_runner import DummyRunner
 
@@ -75,6 +76,28 @@ def test_patient_run(tmpdir):
     runner.write_config = True
     patient.run()
     assert patient.completed, "non-verbose runner should update the config"
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_patient_failed_event(mocker, tmpdir, platform):
+    """Ensure the simulation raises `AssertionError` for failed event."""
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    path = pathlib.Path(tmpdir)
+    patient = Patient(path, runner=DummyRunner(write_config=True))
+    patient.create()
+
+    # mock runner to succeed
+    mocker.patch('isct.docker.Docker.run', return_value=True)
+    mocker.patch('isct.singularity.Singularity.run', return_value=True)
+    patient.run()
+    assert patient.completed
+
+    # mock runner to fail
+    mocker.patch('isct.docker.Docker.run', return_value=False)
+    mocker.patch('isct.singularity.Singularity.run', return_value=False)
+    with pytest.raises(AssertionError):
+        patient.run()
 
 
 def test_lowstorage_patient(tmpdir):

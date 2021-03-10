@@ -94,9 +94,16 @@ class Patient(Config):
                                          container_path=container_path,
                                          runner=self.runner)
             container.bind(self.path.parent, patient_path)
-            container.run(args=f'event --patient /patient --event {idx}')
+            args = f'event --patient /patient --event {idx}'
+            success = container.run(args=args)
 
-        # FIXME: assert that all simulations worked as intended
+            # Here we assert with `not False` to allow `None` as valid output
+            # too. Any verbose logger, i.e. the command is simply logged or
+            # printed to the console, does not have a notion of success/failure
+            # and will sipmly return None. Thus, only when the runner can
+            # make a meaningful conclusion on success/failure will True/False
+            # values be returned.
+            assert success is not False, "Patient event simulation failed."
 
         # Update the local configuration file only when the runner is able
         # to actually invoke the simulations, i.e. do not update the config
