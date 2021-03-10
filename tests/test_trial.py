@@ -50,7 +50,7 @@ def test_trial_config(tmpdir, config):
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-@pytest.mark.parametrize('sample_size', list(range(5)))
+@pytest.mark.parametrize('sample_size', list(range(1, 5)))
 def test_trial_create(mocker, tmpdir, sample_size, platform):
     mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
 
@@ -59,6 +59,7 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
 
     assert os.path.isdir(trial.path.parent)
     assert os.path.isfile(trial.path)
+    assert trial.get('sample_size') == sample_size
 
     for i in range(trial.get('sample_size')):
         patient = Patient(trial.dir, idx=i)
@@ -67,6 +68,50 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
     read = Trial.read(trial.path)
     for k, v in trial.items():
         assert read.get(k) == v
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+@pytest.mark.parametrize('sample_size', list(range(1, 5)))
+def test_trial_sample(mocker, tmpdir, sample_size, platform):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    # record the outcome
+    runner = DummyRunner(write_config=True)
+
+    # initialise the trial
+    trial = Trial(tmpdir, sample_size, runner=runner)
+    trial.create()
+
+    assert os.path.isdir(trial.path.parent)
+    assert os.path.isfile(trial.path)
+    assert trial.get('sample_size') == sample_size
+
+    # all patients are sampled
+    for patient in trial:
+        assert os.path.basename(patient.dir) in runner
+
+    runner.clear()
+
+    # add some more patients
+    for i in range(sample_size, 2 * sample_size):
+        trial.append_patient(i)
+    assert trial.get('sample_size') == 2 * sample_size
+
+    # populate patients
+    trial.sample_virtual_patient(sample_size, 2 * sample_size)
+
+    patients = [os.path.basename(patient.dir) for patient in trial]
+    assert all([p not in runner for p in patients[:sample_size]])
+    assert all([p in runner for p in patients[sample_size:]])
+
+
+@pytest.mark.parametrize('sample_size', list(range(1, 5)))
+def test_trial_sample_empty_set(tmpdir, sample_size):
+    trial = Trial(tmpdir, sample_size, runner=Logger())
+    with pytest.raises(AssertionError):
+        trial.sample_virtual_patient(1 + sample_size, sample_size)
+    with pytest.raises(AssertionError):
+        trial.sample_virtual_patient(sample_size, sample_size)
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])

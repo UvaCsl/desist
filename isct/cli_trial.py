@@ -127,12 +127,6 @@ def append(trial, num, dry):
     for i in range(sample_size, sample_size + num):
         trial.append_patient(i)
 
-    # write updated trial size to configuration file, such that properties
-    # are present in the `trial.yml`, as used by the virtual patient
-    # generation
-    trial.update({'sample_size': sample_size + num})
-    trial.write()
-
     # evaluate the virtual patient model for the provided set of new patients
     trial.sample_virtual_patient(sample_size, sample_size + num)
 

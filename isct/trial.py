@@ -42,14 +42,15 @@ trial_outcome_model = 'in-silico-trial-outcome'
 
 class Trial(Config):
     """Representation of an *in silico* trial."""
-    def __init__(self,
-                 path,
-                 sample_size=1,
-                 random_seed=1,
-                 config={},
-                 runner=LocalRunner(),
-                 keep_files=True,
-                 ):
+    def __init__(
+            self,
+            path,
+            sample_size=1,
+            random_seed=1,
+            config={},
+            runner=LocalRunner(),
+            keep_files=True,
+    ):
         """Initialise a trial from given path and options.
 
         Args:
@@ -173,19 +174,28 @@ class Trial(Config):
         self.write()
 
         # create patients
-        for i in range(0, self.get('sample_size')):
-            self.append_patient(i)
+        for i in range(self.get('sample_size', 0)):
+            patient = Patient(self.path.parent,
+                              idx=i,
+                              prefix=self.get('prefix'))
+            patient.create()
 
         self.sample_virtual_patient(0, self.get('sample_size'))
 
     def append_patient(self, idx: int):
         """Extend the trial with a single virtual patient.
 
+        The sample size is incremented when calling this function.
+
         Args:
             idx (int): integer value of the to be appended patient.
         """
         patient = Patient(self.path.parent, idx=idx, prefix=self.get('prefix'))
         patient.create()
+
+        # increment the sample size when appending patients
+        self['sample_size'] += 1
+        self.write()
 
     def sample_virtual_patient(self, lower: int, upper: int):
         """Update patients' configurations using the virtual patient model.
@@ -196,14 +206,22 @@ class Trial(Config):
         :class:`~isct.patient.Patient`. If the configuration files already
         exist, the statistical samples are overwritten.
 
+        The ``upper`` bound is exclusive similar to ``range``
+
+        >>> trial.sample_virtual_patient(4, 8)
+        [patient_00004, ..., patient_00007]
+
         Args:
             lower (int): lower bound of the range of patients to sample.
             upper (int): upper bound of the range of patients to sample.
-
-        Todo:
-            FIXME: The ``lower`` and ``upper`` ranges are not yet enforced!
         """
-        patients = [trial_path.joinpath(p) for p in self.patients]
+
+        err = f'Samples the empty set: received ID range [{lower}:{upper}]'
+        assert lower < upper, err
+
+        # truncate the patients from lower to upper
+        patients = sorted([trial_path.joinpath(p) for p in self.patients])
+        patients = patients[lower:upper]
 
         container = create_container(virtual_patient_model,
                                      container_path=self.container_path,
