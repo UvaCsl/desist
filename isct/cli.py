@@ -27,24 +27,23 @@ def cli(verbose, log):
     of virtual patient cohorts. The utility provides commands to create,
     run, and analyse in silico trials.
     """
-    if log:
-        # Setup the basic logger with a rotating logger to rotate the logfiles
-        # every 100kB, cycling through 10 backups.
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
-            handlers=[
-                # The logfiles rotate every 100kB.
-                RotatingFileHandler(log, maxBytes=100000, backupCount=10)
-            ],
-        )
 
-    if verbose:
-        # define stream handler to log to console
-        logger = logging.getLogger()
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        logger.addHandler(ch)
+    # initialise the logging on `DEBUG` level without any handlers
+    logging.basicConfig(level=logging.DEBUG, handlers=[])
+
+    # add a streaming log to console
+    ch = logging.StreamHandler()
+    level = logging.DEBUG if verbose else logging.WARNING
+    ch.setLevel(level)
+    logging.getLogger().addHandler(ch)
+
+    # if a logfile is provided, write _all_ messages to the files
+    if log:
+        rfh = RotatingFileHandler(log, maxBytes=100000, backupCount=5)
+        rfh.setLevel(logging.DEBUG)
+        fmt_str = '%(asctime)s | %(name)s | %(levelname)s | %(message)s'
+        rfh.setFormatter(logging.Formatter(fmt_str))
+        logging.getLogger().addHandler(rfh)
 
 
 cli.add_command(container)
