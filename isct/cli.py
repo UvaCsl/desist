@@ -27,7 +27,6 @@ def cli(verbose, log):
     of virtual patient cohorts. The utility provides commands to create,
     run, and analyse in silico trials.
     """
-
     # initialise the logging on `DEBUG` level without any handlers
     logging.basicConfig(level=logging.DEBUG, handlers=[])
 

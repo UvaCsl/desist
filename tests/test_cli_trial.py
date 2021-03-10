@@ -5,6 +5,7 @@ import os
 
 from isct.config import Config
 from isct.cli_trial import create, append, run, list_key, outcome, archive
+from isct.cli_trial import reset
 from isct.trial import Trial, trial_config
 from isct.utilities import OS, MAX_FILE_SIZE
 
@@ -311,3 +312,34 @@ def test_trial_archive_custom_file(tmpdir, num_patients):
             # ensure custom targets are present
             for t in targets:
                 assert folder.joinpath(t).exists()
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_trial_reset(mocker, tmpdir, platform):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    # create a dummy trial
+    result = runner.invoke(create, [str(path), '-n', '5', '-x'])
+    assert result.exit_code == 0
+
+    # set all patients to completed and create dummy file to be removed
+    trial = Trial.read(path.joinpath('trial.yml'))
+    for patient in trial:
+        patient.dir.joinpath('test_file.txt').touch()
+        patient.completed = True
+        patient.write()
+
+    for patient in trial:
+        assert patient.completed
+        assert patient.dir.joinpath('test_file.txt').exists()
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(reset, [str(path), '-r', 'test_file.txt'])
+        assert result.exit_code == 0
+
+        for patient in trial:
+            assert not patient.completed
+            assert not patient.dir.joinpath('test_file.txt').exists()

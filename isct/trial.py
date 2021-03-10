@@ -215,7 +215,6 @@ class Trial(Config):
             lower (int): lower bound of the range of patients to sample.
             upper (int): upper bound of the range of patients to sample.
         """
-
         err = f'Samples the empty set: received ID range [{lower}:{upper}]'
         assert lower < upper, err
 

@@ -117,6 +117,16 @@ class Patient(Config):
             self.completed = True
             self.write()
 
+    def reset(self):
+        """Resets the status of a patient.
+
+        This unsets the completed flag to ``False``, such that the patient
+        is not marked as completed anymore and will be evaluated again in
+        subsequent pipeline evaluations.
+        """
+        self.completed = False
+        self.write()
+
 
 class LowStoragePatient(Patient):
     """A low storage variant of the patient.

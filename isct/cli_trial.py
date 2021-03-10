@@ -230,13 +230,6 @@ def list_key(trial, key, n):
 
 
 @trial.command()
-@click.argument('trial', type=click.Path(writable=True))
-def reset(trial):
-    """Reset trials."""
-    # FIXME: implement resetting of patients
-
-
-@trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.option(
     '-x',
@@ -265,7 +258,8 @@ def outcome(trial, dry):
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.argument('archive', type=click.Path(writable=True))
-@click.option('-a', '--add',
+@click.option('-a',
+              '--add',
               type=click.Path(file_okay=True),
               multiple=True,
               help="Add files to extract from each patient directory")
@@ -320,3 +314,33 @@ def archive(trial, archive, add):
                 shutil.copy2(src, dst)
             except FileNotFoundError:
                 pass
+
+
+@trial.command()
+@click.argument('trial', type=click.Path(exists=True))
+@click.option('-r',
+              '--remove',
+              type=click.Path(file_okay=True),
+              multiple=True,
+              help="Remove additional filepaths from patient directory")
+def reset(trial, remove):
+    """Reset all patient directories of the trial.
+
+    Specifically, the ``patient.completed`` flags are reset for all patients
+    present in the trial. Additionally, the specified files with `-r, --remove`
+    are removed from each patient directory as well. This can be used to
+    remove specific simulation files throughout all patient directories.
+
+    >>> isct trial reset $trial --remove Clots.txt
+    # deletes $trial/patient_*/Clots.txt
+    """
+    # ensure the trial can be read
+    config = pathlib.Path(trial).joinpath(trial_config)
+    trial = Trial.read(config)
+
+    for patient in trial:
+        patient.reset()
+
+        filenames = [patient.dir.joinpath(fn) for fn in remove]
+        for filepath in filter(os.path.isfile, filenames):
+            filepath.unlink()

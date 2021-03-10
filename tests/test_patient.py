@@ -108,3 +108,14 @@ def test_lowstorage_patient(tmpdir):
     assert ls_patient == patient
     assert ls_patient.path == patient.path
     assert ls_patient.runner == patient.runner
+
+
+def test_patient_reset(tmpdir):
+    path = pathlib.Path(tmpdir)
+    patient = Patient(path, runner=DummyRunner(write_config=True))
+    patient.completed = True
+    assert patient.completed
+
+    # reset to uncompleted
+    patient.reset()
+    assert not patient.completed

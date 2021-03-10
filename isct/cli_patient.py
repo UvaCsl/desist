@@ -1,5 +1,6 @@
 """The subcommand for the command-line interface regarding patients."""
 import click
+import os
 import pathlib
 
 from .trial import Trial, trial_config
@@ -55,11 +56,26 @@ def run(patients, dry, keep_files):
         patient.run()
 
 
-# @patient.command()
-# @click.argument('patient', type=click.Path(exists=True))
-# def reset(patient):
-#     """Reset patients."""
+@patient.command()
+@click.argument('patients', type=click.Path(exists=True), nargs=-1)
+@click.option('-r',
+              '--remove',
+              type=click.Path(file_okay=True),
+              multiple=True,
+              help="Remove additional filepaths from patient directory")
+def reset(patients, remove):
+    """Reset the status of a patient directory.
 
-# FIXME:
-# - create patient instance
-# - reset patient instance
+    Predominantly resets the ``patient.completed`` property to ``False``,
+    such that patients will be evaluated again in subsequent pipeline
+    evaluations.
+    """
+    for p in patients:
+        path = pathlib.Path(p).joinpath(patient_config)
+        patient = Patient.read(path)
+        patient.reset()
+
+        # only drop single files
+        filenames = [patient.dir.joinpath(fn) for fn in remove]
+        for filepath in filter(os.path.isfile, filenames):
+            filepath.unlink()

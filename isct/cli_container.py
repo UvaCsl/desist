@@ -48,12 +48,9 @@ def run(container, id, patient, singularity, dry):
     container. The patient is located at PATIENT path and the event
     corresponding to the event's ID is evaluated.
     """
-    # FIXME:
-    # - create container instance
-    # - verify container present
-
     for p in patient:
         container = create_container(p,
                                      container_path=singularity,
                                      runner=new_runner(dry))
+
         container.run()

@@ -3,7 +3,7 @@ import os
 import pathlib
 import pytest
 
-from isct.cli_patient import run
+from isct.cli_patient import run, reset
 from isct.cli_trial import create
 from isct.utilities import OS, MAX_FILE_SIZE
 from isct.events import default_events
@@ -98,3 +98,35 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
         result = runner.invoke(run, [str(patient.dir), '-x'])
         assert result.exit_code == 2
         assert f'`{str(singularity.absolute())}` not present' in result.output
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_patient_reset(mocker, tmpdir, platform):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-x'])
+        assert result.exit_code == 0
+        trial = Trial.read(path.joinpath(trial_config))
+
+        # artificially set patients to completed
+        for p in trial:
+            p.completed = True
+            p.write()
+        assert all([p.completed for p in trial])
+
+        result = runner.invoke(reset, [str(p.dir) for p in trial])
+        assert result.exit_code == 0
+        assert all([p.completed for p in trial]) is False
+
+        # remove file and directories
+        pdir = [p.dir for p in trial][0]
+        test_file = pathlib.Path(pdir).joinpath('test')
+        test_file.touch()
+        assert os.path.isfile(test_file)
+
+        result = runner.invoke(reset, [str(pdir), '-r', 'test'])
+        assert result.exit_code == 0
+        assert not os.path.isfile(test_file)
