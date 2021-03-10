@@ -43,13 +43,6 @@ class Event(dict):
 # These events are now hardcoded for the INSIST project. Prefrably these are
 # read from an additional argument passed into the `trial create` commands.
 
-# FIXME: insert the label mapping from label -> container name? Unclear if this
-# is strictly needed
-
-# FIXME: insert a `occlusion_to_vessel` map in the virtual patient model
-# FIXME: insert a `left_vs_right` sampling step in the virtual patient model
-# FIXME: add temporary support to export from YAML to XML...
-
 baseline_event = Event({
     'event':
     'baseline',
@@ -90,8 +83,5 @@ treatment_event = Event({
     }]
 })
 
-# FIXME: add the patient-outcome model to the end of events
 default_events = Events([baseline_event, stroke_event, treatment_event])
-
-# FIXME: the labels should also be inserted externally
 default_labels = {k: k.replace("_", "-") for k in default_events.models}
