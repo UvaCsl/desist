@@ -18,7 +18,7 @@ def test_trial(tmpdir):
 
 def test_trial_exists(tmpdir):
     path = pathlib.Path(tmpdir)
-    with pytest.raises(SystemExit):
+    with pytest.raises(FileNotFoundError):
         Trial.read(path.joinpath(trial_config))
 
     trial = Trial(path, runner=Logger)

@@ -25,10 +25,10 @@ def test_read_write_config(tmpdir, testdict):
 
 
 def test_read_config_exists(tmpdir):
-    with pytest.raises(SystemExit):
+    with pytest.raises(IsADirectoryError):
         Config.read(tmpdir)
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(FileNotFoundError):
         Config.read(pathlib.Path(tmpdir).joinpath('file.yml'))
 
 

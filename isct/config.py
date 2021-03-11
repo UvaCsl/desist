@@ -60,9 +60,9 @@ class Config(dict):
                 config = yaml.safe_load(config_file)
                 return cls(path.parent, config=config)
         except IsADirectoryError:
-            sys.exit(f'Configuration `{path}` should be a file.')
+            raise IsADirectoryError(f'Config `{path}` should be a file.')
         except FileNotFoundError:
-            sys.exit(f'Configuration `{path}` not found.')
+            raise FileNotFoundError(f'Configuration `{path}` not found.')
         except Exception as err:
             sys.exit(f'Loading `{path}` raised: `{err}`.')
 

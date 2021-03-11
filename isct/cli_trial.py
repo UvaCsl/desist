@@ -160,12 +160,27 @@ def run(trial, dry, parallel, keep_files, skip_completed):
     runner = new_runner(dry, parallel=parallel)
     config = pathlib.Path(trial).joinpath(trial_config)
 
-    if parallel:
-        trial = ParallelTrial.read(config,
-                                   runner=runner,
-                                   keep_files=keep_files)
-    else:
-        trial = Trial.read(config, runner=runner, keep_files=keep_files)
+    cls = ParallelTrial if parallel else Trial
+    try:
+        trial = cls.read(config, runner=runner, keep_files=keep_files)
+    except (FileNotFoundError, IsADirectoryError):
+        # If parsing the trial fails due to missing `trial.yml` configuration,
+        # we can still attempt to fallback on creating a trial in the
+        # configurations' parent directory, i.e. the directory of the trial.
+        # In this case, we have _no_ information whatsoever on the properties
+        # of the trial, basically all configuration is either missing or is
+        # set to the default values of the trials. However, the methods to
+        # extract patients within a trial will simply look at the available
+        # subdirectories. If those are valid patients, the subsequent run
+        # instructions will work as usual, as those can pull all their
+        # configuration data from the `trial/patient_*/patient.yml` files.
+        #
+        # Thus, the package does not need to terminate on this error, as we
+        # can attempt to recover. This is for instance of use when sets of
+        # patients are moved in to other directories, or that patients are
+        # generated without specific trial information, such as is commonly
+        # done when performing VVUQ analysis.
+        trial = cls(path=config.parent, runner=runner, keep_files=keep_files)
 
     # enforce container directory from configuration is valid
     assert_container_path(trial)

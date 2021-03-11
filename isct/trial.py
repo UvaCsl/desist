@@ -121,8 +121,8 @@ class Trial(Config):
         """
         config = super().read(path)
         return cls(path.parent,
-                   sample_size=config['sample_size'],
-                   random_seed=config['random_seed'],
+                   sample_size=config.get('sample_size', 0),
+                   random_seed=config.get('random_seed', 0),
                    config=dict(config),
                    runner=runner,
                    keep_files=keep_files)

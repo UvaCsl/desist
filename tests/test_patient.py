@@ -16,7 +16,7 @@ def test_patient(tmpdir):
 
 
 def test_patient_read_missing(tmpdir):
-    with pytest.raises(SystemExit):
+    with pytest.raises(IsADirectoryError):
         Patient.read(tmpdir)
 
 
@@ -32,7 +32,7 @@ def test_patient_read_prefix(tmpdir):
 
 
 def test_patient_exists(tmpdir):
-    with pytest.raises(SystemExit):
+    with pytest.raises(FileNotFoundError):
         path = pathlib.Path(tmpdir).joinpath(patient_config)
         Patient.read(path)
 
@@ -41,6 +41,25 @@ def test_patient_exists(tmpdir):
     assert os.path.isfile(patient)
 
     Patient.read(patient.path)
+
+
+def test_patient_different_path(tmpdir):
+    path = pathlib.Path(tmpdir).joinpath(patient_config)
+    odd_path = pathlib.Path(tmpdir).joinpath('odd_0')
+
+    # create patient
+    patient = Patient(path, idx=0, prefix='patient')
+    patient.create()
+    assert os.path.isfile(patient.path) and not os.path.isfile(odd_path)
+
+    # change to another name for the yaml
+    os.rename(patient.path, odd_path)
+    assert os.path.isfile(odd_path) and not os.path.isfile(patient.path)
+
+    # ensure the patient config is read and the path is updated to
+    # the odd path, and not the default, expected path is used
+    patient = Patient.read(odd_path)
+    assert patient.path == odd_path
 
 
 @pytest.mark.parametrize('idx, prefix', [(10, 'test')])

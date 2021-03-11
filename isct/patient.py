@@ -71,14 +71,25 @@ class Patient(Config):
         config = super().read(path)
 
         # extract keyword arguments and reconstruct patient
-        path = path.parent.parent
         idx, prefix = config['id'], config['prefix']
 
-        return cls(path,
-                   idx=idx,
-                   prefix=prefix,
-                   config=dict(config),
-                   runner=runner)
+        # initialise a configuration class from the extracted parameters
+        patient = cls(path.parent.parent,
+                      idx=idx,
+                      prefix=prefix,
+                      config=dict(config),
+                      runner=runner)
+
+        # Note: the path set by initialising the class assumes the default
+        # formatting conventions using the provided `prefix` and a set of
+        # leading zeros. In cases were patient directories were generated with
+        # other conventions, these paths will _not_ match. Thus, as a fallback
+        # the configuration's path is set to what the user provided, assuming
+        # this is the correct path.
+        if patient.path != path:
+            patient.path = path
+
+        return patient
 
     def create(self):
         """Create a patient directory with configuration files."""

@@ -175,6 +175,41 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
             assert keep_files == large_file.exists()
 
 
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+@pytest.mark.parametrize('parallel', [True, False])
+@pytest.mark.parametrize('num', [1, 2, 5])
+def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
+    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-n', num, '-x'])
+        assert result.exit_code == 0
+
+        cmd = [str(path)]
+        cmd = cmd + ['--parallel'] if parallel else cmd + ['-x']
+
+        # remove the config
+        trial = Trial.read(path.joinpath(trial_config))
+        trial.path.unlink()
+        assert not trial.path.exists()
+
+        # ensure runs as usual, as it can fallback on extracting the patients
+        # from the subdirectory, even when the trial config itself is missing
+        result = runner.invoke(run, cmd)
+        assert result.exit_code == 0
+
+        for i in range(num):
+            assert f'patient_{i:05}' in result.output
+
+        if parallel:
+            assert 'docker' not in result.output
+        else:
+            for k in ['docker', 'run']:
+                assert k in result.output
+
+
 @pytest.mark.parametrize('num_patients', [5])
 def test_trial_outcome(tmpdir, num_patients):
     runner = CliRunner()
