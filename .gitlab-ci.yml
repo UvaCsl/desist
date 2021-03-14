@@ -1,50 +1,53 @@
-image: "python:3.8"
+image: "python:3.9"
 
 variables:
-  GIT_SUBMODULE_STRATEGY: recursive
-  GIT_STRATEGY: clone
+  GIT_SUBMODULE_STRATEGY: none
+  GIT_STRATEGY: fetch
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 cache: &global_cache
+  key: pip-isct
   paths:
     - .cache/pip
-    - venv/
-  key: ${CI_COMMIT_REF_SLUG}
-  policy: pull-push
 
 before_script:
   - python -V
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-  - python -m pip install --upgrade pip
-  - pip install -r requirements.txt
-  - pip install flake8
+  - python -m pip install --upgrade pip setuptools wheel
+  - pip install --cache-dir=.cache/pip tox
 
 stages:
   - build
   - test
+  - docs
 
 build_isct:
   stage: build
-  cache:
-    <<: *global_cache
-    policy: push
   script:
-    - pip install -e .
+    - pip install -e .[all]
 
 test_isct:
   stage: test
-  cache:
-    <<: *global_cache
-    policy: pull
   script:
-    - pytest --cov=isct
+    - tox -e py39
 
-flake8_isct:
+test_isct_38:
+  # ensure the code runs on 3.8 as well
+  image: "python:3.8"
   stage: test
-  cache:
-    <<: *global_cache
-    policy: pull
   script:
-    - flake8 isct
+    - tox -e py38
+
+test_isct_vvuq:
+  stage: test
+  script:
+    - tox -e py39-vvuq
+
+lint_isct:
+  stage: docs
+  script:
+    - tox -e flake8
+
+lint_docs:
+  stage: docs
+  script:
+    - tox -e pydocstyle

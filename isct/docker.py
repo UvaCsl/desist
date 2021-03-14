@@ -1,90 +1,110 @@
-import os
-import pathlib
+""":class:`~isct.container.Container` implemementation for ``Docker``."""
 import subprocess
-import logging
+import sys
 
-from .container import Container, ContainerType
-import isct.utilities as utilities
+from .container import Container
+from .utilities import OS
+from .runner import Logger
 
 
 class Docker(Container):
-    def __init__(self, permissions=False):
-        super().__init__()
-        self.type = ContainerType.DOCKER
+    """Implements :class:`~isct.container.Container` for ``Docker``."""
+    def __init__(self, path, docker_group=False, runner=Logger()):
+        super().__init__(path, runner=runner)
+        self.docker_group = docker_group
+        self.bind_flag = '-v'
 
-        # indicates the user has root permissions for the docker group
-        self.permissions = permissions
-
-        # Docker requires the use of `sudo` for each command on Linux. Any
-        # other environment does not require this, as they run inside another
-        # VM
+        # Docker requires `sudo` when no part of user group; only on Linux
         self.sudo = ''
-        if not self.permissions and self.os == utilities.OS.LINUX:
-            self.sudo = 'sudo'
+        if not docker_group:
+            if OS.from_platform(sys.platform) == OS.LINUX:
+                self.sudo = 'sudo'
 
-        # Docker uses the `-v [path_1:path_2]` argument to indicate that the
-        # following paths represent the host's path (path_1) and the local
-        # path (path_2) inside the container. Multiple volumes to bind are
-        # allowed as long as these are prefixed by the `bind_flag` `-v`.
-        self.bind_flag = '-v '
+    def exists(self):
+        """Returns ``True`` if the Docker container exists."""
+        cmd = f'{self.sudo} docker image inspect {self.tag}'.split()
+        return self.runner.run(cmd, check=True)
 
-    def image(self, path):
-        """Return the image's tag as defined by the basename of the path."""
-        # The `isct` command builds all Docker containers where the tags are
-        # matched to the basename of the directories. Therefore, we only need
-        # to split the basename here to obtain the corresponding image tag.
-        return os.path.basename(self._format_image(pathlib.Path(path)))
+    def create(self):
+        """Create a Docker container."""
+        cmd = f'{self.sudo} docker build {self.path.absolute()} -t {self.tag}'
+        return self.runner.run(cmd.split())
 
-    def build_image(self, path):
-        """Build the Docker image of the Dockerfile in `path`."""
-        # FIXME: introduce a check that Dockerfile is found?
+    def run(self, args=''):
+        """Evaluate the Docker command."""
+        cmd = f'{self.sudo} docker run {self.volumes} {self.tag} {args}'
+        permissions_cmd = self.update_file_permissions()
 
-        # Docker can build from anywhere, when given an absolute path.
-        path = pathlib.Path(path).absolute()
-        tag = self.image(path)
-        return f"{self.sudo} {self.type} build {path} -t {tag}".split()
+        if permissions_cmd is not None:
+            cmd = f'{cmd} && {permissions_cmd}'
 
-    def check_image(self, tag):
-        """Returns the command to identify if the image of `tag` exists."""
-        return f"{self.sudo} {self.type} image inspect {tag}".split()
+        return self.runner.run(cmd.split())
 
-    def image_exists(self, tag, dry_run=True):
-        """Returns True if container with tag `tag` exists on the host."""
-        cmd = self.check_image(self.image(tag))
-        return utilities.command_succeeds(cmd, dry_run=dry_run)
+    def update_file_permissions(self):
+        """Update file permissions for files created within Docker on Linux.
 
-    def set_permissions(self, path, tag, dry_run=True):
-        """Updates the file permissions after Docker runs to prevent files
-        remaining on the filesystem with `root` permissions inherited from the
-        Docker container."""
+        This routine aims to fix the file permissions for files generated
+        within Docker containers, specifically when running on Linux-based
+        operating systems on the host machine. The issue arrises from the
+        permissions set within the container, as all newly created files have
+        root permissions (i.e. the permissions within the Docker environment).
 
-        if self.os == utilities.OS.LINUX:
+        This creates a problem when the user on the host machine does *not*
+        have root permissions as well. In this case, the user is *not* able to
+        change the permissions of these newly created files, nor remove them
+        from their system.
 
-            # explicitly convert the ownership of the files to current user
-            if not self.permissions:
-                user = subprocess.check_output(
-                    ['whoami'], universal_newlines=True).strip()
-                cmd = f"sudo chown -R {user}:{user} {str(path)}".split()
+        This routine considers two scenarios:
 
-            # The user has permissions to run docker, but no permissions to
-            # invoke sudo. Therefore, we leverage the docker container again to
-            # update the ownership of all documents with `/patient/` to match
-            # the ownership of the actual `/patient` directory.
+        1. The host does have root permissions.
+        2. The host does not have root permissions.
+
+        In the first case, we evaluate a `chown` operation to reset the
+        permissions from `root:root` back to `user:user`.
+
+        In the second case, we apply some trickery: the Docker container is
+        invoked another time to evaluate the `chown` operation where the
+        permissions are set to match the original permissions of the volume
+        on the host machine.
+        """
+        if OS.from_platform(sys.platform) != OS.LINUX:
+            return None
+
+        # If no volumes were written, no permissions have to be updated
+        if len(self.bind_volumes) == 0:
+            return None
+
+        if not self.docker_group:
+
+            # convert ownership of the files to ownership of the current user
+            user = subprocess.check_output(['whoami']).strip().decode('utf-8')
+
+            # Loop over all volumes that were bound to the container to
+            # identify the patient's container, i.e. the path that was
+            # explicitly linked to the local `/patient` or `/trial` paths.
+            # Docker will write files in this directory with root permissions,
+            # which we undo.
             #
-            # reference: https://stackoverflow.com/a/29584184
-            else:
-                volumes = " ".join(
-                    map(lambda s: self.bind_flag + s, self.volumes))
+            # FIXME: resolve these hardcoded paths
+            for (host, local) in self.bind_volumes:
+                if '/patient' in str(local) or '/trial' in str(local):
+                    permission_path = host
+                    break
 
-                cmd = (f"{self.type} run --entrypoint /bin/sh {volumes}"
-                       f""" {self.image(tag)} -c """.split())
-                cmd.append("""chown -R `stat -c "%u:%g" /patient` /patient""")
+            return f'sudo chown -R {user}:{user} {str(permission_path)}'
 
-            # log the command
-            logging.info(" + " + " ".join(cmd))
-
-            # only evaluate when not doing a dry run
-            if not dry_run:
-                subprocess.run(cmd)
-
-            return " ".join(cmd)
+        # In the remaining situation, the user has permissions to run Docker,
+        # as the user is part of the "docker group". However, there are no
+        # permissions to use `sudo` to reset the file permissions. Thus, to
+        # still reset these permissions, well call into the Docker container
+        # again specifically to reset these file permissions. Thus, inside the
+        # Docker container---with root permissions---we change the ownership
+        # of all documents within `/patient/*` to match the ownership of
+        # the actual `/patient` directory on the host system.
+        #
+        # FIXME: it would be much nicer to avoid these operations...
+        #
+        # Reference discussions at: https://stackoverflow.com/a/29584184
+        return (f"docker run --entrypoint /bin/sh {self.volumes}"
+                f""" {self.tag} -c """
+                f"""chown -R `stat -c "%u:%g" /patient` /patient""")

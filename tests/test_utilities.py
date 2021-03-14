@@ -1,100 +1,40 @@
-import logging
-import os
 import pathlib
 import pytest
-import subprocess
-import yaml
 
-from mock import patch, MagicMock
+from isct.utilities import OS, clean_large_files, MAX_FILE_SIZE
 
-from isct.utilities import get_git_hash, isct_module_path, inner_tree, tree
-from isct.utilities import OS, run_and_stream, command_succeeds, read_yaml
 
-@pytest.fixture
-def log_subprocess_run(mocker):
-    mocker.patch('subprocess.run', logging.info)
+@pytest.mark.parametrize("string, platform", [("darwin", OS.MACOS),
+                                              ("linux", OS.LINUX)])
+def test_OS_enum(string, platform):
+    assert OS.from_platform(string) == platform
 
-@pytest.fixture
-def mock_check_output(mocker):
-    mocker.patch('subprocess.check_output', return_value='string\n')
-
-def test_isct_module_path():
-    import isct as wf
-    assert isct_module_path().samefile(os.path.split(wf.__file__)[0])
-
-@patch('subprocess.run',
-        return_value=subprocess.CompletedProcess(["git", "rev-parse", "HEAD"], returncode=0, stdout="myhash"))
-def test_get_git_hash(mock_check_output, tmp_path):
-    # output is mocked, we do not know the current hash
-    h = get_git_hash(tmp_path)
-    assert h == "myhash"
-
-@patch('shutil.which', return_value=None)
-def test_git_hash_no_git(mock_which, tmp_path):
-    assert get_git_hash(pathlib.Path(tmp_path)) == ""
-
-def test_git_hash_no_git_directory(tmp_path):
-    assert get_git_hash(pathlib.Path(tmp_path)) == ""
-
-@pytest.mark.parametrize("report", (lambda n: "", lambda n: "flag"))
-@pytest.mark.parametrize("recurse", (True, False))
-@pytest.mark.parametrize("dirs", (["one"], ["one", "two"]))
-def test_inner_tree(tmp_path, dirs, recurse, report):
-    # emtpy directory
-    lines = list(inner_tree(tmp_path, recurse=recurse, report=report))
-    assert len(lines) == 0
-
-    # setup a nested path
-    p = tmp_path
-    for folder in dirs:
-        p = p.joinpath(folder)
-    os.makedirs(p)
-
-    lines = list(inner_tree(tmp_path, recurse=recurse, report=report))
-
-    if recurse:
-        assert len(lines) == len(dirs)
-        for i, folder in enumerate(dirs):
-            assert folder in lines[i]
-            assert report("hello") in lines[i]
-    else:
-        assert len(lines) == 1
-
-    # run through full command and make sure it doesn't crash.
-    tree(tmp_path)
-
-def test_OS_enum_values():
-    assert OS.LINUX.value == "linux"
-    assert OS.MACOS.value == "darwin"
-
-@pytest.mark.parametrize("platform, os", [
-        ("linux", OS.LINUX),
-        ("linux2", OS.LINUX),
-        ("darwin", OS.MACOS),
-    ])
-def test_OS_enum_init(platform, os):
-    assert OS.from_platform(platform) == os
-
-def test_OS_enum_exit_windows():
-    # ensure windows fails
     with pytest.raises(SystemExit):
-        OS.from_platform("win32")
+        OS.from_platform("windows")
 
-@pytest.mark.parametrize("cmd, flag", [('true', 0), ('false', 1)])
-def test_run_and_stream(cmd, flag):
-    assert run_and_stream(cmd, logging) == flag
 
-@pytest.mark.parametrize("cmd, out", [('true', True), ('false', False)])
-def test_command_succeeds(cmd, out):
-    assert command_succeeds(cmd) == out
-    assert command_succeeds(cmd, dry_run=True) == True
+@pytest.mark.parametrize('fn, delta, remains', [('removes.txt', +10, False),
+                                                ('remains.txt', -10, True),
+                                                ('remains.yml', +10, True),
+                                                ('config.xml', +10, True),
+                                                ('anyother.xml', +10, False)])
+def test_remove_large_files(tmpdir, fn, delta, remains):
+    path = pathlib.Path(tmpdir)
+    filename = path.joinpath(fn)
+    filesize = MAX_FILE_SIZE + delta
 
-def test_read_yaml(tmp_path):
-    p = pathlib.Path(tmp_path)
-    assert read_yaml(None) == {}
-    assert read_yaml(p.joinpath('does-not-exist.yml')) == {}
-    d = {'some': 'dict'}
-    yml_p = p.joinpath('test.yml')
-    with open(yml_p, 'w') as outfile:
-        yaml.dump(d, outfile)
-    assert read_yaml(yml_p) == d
+    with open(filename, "wb") as outfile:
+        outfile.seek(filesize - 1)
+        outfile.write(b"\0")
+
+    assert filename.exists(), "Test file should be present at start"
+
+    cnt, size = clean_large_files(path)
+    assert filename.exists() == remains, "Should match desired remain flag"
+
+    if remains:
+        assert (cnt, size) == (0, 0), f"'{fn}' should not be removed"
+    else:
+        assert (cnt, size) == (1, filesize)
+
+    assert clean_large_files(path.joinpath("not/existing")) is None

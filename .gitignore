@@ -11,6 +11,7 @@ _build
 *.gz 
 *.tar.gz 
 *.coverage
+cov_html/
 
 # jupyter notebook
 *.ipynb_checkpoints/*
@@ -28,3 +29,6 @@ _build
 
 # no virtualenv
 venv
+
+# no tox 
+*.tox
