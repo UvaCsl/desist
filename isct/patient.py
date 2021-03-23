@@ -104,7 +104,7 @@ class Patient(Config):
             container = create_container(f'{model}',
                                          container_path=container_path,
                                          runner=self.runner)
-            container.bind(self.path.parent, patient_path)
+            container.bind(self.dir, patient_path)
             args = f'event --patient /patient --event {idx}'
             success = container.run(args=args)
 

@@ -175,7 +175,7 @@ class Trial(Config):
 
         # create patients
         for i in range(self.get('sample_size', 0)):
-            patient = Patient(self.path.parent,
+            patient = Patient(self.dir,
                               idx=i,
                               prefix=self.get('prefix'))
             patient.create()
@@ -190,7 +190,7 @@ class Trial(Config):
         Args:
             idx (int): integer value of the to be appended patient.
         """
-        patient = Patient(self.path.parent, idx=idx, prefix=self.get('prefix'))
+        patient = Patient(self.dir, idx=idx, prefix=self.get('prefix'))
         patient.create()
 
         # increment the sample size when appending patients
@@ -225,7 +225,7 @@ class Trial(Config):
         container = create_container(virtual_patient_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
-        container.bind(self.path.parent, trial_path)
+        container.bind(self.dir, trial_path)
 
         # The trial.yml config file is passes as the criteria file for the
         # virtual patient model.
@@ -239,7 +239,7 @@ class Trial(Config):
         container = create_container(trial_outcome_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
-        container.bind(self.path.parent, trial_path)
+        container.bind(self.dir, trial_path)
         container.run()
 
     def run(self, skip_completed=False):
@@ -284,5 +284,6 @@ class ParallelTrial(Trial):
         for p in self:
             if skip_completed and p.completed:
                 continue
-            cmd = f'isct --log {p.dir}/isct.log patient run {flags} {p.dir}'
+            pdir = os.path.dirname(p.path)
+            cmd = f'isct --log {pdir}/isct.log patient run {flags} {pdir}'
             self.runner.run(cmd.split())

@@ -34,10 +34,24 @@ class Config(dict):
             config (dict): Initialise configuration with dictionary.
         """
         self.path = pathlib.Path(path)
-        self.dir = self.path.parent
         super().__init__(**config)
 
         # FIXME: consider storing a `isct` version / git hash by default
+
+    @property
+    def path(self):
+        """Path pointing to patient configuration file."""
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        """Store path to patient configuration file as `pathlib.Path`."""
+        self._path = pathlib.Path(path)
+
+    @property
+    def dir(self):
+        """Return the directory as the parent of the file's path."""
+        return self.path.parent
 
     def __fspath__(self) -> str:
         """Return the file system path of the :class:`Config`."""
