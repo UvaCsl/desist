@@ -7,9 +7,9 @@ import os
 import pathlib
 import shutil
 
-from .config import Config
-from .trial import Trial, ParallelTrial, trial_config
-from .runner import new_runner
+from desist.isct.config import Config
+from desist.isct.trial import Trial, ParallelTrial, trial_config
+from desist.isct.runner import new_runner
 
 
 @click.group()

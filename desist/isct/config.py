@@ -19,11 +19,6 @@ class Config(dict):
 
     This class extends a :obj:`dict` with functions to read/write the
     underlying dictionary to the YAML format.
-
-    Attributes:
-        path (:py:obj:`pathlib.Path`): Path of the configuration file.
-        dir (:py:obj:`pathlib.Path`): Path of the directory.
-
     """
 
     def __init__(self, path, config):

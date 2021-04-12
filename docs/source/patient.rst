@@ -1,6 +1,6 @@
 Patient class
 =============
 
-.. automodule:: isct.patient
+.. automodule:: desist.isct.patient
    :members:
    :undoc-members:

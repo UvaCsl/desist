@@ -1,4 +1,4 @@
 Trial class
 ===========
 
-.. automodule:: isct.trial
+.. automodule:: desist.isct.trial

@@ -2,15 +2,15 @@ import os
 import pathlib
 import pytest
 
-from isct.utilities import OS
-from isct.singularity import Singularity
-from isct.runner import LocalRunner
+from desist.isct.utilities import OS
+from desist.isct.singularity import Singularity
+from desist.isct.runner import LocalRunner
 from test_runner import DummyRunner
 
 
 @pytest.mark.parametrize("platform", [OS.MACOS, OS.LINUX])
 def test_singularity_create(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     path = pathlib.Path('tmp')
     container_path = pathlib.Path(tmpdir)
@@ -33,7 +33,7 @@ def test_singularity_create(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize("platform", [OS.MACOS, OS.LINUX])
 def test_singularity_exists(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     path = 'tmp'
     container_path = pathlib.Path(tmpdir)
@@ -54,7 +54,7 @@ def test_singularity_exists(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize("platform", [OS.MACOS, OS.LINUX])
 def test_docker_run(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     path = 'tmp'
     container_path = pathlib.Path(tmpdir)

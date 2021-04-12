@@ -3,9 +3,9 @@ import click
 import os
 import pathlib
 
-from .trial import Trial, trial_config
-from .patient import Patient, LowStoragePatient, patient_config
-from .runner import new_runner
+from desist.isct.trial import Trial, trial_config
+from desist.isct.patient import Patient, LowStoragePatient, patient_config
+from desist.isct.runner import new_runner
 from .cli_trial import assert_container_path
 
 

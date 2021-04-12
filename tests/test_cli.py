@@ -1,10 +1,7 @@
-import logging
 import os
-import pathlib
-import pytest
 
 from click.testing import CliRunner
-from isct.cli import cli
+from desist.cli.cli import cli
 
 
 def test_isct_cli():

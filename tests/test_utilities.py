@@ -1,7 +1,7 @@
 import pathlib
 import pytest
 
-from isct.utilities import OS, clean_large_files, MAX_FILE_SIZE
+from desist.isct.utilities import OS, clean_large_files, MAX_FILE_SIZE
 
 
 @pytest.mark.parametrize("string, platform", [("darwin", OS.MACOS),

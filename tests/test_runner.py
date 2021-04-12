@@ -1,7 +1,7 @@
 import pytest
 
-from isct.runner import Runner, LocalRunner, Logger, ParallelRunner
-from isct.runner import new_runner
+from desist.isct.runner import Runner, LocalRunner, Logger, ParallelRunner
+from desist.isct.runner import new_runner
 
 
 class DummyRunner(Runner):

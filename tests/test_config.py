@@ -2,7 +2,7 @@ import os
 import pathlib
 import pytest
 
-from isct.config import Config
+from desist.isct.config import Config
 
 
 @pytest.mark.parametrize('testdict', [{}, {'path': '.'}])

@@ -1,8 +1,8 @@
 """The subcommand for the command-line interface regarding containers."""
 import click
 
-from .container import create_container
-from .runner import new_runner
+from desist.isct.container import create_container
+from desist.isct.runner import new_runner
 
 
 @click.group()

@@ -2,8 +2,8 @@ import os
 import pathlib
 import pytest
 
-from isct.utilities import OS
-from isct.docker import Docker
+from desist.isct.utilities import OS
+from desist.isct.docker import Docker
 from test_runner import DummyRunner
 
 
@@ -11,7 +11,7 @@ from test_runner import DummyRunner
                                                   (OS.LINUX, 'sudo')])
 @pytest.mark.parametrize("docker_group", [True, False])
 def test_docker_create(mocker, platform, permission, docker_group):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     path = pathlib.Path('tmp')
     container = Docker(path, docker_group=docker_group, runner=DummyRunner())
@@ -28,7 +28,7 @@ def test_docker_create(mocker, platform, permission, docker_group):
                                                   (OS.LINUX, 'sudo')])
 @pytest.mark.parametrize("docker_group", [True, False])
 def test_docker_exists(mocker, docker_group, platform, permission):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     path = 'tmp'
     container = Docker(path, docker_group=docker_group, runner=DummyRunner())
@@ -45,7 +45,7 @@ def test_docker_exists(mocker, docker_group, platform, permission):
 @pytest.mark.parametrize("platform, permission", [(OS.MACOS, ''),
                                                   (OS.LINUX, 'sudo')])
 def test_docker_run(mocker, tmpdir, platform, permission):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
     path = pathlib.Path(tmpdir)
     container = Docker(path, runner=DummyRunner())
     result = ' '.join(container.run(args='args'))
@@ -55,7 +55,7 @@ def test_docker_run(mocker, tmpdir, platform, permission):
 
 
 def test_docker_fix_permissions(mocker, tmpdir):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=OS.LINUX)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=OS.LINUX)
     path = pathlib.Path(tmpdir)
 
     # without docker group access, with root

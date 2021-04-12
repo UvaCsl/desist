@@ -1,4 +1,4 @@
 Runner class
 ============
 
-.. automodule:: isct.runner
+.. automodule:: desist.isct.runner

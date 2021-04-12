@@ -16,7 +16,7 @@ venv:
 
 .PHONY: test
 test:
-	tox 
+	tox
 
 .PHONY: docs
 docs:
@@ -30,5 +30,5 @@ docsclean:
 distclean:
 	rm -rf $(VENV)/
 	rm -rf .tox/
-	rm -rf isct.egg-info/
+	rm -rf desist.egg-info/
 	rm -rf cov_html/

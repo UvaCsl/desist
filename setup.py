@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-_isct_packages = find_packages(include=['isct'])
+_desist_packages = find_packages()
 
 _dev = [
     'yapf', 'tox', 'flake8', 'pydocstyle', 'numpy', 'sphinx',
@@ -14,22 +14,21 @@ _vvuq = ['easyvvuq']
 _all = _dev + _test + _vvuq
 
 setup(
-    name="isct",
-    version="0.0.1",
+    name="desist",
+    version="0.1.0",
     description='Streamline In Silico Computational Trials',
     author_email='m.vanderkolk@uva.nl',
-    packages=_isct_packages,
+    packages=_desist_packages,
     keywords=['in-silico'],
     entry_points={
         'console_scripts': [
-            'isct = isct.cli:cli',
+            'desist = desist.cli.cli:cli',
         ],
     },
     python_requires='>=3.8, <4',
     install_requires=[
         'click>=7.1.2',
         'PyYAML>=5.3',
-        'schema>=0.7',
     ],
     extras_require={
         'all': _all,

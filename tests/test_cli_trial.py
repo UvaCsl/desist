@@ -3,11 +3,11 @@ import pathlib
 import pytest
 import os
 
-from isct.config import Config
-from isct.cli_trial import create, append, run, list_key, outcome, archive
-from isct.cli_trial import reset
-from isct.trial import Trial, trial_config
-from isct.utilities import OS, MAX_FILE_SIZE
+from desist.cli.cli_trial import create, append, run, list_key, outcome, archive
+from desist.cli.cli_trial import reset
+from desist.isct.config import Config
+from desist.isct.trial import Trial, trial_config
+from desist.isct.utilities import OS, MAX_FILE_SIZE
 
 # FIXME: `dry` run does still create all directories though...
 
@@ -138,7 +138,7 @@ def test_trial_append(tmpdir, n):
 @pytest.mark.parametrize('parallel', [True, False])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     keep_cmd = '--keep-files' if keep_files else '--clean-files'
 
@@ -179,7 +179,7 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
 @pytest.mark.parametrize('parallel', [True, False])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
@@ -355,7 +355,7 @@ def test_trial_archive_custom_file(tmpdir, num_patients):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_reset(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')

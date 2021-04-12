@@ -1,4 +1,4 @@
-from isct.events import Events, Event
+from desist.isct.events import Events, Event
 
 example_event = {
     'event': 'baseline',

@@ -1,4 +1,4 @@
 Container class
 ====================
 
-.. automodule:: isct.container
+.. automodule:: desist.isct.container

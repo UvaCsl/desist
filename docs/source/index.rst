@@ -1,5 +1,5 @@
-DESIST: Discrete Event Simulation for *In Silico* Trials
-========================================================
+Discrete Event Simulation for *In Silico* Trials: ``desist``
+============================================================
 
 ``desist`` provides a command-line utility to support generation, evaluation,
 and analysis of *in silico* trials. The package has been developed in context of
@@ -26,24 +26,24 @@ available on the path
     source ./venv/bin/activate
 
     # test installation
-    isct --help
+    desist --help
 
 Usage
 -----
 
 A brief overview of the usage of the commands available in ``desist`` is
-obtained by ``isct --help``, with specific usage instructions for individual
-commands, e.g. to build containers, with ``isct container --help``.
+obtained by ``desist --help``, with specific usage instructions for individual
+commands, e.g. to build containers, with ``desist container --help``.
 
 .. code-block:: bash
 
     # general usage instructions
-    isct --help
+    desist --help
 
     # command specific instructions
-    isct container --help
-    isct trial --help
-    isct patient --help
+    desist container --help
+    desist trial --help
+    desist patient --help
 
 The documentation is also available here: :doc:`cmd`.
 

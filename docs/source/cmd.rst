@@ -1,7 +1,7 @@
 Command-line reference
 ======================
 
-.. click:: isct.cli:cli
-    :prog: isct
+.. click:: desist.cli.cli:cli
+    :prog: desist
     :nested: full
 

@@ -1,7 +1,7 @@
-ISCT Reference
-##############
+``desist`` Reference
+####################
 
-.. module:: isct
+.. module:: desist
 
 This is some documentation on ...
 

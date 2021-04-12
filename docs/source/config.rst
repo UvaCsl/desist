@@ -1,5 +1,5 @@
 Configuration class
 ====================
 
-.. automodule:: isct.config
+.. automodule:: desist.isct.config
    :special-members: __fspath__

@@ -7,14 +7,14 @@ Creating containers
     directory=/path/to/simulation/directory
 
     # docker containers
-    isct container create $directory
+    desist container create $directory
 
     # singularity images are stored on disk as `*.sif` files
     # this container variable points to the desired location
     containers=/path/to/containers/
 
     # singularity containers
-    isct container create $directory -s $containers
+    desist container create $directory -s $containers
 
 .. code-block:: bash
 

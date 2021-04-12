@@ -3,17 +3,16 @@ import os
 import pathlib
 import pytest
 
-from isct.cli_patient import run, reset
-from isct.cli_trial import create
-from isct.utilities import OS, MAX_FILE_SIZE
-from isct.events import default_events
-from isct.trial import Trial, trial_config
-from isct.patient import patient_config
+from desist.cli.cli_patient import run, reset
+from desist.cli.cli_trial import create
+from desist.isct.utilities import OS, MAX_FILE_SIZE
+from desist.isct.events import default_events
+from desist.isct.trial import Trial, trial_config
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_run(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
@@ -37,7 +36,7 @@ def test_patient_run(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_keep_files(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
@@ -68,7 +67,7 @@ def test_patient_keep_files(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_run_singularity(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
@@ -102,7 +101,7 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_reset(mocker, tmpdir, platform):
-    mocker.patch('isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
