@@ -79,22 +79,14 @@ documentation pages. The can be accessed online: `TODO`, generated locally using
 `make docs`, or by inspecting their source
 [`docs/source/`](https://gitlab.computationalscience.nl/insist/in-silico-trial/-/tree/update-docs/docs/source).
 
+## INSIST Trial
+
+The `des-ist` package was developed for the streamlining of the INSIST
+project. The corresponding simulation modules and pipelines are provided
+at in a separate repository [`insist-trials`](https://gitlab.computationalscience.nl/insist/insist-trials).
+
 ## Documentation
 
 More in depth documentation can be found at:
 `https://insilicostroketrial.eu/insist_docs/.` (Hosted documentation is not yet
 up to date: issue #18)
-
-## Pipeline status
-
-Package | Pipeline
---- | ---
-`in-silico-trial` | ![pipeline](https://gitlab.computationalscience.nl/insist/in-silico-trial/badges/master/pipeline.svg)
-`virtual_patient_generation` | ![pipeline](https://gitlab.computationalscience.nl/insist/virtual_patient_generation/badges/master/pipeline.svg)
-`place_clot` | ![pipeline](https://gitlab.computationalscience.nl/insist/place_clot/badges/master/pipeline.svg)
-`1D-blood-flow` | ![pipeline](https://gitlab.computationalscience.nl/insist/1d-blood-flow/badges/master/pipeline.svg)
-`perfusion_and_tissue_damage` | ![pipeline](https://gitlab.computationalscience.nl/insist/perfusion_and_tissue_damage/badges/master/pipeline.svg)
-`thrombo-sis-lysis` | ![pipeline](https://gitlab.computationalscience.nl/insist/thrombo-sis-lysis/badges/master/pipeline.svg)
-`thrombectomy` | ![pipeline](https://gitlab.computationalscience.nl/insist/thrombectomy_python_rs/badges/master/pipeline.svg)
-`in-silico-trial-outcome` | ![pipeline](https://gitlab.computationalscience.nl/insist/in-silico-trial-outcome/badges/master/pipeline.svg)
-`patient-outcome-model` | ![pipeline](https://gitlab.computationalscience.nl/insist/patient-outcome-model/badges/master/pipeline.svg)
