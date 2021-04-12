@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<insist_variables>
-<patients_directory>/patients/</patients_directory>
-<virtual_patient_prefix>patient</virtual_patient_prefix>
-</insist_variables>
