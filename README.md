@@ -1,6 +1,6 @@
-# In Silico Clinical Trial (ISCT) workflow
+# Discrete Event Simulation for In Silico Trials `desist`
 
-This repository provides the command `isct` to manage *in silico* clinical
+This repository provides the command `desist` to manage *in silico* clinical
 trials. The trial is setup as a discrete event-based simulation pipeline, where
 submodules represent separate simulation events within the trial, e.g.
 statistical analyses, numerical simulations, etc.
@@ -42,11 +42,11 @@ source venv/bin/activate
 pip install . -e
 ```
 
-To verify if the installation worked evaluate `isct --help` on the
+To verify if the installation worked evaluate `desist --help` on the
 command-line to obtain the application's usage.
 
 ```
-Usage: isct [OPTIONS] COMMAND [ARGS]...
+Usage: desist [OPTIONS] COMMAND [ARGS]...
 
   des-ist.
 
@@ -69,8 +69,8 @@ Commands:
 
 ## Usage
 
-To obtain general usage information: `isct --help` or for more specific usage
-per command `isct <command> --help` with often used commands: `container`,
+To obtain general usage information: `desist --help` or for more specific usage
+per command `desist <command> --help` with often used commands: `container`,
 `patient`, and `trial`. The provide utilities to interact at respectively the
 container, patient, and trial levels.
 
