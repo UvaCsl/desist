@@ -4,9 +4,9 @@ import click
 import logging
 from logging.handlers import RotatingFileHandler
 
-from .cli_container import container
-from .cli_patient import patient
-from .cli_trial import trial
+from .container import container
+from .patient import patient
+from .trial import trial
 
 
 @click.group()

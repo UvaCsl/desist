@@ -6,7 +6,7 @@ import pathlib
 from desist.isct.trial import Trial, trial_config
 from desist.isct.patient import Patient, LowStoragePatient, patient_config
 from desist.isct.runner import new_runner
-from .cli_trial import assert_container_path
+from .trial import assert_container_path
 
 
 @click.group()

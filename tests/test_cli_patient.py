@@ -3,8 +3,8 @@ import os
 import pathlib
 import pytest
 
-from desist.cli.cli_patient import run, reset
-from desist.cli.cli_trial import create
+from desist.cli.patient import run, reset
+from desist.cli.trial import create
 from desist.isct.utilities import OS, MAX_FILE_SIZE
 from desist.isct.events import default_events
 from desist.isct.trial import Trial, trial_config
