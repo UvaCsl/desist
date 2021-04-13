@@ -67,6 +67,9 @@ class Patient(Config):
     @classmethod
     def read(cls, path, runner=Logger()):
         """Reads an existing patient configuration."""
+
+        path = pathlib.Path(path)
+
         # obtain config from provided filepath
         config = super().read(path)
 
