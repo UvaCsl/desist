@@ -51,7 +51,7 @@ class API(abc.ABC):
     def next_event(self):
         """The next event with respect to the ``self.model_id``.
 
-        Returns ``None` if no subsequent event is present.
+        Returns ``None`` if no subsequent event is present.
         """
         if (eid := self.event_id + 1) < len(self.events):
             return self.events[eid]

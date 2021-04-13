@@ -8,8 +8,10 @@ This is some documentation on ...
 .. toctree::
     :maxdepth: 2
 
+    api
     config
     container
+    events
     patient
-    trial
     runner
+    trial

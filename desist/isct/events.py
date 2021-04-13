@@ -67,7 +67,7 @@ class Event(dict):
         super().__init__(*args, **kwargs)
 
     def model(self, idx):
-        """Returns the label of ``idx``th model in the event."""
+        """Returns the label of ``idx`` th model in the event."""
         models = list(self.models)
         if idx >= 0 and idx < len(models):
             return models[idx]

@@ -11,7 +11,21 @@ The command-line utility is written using `Click
 the backing implementation and not described in much detail here. The exported
 commands are documented in :doc:`cmd`.
 
-The code can be grouped as follows:
+The code is structured as follows, which is reflected by the tests (``tests/``)
+
+.. code-block:: bash
+
+    desist/
+        # the functionality related to ``click`` command-line utility
+        cli/
+
+        # the eventhandling and API definitions
+        eventhandler/
+
+        # the core ``isct`` functionality
+        isct/
+
+With the fundamental implementation in ``isct/`` out as:
 
 .. code-block:: python
 
