@@ -67,7 +67,6 @@ class Patient(Config):
     @classmethod
     def read(cls, path, runner=Logger()):
         """Reads an existing patient configuration."""
-
         path = pathlib.Path(path)
 
         # obtain config from provided filepath
@@ -97,6 +96,11 @@ class Patient(Config):
     def create(self):
         """Create a patient directory with configuration files."""
         self.write()
+
+    @property
+    def events(self):
+        """Return all events present for the current patient."""
+        return Events(self.get('events'))
 
     def run(self):
         """Evaluate simulation of virtual patient."""

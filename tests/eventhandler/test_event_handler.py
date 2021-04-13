@@ -4,6 +4,7 @@ from click.testing import CliRunner
 from desist.eventhandler.api import API
 from desist.eventhandler.eventhandler import event_handler
 from desist.isct.patient import Patient
+from desist.isct.events import baseline_event, stroke_event, treatment_event
 
 
 class TAPI(API):
@@ -45,15 +46,32 @@ def test_eventhandler(tmpdir, cmd):
         patient.write()
 
         result = runner.invoke(event_handler(TAPI), [str(path), 0, cmd])
+        print(result.output)
         assert result.exit_code == 0
         assert cmd in result.output
 
 
-@pytest.mark.parametrize('event_id', [0, 1])
-def test_api_class(tmpdir, event_id):
+@pytest.mark.parametrize('model_id', [0, 1])
+def test_api_class(tmpdir, model_id):
     patient = Patient(tmpdir, idx=0, prefix='test')
     patient.write()
 
-    api = TAPI(patient=patient.path, event_id=event_id)
+    api = TAPI(patient=patient.path, model_id=model_id)
     assert api.patient == patient
-    assert api.event_id == event_id
+    assert api.model_id == model_id
+
+
+def test_api_helpers(tmpdir):
+    patient = Patient(tmpdir, idx=0, prefix='test')
+    patient.write()
+
+    api = TAPI(patient=patient.path, model_id=0)
+    assert api.previous_event is None
+    assert api.current_event == baseline_event
+    assert api.next_event == stroke_event
+
+    n_models = len(list(patient.events.models)) - 1
+    api = TAPI(patient=patient.path, model_id=n_models)
+    assert api.previous_event == stroke_event
+    assert api.current_event == treatment_event
+    assert api.next_event is None

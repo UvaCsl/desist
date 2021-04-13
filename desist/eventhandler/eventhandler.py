@@ -1,3 +1,9 @@
+"""Command-line utility for the eventhandling.
+
+This provides a basic ``click``-based command-line utility that uses a
+concrete API of the abstract ``desist.eventhander.api.API`` implementation.
+The utility attaches the ``event``, ``example``, and ``test`` commands.
+"""
 import click
 
 from .api import API
@@ -6,18 +12,21 @@ from .api import API
 @click.command()
 @click.pass_context
 def event(ctx):
+    """Invokes the ``API.event`` call to dispatch the event evaluation."""
     ctx.obj.event()
 
 
 @click.command()
 @click.pass_context
 def example(ctx):
+    """Invokes the ``API.example`` call to dispatch the example evaluation."""
     ctx.obj.example()
 
 
 @click.command()
 @click.pass_context
 def test(ctx):
+    """Invokes the ``API.test`` call to dispatch the test evaluation."""
     ctx.obj.test()
 
 
