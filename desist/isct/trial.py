@@ -285,5 +285,5 @@ class ParallelTrial(Trial):
             if skip_completed and p.completed:
                 continue
             pdir = os.path.dirname(p.path)
-            cmd = f'isct --log {pdir}/isct.log patient run {flags} {pdir}'
+            cmd = f'desist --log {pdir}/isct.log patient run {flags} {pdir}'
             self.runner.run(cmd.split())

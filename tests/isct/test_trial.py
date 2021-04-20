@@ -158,6 +158,8 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
     # these tests could be more extensive
     trial.run()
     assert 'run' in runner
+    if trial_cls == ParallelTrial:
+        assert 'desist' in runner
 
     for patient in trial:
         assert f'{patient.path.parent}' in runner

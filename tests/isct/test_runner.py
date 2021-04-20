@@ -65,7 +65,7 @@ def test_local_runner():
 
 
 def test_parallel_runner(capsys):
-    cmd = 'isct trial this is a dummy command'
+    cmd = 'desist trial this is a dummy command'
     runner = ParallelRunner()
     runner.run(cmd.split())
 
