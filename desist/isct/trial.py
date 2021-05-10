@@ -147,6 +147,10 @@ class Trial(Config):
             return path
         return None
 
+    @container_path.setter
+    def container_path(self, path):
+        self['container-path'] = str(path)
+
     def invalid_container_path(self):
         """Returns true when no or invalide container paths are encountered."""
         return self.container_path and not os.path.exists(self.container_path)
@@ -175,9 +179,7 @@ class Trial(Config):
 
         # create patients
         for i in range(self.get('sample_size', 0)):
-            patient = Patient(self.dir,
-                              idx=i,
-                              prefix=self.get('prefix'))
+            patient = Patient(self.dir, idx=i, prefix=self.get('prefix'))
             patient.create()
 
         self.sample_virtual_patient(0, self.get('sample_size'))
@@ -278,12 +280,39 @@ class ParallelTrial(Trial):
         Examples:
             >>> isct -v trial run --parallel | parallel -j 4
         """
-        # additional flags to pass into the emitted instructions
-        flags = '--keep-files' if self.keep_files else '--clean-files'
+        # By default files are to be cleaned: running in parallel can quickly
+        # accumulate large amounts of data.
+        file_flags = ['--clean-files']
+        if self.keep_files:
+            file_flags = ['--keep-files']
 
-        for p in self:
-            if skip_completed and p.completed:
+        # Only pass a container flag when the container path is set, i.e.
+        # when running with Singularity-based containers. Note: this does
+        # pick up externally set container paths, to allow to redirect to
+        # another container path with respect to the original container path.
+        container_flag = []
+        if self.container_path:
+            container_flag = ['--container-path', f'{self.container_path}']
+
+        for patient in self:
+            if skip_completed and patient.completed:
                 continue
-            pdir = os.path.dirname(p.path)
-            cmd = f'desist --log {pdir}/isct.log patient run {flags} {pdir}'
-            self.runner.run(cmd.split())
+
+            # This only emits the directory of the patient path, this makes
+            # it easier to generate a task list of patient simulation to
+            # be performed from different directories.
+            patient_path = os.path.dirname(patient.path)
+
+            # build the command: the root command with a logger, followed
+            # by the patient subcommand with additional flags.
+            cmd = ['desist']
+            cmd += ['--log', f'{patient_path}/isct.log']
+            cmd += ['patient', 'run']
+            cmd += file_flags + container_flag
+            # The patient path is added last, such that it becomes easier to
+            # slice out the patient directory of the list of parallel
+            # simulations, i.e. the directories of interest are simply the
+            # last item in the command.
+            cmd += [f'{patient_path}']
+
+            self.runner.run(cmd)

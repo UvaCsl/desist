@@ -61,7 +61,14 @@ def assert_container_path(trial):
     default=False,
     help="Logs container commands to `stdout` rather than evaluating directly."
 )
-@click.option('-s', '--singularity', type=click.Path(exists=True))
+@click.option(
+    '-s',
+    '--singularity',
+    type=click.Path(exists=True),
+    help=(
+        "Use Singularity-based container images. "
+        "The Sigularity container images are obtained from the provided path.")
+)
 def create(trial, criteria, num_patients, dry, singularity):
     """Create trials and their virtual cohorts.
 
@@ -143,7 +150,12 @@ def append(trial, num, dry):
               is_flag=True,
               default=False,
               help="Skip previously completed patient simulations.")
-def run(trial, dry, parallel, keep_files, skip_completed):
+@click.option(
+    '-c',
+    '--container-path',
+    type=click.Path(exists=True, resolve_path=True),
+    help="Override the container path as defined in the trial configuration")
+def run(trial, dry, parallel, keep_files, skip_completed, container_path):
     """Run all simulations for the patients in the in silico trial at TRIAL.
 
     The compute simulation pipeline is evaluated for each patient considered
@@ -181,6 +193,10 @@ def run(trial, dry, parallel, keep_files, skip_completed):
         # generated without specific trial information, such as is commonly
         # done when performing VVUQ analysis.
         trial = cls(path=config.parent, runner=runner, keep_files=keep_files)
+
+    # overwrite the container path when provided as argument
+    if container_path:
+        trial.container_path = container_path
 
     # enforce container directory from configuration is valid
     assert_container_path(trial)
@@ -238,8 +254,7 @@ def list_key(trial, key, n):
         key_type = type(occurrences[0])
         msg = (f'Key `{key}` cannot be listed.\n'
                f'The entry is of type: `{key_type}`, currently not supported')
-        raise click.UsageError(
-            click.style(msg, fg="red"))
+        raise click.UsageError(click.style(msg, fg="red"))
 
     # ensure the sum matches the number of patients
     err = "Counted '{total=}' does not match patient count {len(patients)}"

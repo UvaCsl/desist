@@ -100,6 +100,44 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_patient_run_container_path(mocker, tmpdir, platform):
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path('test')
+
+    local = pathlib.Path('local')
+    remote = pathlib.Path('remote')
+
+    with runner.isolated_filesystem():
+        os.makedirs(local)
+        os.makedirs(remote)
+
+        result = runner.invoke(
+            create,
+            [str(path), '-x', '-s', str(local)])
+        assert result.exit_code == 0
+
+        trial = Trial.read(path.joinpath(trial_config))
+        patient = list(trial)[0]
+
+        # runs fine: local container directory is present
+        result = runner.invoke(run, [str(patient.dir), '-x'])
+        assert result.exit_code == 0
+
+        # should fail: local container directory not present
+        os.rmdir(local)
+        result = runner.invoke(run, [str(patient.dir), '-x'])
+        assert result.exit_code == 2
+
+        # should run fine: override the container directory manually
+        result = runner.invoke(run,
+                               [str(patient.dir), '-x', '-c', str(remote)])
+        assert result.exit_code == 0
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_reset(mocker, tmpdir, platform):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 

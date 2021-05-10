@@ -25,7 +25,8 @@ def patient():
     '--keep-files/--clean-files',
     default=True,
     help=("Keep or clean large files after evaluating all simulations."))
-def run(patients, dry, keep_files):
+@click.option('-c', '--container-path', type=click.Path(exists=True))
+def run(patients, dry, keep_files, container_path):
     """Run a patient's simulation pipeline.
 
     The complete simulation pipeline is evaluated for the patient located
@@ -45,6 +46,10 @@ def run(patients, dry, keep_files):
 
         # extract trial configuration
         trial = Trial.read(patient.dir.parent.joinpath(trial_config))
+
+        # overwrite the container path if manually provided
+        if container_path:
+            trial.container_path = container_path
 
         # ensure the container path for singularity exists
         assert_container_path(trial)

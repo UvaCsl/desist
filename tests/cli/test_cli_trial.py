@@ -176,6 +176,48 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_trial_run_parallel_singularity(mocker, tmpdir, platform):
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    local = pathlib.Path(tmpdir).joinpath('local')
+    remote = pathlib.Path(tmpdir).joinpath('remote')
+
+    for p in (local, remote):
+        os.makedirs(p)
+
+    with runner.isolated_filesystem():
+        args = [str(path), '-x', '-s', str(local)]
+        result = runner.invoke(create, args)
+        assert result.exit_code == 0
+
+        result = runner.invoke(run, [str(path), '--parallel', '-x'])
+        assert result.exit_code == 0
+
+        # assert the local directory is used by default, i.e. the one specified
+        # on creation of the trial
+        trial = Trial.read(path.joinpath(trial_config))
+        for i in range(len(trial)):
+            assert f'patient_{i:05}' in result.output
+        assert 'docker' not in result.output
+        assert '--container-path' in result.output
+        assert f'{local}' in result.output
+
+        # assert the remote directory is used when specific manually.
+        cmd = [str(path), '--parallel', '-x', '-c', str(remote)]
+        result = runner.invoke(run, cmd)
+        for i in range(len(trial)):
+            assert f'patient_{i:05}' in result.output
+        assert result.exit_code == 0
+        assert '--container-path' in result.output
+        assert f'{local}' not in result.output
+        assert f'{remote}' in result.output
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('parallel', [True, False])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
@@ -208,6 +250,39 @@ def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
         else:
             for k in ['docker', 'run']:
                 assert k in result.output
+
+
+@pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
+def test_trial_run_container_path(mocker, tmpdir, platform):
+    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+
+    local_path = pathlib.Path(tmpdir).joinpath('local')
+    remote_path = pathlib.Path(tmpdir).joinpath('remote')
+
+    for p in [local_path, remote_path]:
+        os.makedirs(p)
+
+    with runner.isolated_filesystem():
+        # create the trials with respect to the local trial directory
+        cmd = [str(path), '-n', 1, '-x', '-s', str(local_path)]
+        result = runner.invoke(create, cmd)
+        assert result.exit_code == 0
+
+        # ensure the local path is not present: mimick remote running
+        os.rmdir(local_path)
+
+        # this command must now fails: the local container path is not
+        # present on the system, thus `assert_container_path` raises an error.
+        result = runner.invoke(run, [str(path), '-x'])
+        assert result.exit_code == 2
+
+        # explicity providing the alternative path to override the container
+        # path should allow the run to work fine.
+        result = runner.invoke(run, [str(path), '-x', '-c', str(remote_path)])
+        assert result.exit_code == 0
 
 
 @pytest.mark.parametrize('num_patients', [5])
