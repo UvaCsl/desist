@@ -37,6 +37,20 @@ class Singularity(Container):
         return self.runner.run(cmd.split(), check=True)
 
     def run(self, args=''):
-        """Evaluate the Singularity command."""
-        cmd = f'singularity run {self.volumes} {self.container} {args}'
+        """Evaluate the Singularity command.
+
+        All containers are evaluated with the ``--containall`` flag to ensure
+        reproducibility when running on a wide range of systems. By default
+        Singularity will mount the user's home directory and imports the
+        available environment variables. As these directories and environment
+        settings might have influence on the containers output, and possibly
+        have influence on each other when containers are running in parallel,
+        it is important to pass ``containall``.
+
+        From the Singularity documentation: "use minimal ``/dev`` and empty
+        other directories (e.g. ``/tmp`` and ``$HOME) instead of sharing
+        filesytems from your host."
+        """
+        flags = '--containall'
+        cmd = f'singularity run {flags} {self.volumes} {self.container} {args}'
         return self.runner.run(cmd.split())
