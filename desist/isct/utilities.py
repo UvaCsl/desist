@@ -5,6 +5,7 @@ import logging
 import os
 import pathlib
 import sys
+import yaml
 
 
 # FIXME: support Windows environment
@@ -65,3 +66,51 @@ def clean_large_files(path):
                  f"Saved {saved//unit}MB.")
 
     return cnt, saved
+
+
+def read_yaml(path):
+    """Reads the contents from the YAML file at the specified path.
+
+    The routine uses the ``yaml.safe_load`` function, and therefore will only
+    read standard YAML tags and cannot handle loading arbitrary Python objects.
+
+    Raises ``IsDirectoryError`` and ``FileNotFoundError`` in case the path or
+    file are not encountered on the file system. For any other error the
+    function panics, as typically reading the YAML files represent and
+    important step in a pipeline that _has_ to work.
+    """
+    path = pathlib.Path(path)
+    try:
+        with open(path, 'r') as yaml_file:
+            contents = yaml.safe_load(yaml_file)
+    except IsADirectoryError:
+        raise IsADirectoryError(f'The YAML path `{path}` should be a file.')
+    except FileNotFoundError:
+        raise FileNotFoundError(f'The YAML path `{path}` is not present.')
+    except Exception as err:
+        sys.exit(f'Loading YAML from `{path}` raised: `{err}`')
+
+    return contents
+
+
+def write_yaml(path, dictionary):
+    """Writes a dictionary to the given path in the YAML format.
+
+    This routine creates the full directory tree corresponding to the
+    provided path ``path``. In case the writing to disk fails, no attempt is
+    made to remove any created directories. This avoids having to keep track
+    which part of the tree is newly added as well as accidentally dropping
+    large directory trees.
+
+    The ``yaml.safe_dump`` function is used, which allows dumping of standard
+    YAML tags only. So, no arbitrary Python objects can be written using this
+    function.
+    """
+
+    # Make sure the full tree of the file path exist on the file system,
+    # otherwise attempting to write the file will fail.
+    basepath, _ = os.path.split(path)
+    os.makedirs(basepath, exist_ok=True)
+
+    with open(path, 'w') as config_file:
+        yaml.safe_dump(dictionary, config_file)

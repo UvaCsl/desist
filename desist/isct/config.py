@@ -8,10 +8,10 @@ and provides the :meth:`~isct.config.Config.read` and
 writing of the configuration files.
 """
 
-import os
+import collections
 import pathlib
-import yaml
-import sys
+
+import desist.isct.utilities as utilities
 
 
 class Config(dict):
@@ -64,16 +64,14 @@ class Config(dict):
             path (str): Path to YAML file.
         """
         path = pathlib.Path(path)
-        try:
-            with open(path, 'r') as config_file:
-                config = yaml.safe_load(config_file)
-                return cls(path.parent, config=config)
-        except IsADirectoryError:
-            raise IsADirectoryError(f'Config `{path}` should be a file.')
-        except FileNotFoundError:
-            raise FileNotFoundError(f'Configuration `{path}` not found.')
-        except Exception as err:
-            sys.exit(f'Loading `{path}` raised: `{err}`.')
+        config = utilities.read_yaml(path)
+
+        assert isinstance(config, collections.abc.Mapping), """To represent a
+        configuration file the contents read from the YAML file `{path}` should
+        be represented by a `collections.abc.Mapping` type and not a
+        `{type(config)}`."""
+
+        return cls(path.parent, config=config)
 
     def write(self):
         """Writes the configuation to disk as YAML.
@@ -81,10 +79,6 @@ class Config(dict):
         The :class:`Config` is written as dictionary to disk. The file is
         written in the YAML format.
 
-        The director :attr:`Config.dir` is created when not yet present.
+        The directory :attr:`Config.dir` is created when not yet present.
         """
-        path, _ = os.path.split(self.path)
-        os.makedirs(path, exist_ok=True)
-
-        with open(self.path, 'w') as config_file:
-            yaml.dump(dict(self), config_file)
+        utilities.write_yaml(self.path, dict(self))
