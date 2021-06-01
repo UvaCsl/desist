@@ -75,7 +75,7 @@ class Docker(Container):
             return None
 
         if not self.docker_group:
-
+            
             # convert ownership of the files to ownership of the current user
             user = subprocess.check_output(['whoami']).strip().decode('utf-8')
 
@@ -90,7 +90,7 @@ class Docker(Container):
                 if '/patient' in str(local) or '/trial' in str(local):
                     permission_path = host
                     break
-
+            
             return f'sudo chown -R {user}:{user} {str(permission_path)}'
 
         # In the remaining situation, the user has permissions to run Docker,
@@ -105,6 +105,12 @@ class Docker(Container):
         # FIXME: it would be much nicer to avoid these operations...
         #
         # Reference discussions at: https://stackoverflow.com/a/29584184
+
+        for (host, local) in self.bind_volumes:
+                if '/patient' in str(local) or '/trial' in str(local):
+                    permission_path = local
+                    break
+                    
         return (f"docker run --entrypoint /bin/sh {self.volumes}"
                 f""" {self.tag} -c """
-                f"""chown -R `stat -c "%u:%g" /patient` /patient""")
+                f""" chown -R `stat -c "%u:%g" {str(permission_path)}` {str(permission_path)}""")
