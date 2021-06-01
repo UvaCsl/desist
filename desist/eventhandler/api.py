@@ -42,6 +42,8 @@ class API(abc.ABC):
         """Returns all events of the simulation as ``Events`` instance."""
         return self.patient.events
 
+    # TODO: consider adding a `labels` property as well
+
     @property
     def current_event(self):
         """The current event corresponding to ``self.model_id``."""
@@ -67,10 +69,12 @@ class API(abc.ABC):
 
     @property
     def current_model(self):
+        # TODO comment models vs labels
         return self.events.model(self.model_id)
 
     @property
     def current_label(self):
+        # TODO comment models vs labels
         return self.events.label(self.model_id)
 
     @property

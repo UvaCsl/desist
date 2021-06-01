@@ -136,6 +136,8 @@ treatment_event = Event({
     'event':
     'treatment',
     'models': [{
+        'label': 'simple-thrombolysis',
+    }, {
         'label': 'thrombectomy',
     }, {
         'label': '1d-blood-flow',
@@ -143,6 +145,9 @@ treatment_event = Event({
         'evaluate_infarct_estimates': True,
         'label': 'perfusion_and_tissue_damage',
         'type': 'PERFUSION'
+    }, {
+        'label': 'perfusion_and_tissue_damage',
+        'type': 'TISSUE-HEALTH'
     }, {
         'label': 'patient-outcome-model'
     }]
