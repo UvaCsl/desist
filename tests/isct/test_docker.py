@@ -57,17 +57,25 @@ def test_docker_run(mocker, tmpdir, platform, permission):
 def test_docker_fix_permissions(mocker, tmpdir):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=OS.LINUX)
     path = pathlib.Path(tmpdir)
+    host_path = path.joinpath('host')
+    os.makedirs(host_path)
 
     # without docker group access, with root
     container = Docker(path, docker_group=False, runner=DummyRunner())
-    container.bind('path/on/host', '/patient')
+    container.bind(host_path, '/patient')
     result = ' '.join(container.run(args='args'))
     for key in ['sudo', 'docker', 'run', 'chown -R']:
         assert key in result
 
     # with docker group access, without root
     container = Docker(path, docker_group=True, runner=DummyRunner())
-    container.bind('path/on/host', '/patient')
+    container.bind(host_path, '/patient')
     result = ' '.join(container.run(args='args'))
-    for key in ['docker', 'run', '--entrypoint /bin/sh', 'chown -R', 'stat']:
+    stat = os.stat(host_path)
+
+    # assert the right user and group IDs are set
+    assert str(stat.st_uid) in result, "Expected user id not found."
+    assert str(stat.st_gid) in result, "Expected group id not found."
+
+    for key in ['docker', 'run', '--entrypoint /bin/sh', 'chown -R']:
         assert key in result
