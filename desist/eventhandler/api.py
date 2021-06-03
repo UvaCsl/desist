@@ -69,12 +69,12 @@ class API(abc.ABC):
 
     @property
     def current_model(self):
-        # TODO comment models vs labels
+        """Return the current model definition from the list of events."""
         return self.events.model(self.model_id)
 
     @property
     def current_label(self):
-        # TODO comment models vs labels
+        """Returns the current label of the list of events."""
         return self.events.label(self.model_id)
 
     @property

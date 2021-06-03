@@ -59,6 +59,9 @@ def test_api_class(tmpdir, model_id):
     api = TAPI(patient=patient.path, model_id=model_id)
     assert api.patient == patient
     assert api.model_id == model_id
+    assert api.patient_dir == patient.path.parent
+    assert api.current_label == patient.events.label(model_id)
+    assert api.current_model == patient.events.model(model_id)
 
 
 def test_api_helpers(tmpdir):
@@ -69,9 +72,11 @@ def test_api_helpers(tmpdir):
     assert api.previous_event is None
     assert api.current_event == baseline_event
     assert api.next_event == stroke_event
+    assert api.previous_result_dir is None
 
     n_models = len(list(patient.events.models)) - 1
     api = TAPI(patient=patient.path, model_id=n_models)
     assert api.previous_event == stroke_event
     assert api.current_event == treatment_event
     assert api.next_event is None
+    assert api.previous_result_dir.parent == patient.dir
