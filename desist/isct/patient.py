@@ -107,12 +107,12 @@ class Patient(Config):
         events = Events(self.get('events'))
         container_path = self.get('container-path')
 
-        for idx, model in enumerate(events.models):
+        for idx, model in enumerate(events.labels):
             container = create_container(f'{model}',
                                          container_path=container_path,
                                          runner=self.runner)
             container.bind(self.dir, patient_path)
-            args = f'event --patient /patient --event {idx}'
+            args = f'/patient/{self.path.name} {idx} event'
             success = container.run(args=args)
 
             # Here we assert with `not False` to allow `None` as valid output

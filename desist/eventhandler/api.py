@@ -66,9 +66,33 @@ class API(abc.ABC):
             return self.events[eid]
 
     @property
+    def current_model(self):
+        return self.events.model(self.model_id)
+
+    @property
+    def current_label(self):
+        return self.events.label(self.model_id)
+
+    @property
+    def patient_dir(self):
+        """This points to the current patient directory."""
+        return self.patient.dir
+
+    @property
     def result_dir(self):
         """The output directory for the results of the current event."""
         return self.patient.dir.joinpath(self.current_event.get('event'))
+
+    @property
+    def previous_result_dir(self):
+        """The output directory for the previous event.
+
+        Returns ``None`` if no previous event is present.
+        """
+        if self.previous_event is None:
+            return None
+
+        return self.patient.dir.joinpath(self.previous_event.get('event'))
 
     @abc.abstractmethod
     def event(self):

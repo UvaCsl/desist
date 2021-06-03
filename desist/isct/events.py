@@ -32,6 +32,12 @@ class Events(list):
             if i == idx:
                 return m
 
+    def label(self, idx):
+        """Returns the label corresponding to simulation index ``idx``."""
+        for (i, label) in enumerate(self.labels):
+            if i == idx:
+                return label
+
     def event(self, idx):
         """Returns the event corresponding to simulation index ``idx``."""
         cnt = 0
@@ -47,6 +53,13 @@ class Events(list):
         for event in self:
             for m in Event(event).models:
                 yield m
+
+    @property
+    def labels(self):
+        """Yields all labels present in all events, in flattened order."""
+        for event in self:
+            for label in Event(event).labels:
+                yield label
 
     def to_dict(self):
         """Returns a list of ``Events`` in their ``key:value`` dictionary."""
@@ -67,16 +80,28 @@ class Event(dict):
         super().__init__(*args, **kwargs)
 
     def model(self, idx):
-        """Returns the label of ``idx`` th model in the event."""
+        """Returns the label of the ``idx``th model in the event."""
         models = list(self.models)
         if idx >= 0 and idx < len(models):
             return models[idx]
 
+    def label(self, idx):
+        """Returns the label of the ``idx``th label in the event."""
+        labels = list(self.labels)
+        if idx >= 0 and idx < len(labels):
+            return labels[idx]
+
     @property
     def models(self):
-        """Yield the labels of the available models in the current event."""
+        """Yield all models available in the current event."""
         for model in self.get('models'):
-            yield model.get('label')
+            yield model
+
+    @property
+    def labels(self):
+        """Yields all labels available in the current event."""
+        for label in map(lambda x: x.get('label'), self.models):
+            yield label
 
 
 # FIXME: support external definitions of the list of events:
@@ -124,4 +149,4 @@ treatment_event = Event({
 })
 
 default_events = Events([baseline_event, stroke_event, treatment_event])
-default_labels = {k: k.replace("_", "-") for k in default_events.models}
+default_labels = {k: k.replace("_", "-") for k in default_events.labels}

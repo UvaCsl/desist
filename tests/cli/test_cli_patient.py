@@ -30,7 +30,7 @@ def test_patient_run(mocker, tmpdir, platform):
             assert k in result.output
 
         # FIXME: this tag conversion should be improved
-        tags = [event.replace("_", "-") for event in default_events.models]
+        tags = [event.replace("_", "-") for event in default_events.labels]
         assert all([m in result.output for m in tags])
 
 
@@ -89,7 +89,7 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
             assert k in result.output
 
         # FIXME: this tag conversion should be improved
-        tags = [event.replace("_", "-") for event in default_events.models]
+        tags = [event.replace("_", "-") for event in default_events.labels]
         assert all([m in result.output for m in tags])
 
         # if the singularity directory is not present, the running should fail

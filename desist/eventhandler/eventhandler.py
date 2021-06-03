@@ -34,9 +34,13 @@ def event_handler(api_class=API):
     """Initialise the event handler API.
 
     Initialises the click-based command-line utility where the API is defined
-    by the passed class or function. The argument suppors any function that
+    by the passed class or function. The argument supports any function that
     accepts a patient path and event id, and returns an initialised API
     instance.
+
+    This results in commands formatted as, with ``$id`` the desired event ID:
+
+    >>> python3 API.py /patient/ $id event
     """
 
     @click.group()
@@ -45,7 +49,6 @@ def event_handler(api_class=API):
     @click.pass_context
     def cli(ctx, patient, event):
         ctx.obj = api_class(patient, event)
-        ctx.obj.event()
 
     # attach the default commands
     for command in [event, example, test]:
