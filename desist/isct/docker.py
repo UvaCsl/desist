@@ -37,7 +37,7 @@ class Docker(Container):
         permissions_cmd = self.update_file_permissions()
 
         if permissions_cmd is not None:
-            cmd = f'{cmd} && {permissions_cmd}'
+            return self.runner.run([*cmd.split(), *permissions_cmd])
 
         return self.runner.run(cmd.split())
 
@@ -111,7 +111,7 @@ class Docker(Container):
             # the user has the right permissions to do so, and we can directly
             # update the file permissions.
             user = getpass.getuser()
-            return f'sudo chown -R {user}:{user} {str(host_path)}'
+            return f'sudo chown -R {user}:{user} {str(host_path)}'.split()
 
         # In the remaining situation, the user has permissions to run Docker,
         # as the user is part of the "docker group". However, there are no
@@ -128,5 +128,9 @@ class Docker(Container):
         user_id = stat.st_uid
         group_id = stat.st_gid
 
-        return f"""docker run --entrypoint /bin/sh {self.volumes} {self.tag} -c
-        chown -R {user_id}:{group_id} {str(local_path)}"""
+        cmd = f"docker run --entrypoint /bin/sh {self.volumes} {self.tag} -c"
+        permissions = f"chown -R {user_id}:{group_id} {str(local_path)}"
+
+        # The permission path should not be split as this command should be
+        # passed as a full command into the container itself.
+        return [*cmd.split(), permissions]
