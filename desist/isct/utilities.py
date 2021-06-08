@@ -106,7 +106,6 @@ def write_yaml(path, dictionary):
     YAML tags only. So, no arbitrary Python objects can be written using this
     function.
     """
-
     # Make sure the full tree of the file path exist on the file system,
     # otherwise attempting to write the file will fail.
     basepath, _ = os.path.split(path)
