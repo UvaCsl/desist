@@ -61,14 +61,16 @@ def test_docker_fix_permissions(mocker, tmpdir):
     os.makedirs(host_path)
 
     # without docker group access, with root
-    container = Docker(path, docker_group=False, runner=DummyRunner())
+    runner = DummyRunner()
+    container = Docker(path, docker_group=False, runner=runner)
     container.bind(host_path, '/patient')
     result = ' '.join(container.run(args='args'))
     for key in ['sudo', 'docker', 'run', 'chown -R']:
-        assert key in result
+        assert key in runner
 
     # with docker group access, without root
-    container = Docker(path, docker_group=True, runner=DummyRunner())
+    runner.clear()
+    container = Docker(path, docker_group=True, runner=runner)
     container.bind(host_path, '/patient')
     result = ' '.join(container.run(args='args'))
     stat = os.stat(host_path)
@@ -77,5 +79,5 @@ def test_docker_fix_permissions(mocker, tmpdir):
     assert str(stat.st_uid) in result, "Expected user id not found."
     assert str(stat.st_gid) in result, "Expected group id not found."
 
-    for key in ['docker', 'run', '--entrypoint /bin/sh', 'chown -R']:
+    for key in ['docker', 'run', '--entrypoint /bin/sh', '-c', 'chown -R']:
         assert key in result
