@@ -36,11 +36,12 @@ def test_new_container_permission(mocker, platform, permission):
 ])
 @pytest.mark.parametrize("container", [Docker, Singularity])
 def test_bind_volume(container, host, local):
+    runner = DummyRunner()
     if container == Docker:
-        c = container(".", runner=DummyRunner())
+        c = container(".", runner=runner)
         flag = '-v'
     else:
-        c = container(".", "./container", runner=DummyRunner())
+        c = container(".", "./container", runner=runner)
         flag = '-B'
 
     assert c.volumes == ''
@@ -54,5 +55,8 @@ def test_bind_volume(container, host, local):
     # ensure `:` formatting
     assert f'{host}:{local}' in c.volumes
 
+    # run the command; which is traced in the `DummyRunner`s output
+    c.run()
+
     # ensure correct `bind_flag` is present
-    assert flag in ' '.join(c.run())
+    assert flag in runner

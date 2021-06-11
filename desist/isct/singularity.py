@@ -53,4 +53,4 @@ class Singularity(Container):
         """
         flags = '--containall'
         cmd = f'singularity run {flags} {self.volumes} {self.container} {args}'
-        return self.runner.run(cmd.split())
+        return self.runner.run(cmd.split(), check=True)
