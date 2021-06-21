@@ -9,6 +9,7 @@ import abc
 import click
 import subprocess
 import logging
+import os
 import sys
 
 
@@ -116,7 +117,8 @@ class LocalRunner(Runner):
                                      check=check,
                                      shell=shell,
                                      stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT)
+                                     stderr=subprocess.STDOUT,
+                                     env={**os.environ})
 
         except subprocess.CalledProcessError as e:
             msg = f'Command: `{msg}` failed with error: `{e}`.'

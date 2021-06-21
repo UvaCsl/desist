@@ -28,7 +28,7 @@ def test_new_container_permission(mocker, platform, permission):
 
     # Singularity
     container = create_container(".", container_path='./container')
-    assert container.sudo == 'sudo'
+    assert container.sudo == 'sudo -E'
 
 
 @pytest.mark.parametrize("host, local", [

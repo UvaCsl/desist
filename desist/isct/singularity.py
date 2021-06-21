@@ -10,7 +10,7 @@ class Singularity(Container):
     def __init__(self, path, container_path, runner=Logger()):
         super().__init__(path, runner=runner)
         self.container_path = pathlib.Path(container_path).absolute()
-        self.sudo = 'sudo'
+        self.sudo = 'sudo -E'
         self.bind_flag = '-B'
 
         self.container = self.container_path.joinpath(f'{self.tag}.sif')
@@ -22,11 +22,11 @@ class Singularity(Container):
         container to the desired container directory at `self.container_path`.
         """
         chdir = f'cd {self.path.absolute()}'
-        cmd = f'sudo singularity build --force {self.tag}.sif singularity.def'
+        cmd = f'singularity build --force {self.tag}.sif singularity.def'
         mv = f'mv {self.tag}.sif {self.container_path}/'
 
         # compose the create command
-        cmd = f'{chdir} && {cmd} && {mv}'
+        cmd = f'{chdir} && sudo -E {cmd} && {mv}'
 
         # to run multiple commands in the runner, `shell=True` is required
         return self.runner.run(cmd, check=True, shell=True)
