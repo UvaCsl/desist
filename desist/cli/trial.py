@@ -10,6 +10,7 @@ import shutil
 from desist.isct.config import Config
 from desist.isct.trial import Trial, ParallelTrial, trial_config
 from desist.isct.runner import new_runner
+from desist.isct.utilities import clean_large_files
 
 
 @click.group()
@@ -381,3 +382,16 @@ def reset(trial, remove):
         filenames = [patient.dir.joinpath(fn) for fn in remove]
         for filepath in filter(os.path.isfile, filenames):
             filepath.unlink()
+            
+@trial.command()
+@click.argument('trial', type=click.Path(exists=True))
+def clean(trial):
+    """Clean up files in the trial directory: deletes all files greater than 1Mb.
+    Performs the same action as using --clean-files in the run command.
+    """
+    # ensure the trial can be read
+    config = pathlib.Path(trial).joinpath(trial_config)
+    trial = Trial.read(config)
+
+    for patient in trial:
+        clean_large_files(patient.dir)
