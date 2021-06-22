@@ -382,12 +382,15 @@ def reset(trial, remove):
         filenames = [patient.dir.joinpath(fn) for fn in remove]
         for filepath in filter(os.path.isfile, filenames):
             filepath.unlink()
-            
+
+
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 def clean(trial):
-    """Clean up files in the trial directory: deletes all files greater than 1Mb.
-    Performs the same action as using --clean-files in the run command.
+    """Clean up files in the trial directory.
+
+    Deletes all files greater than 1Mb. This performs the same action as when
+    passing the `--clean-files` flag to the `run` command.
     """
     # ensure the trial can be read
     config = pathlib.Path(trial).joinpath(trial_config)
