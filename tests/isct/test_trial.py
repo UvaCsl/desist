@@ -192,3 +192,17 @@ def test_trial_container_path(tmpdir):
     # should be valid: the container path _does_ exist
     os.makedirs(singularity)
     assert not trial.invalid_container_path()
+
+
+def test_trial_filter_directories(tmpdir):
+    path = pathlib.Path(tmpdir)
+    sample_size = 5
+    runner = DummyRunner(write_config=True)
+    trial = Trial(tmpdir, sample_size, runner=runner).create()
+    assert len(trial) == 5
+
+    os.makedirs(path.joinpath('empty'))
+
+    patients = [p for p in trial]
+    assert len(patients) == 5
+    assert len(trial) == 5

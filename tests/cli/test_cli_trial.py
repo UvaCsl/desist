@@ -28,7 +28,7 @@ def test_trial_create(n):
         assert trial['container-path'] is None
 
         for patient in trial.patients:
-            assert f'trial/{patient}' in result.output
+            assert str(patient) in result.output
 
 
 @pytest.mark.parametrize('n', [1, 5])
@@ -82,7 +82,7 @@ def test_trial_create_singularity(n):
         assert trial['container-path'] == str(singularity.absolute())
 
         for patient in trial.patients:
-            assert f'trial/{patient}' in result.output
+            assert str(patient) in result.output
 
         # modified container path in configuration, should fail on append
         trial['container-path'] = 'path/does/not/exist'
@@ -128,9 +128,9 @@ def test_trial_append(tmpdir, n):
         # the other half should be in result of `append`
         for i, patient in enumerate(sorted(list(trial.patients))):
             if i < n:
-                assert f'trial/{patient}' in result_c.output
+                assert str(patient) in result_c.output
             else:
-                assert f'trial/{patient}' in result_a.output
+                assert str(patient) in result_a.output
 
 
 @pytest.mark.parametrize('keep_files', [True, False])

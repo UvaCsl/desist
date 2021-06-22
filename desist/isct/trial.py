@@ -89,8 +89,7 @@ class Trial(Config):
         present in the trial. The patients are yielded in sorted order, where
         the sort is based on their directory.
         """
-        patient_paths = map(lambda p: self.dir.joinpath(p), self.patients)
-        for path in sorted(list(patient_paths)):
+        for path in sorted(list(self.patients)):
             config_path = path.joinpath(patient_config)
             patient = Patient.read(config_path, runner=self.runner)
 
@@ -157,10 +156,27 @@ class Trial(Config):
 
     @property
     def patients(self):
-        """Iterator yielding all patient paths of the trial."""
-        for patient in os.listdir(self.dir):
-            if os.path.isdir(self.dir.joinpath(patient)):
-                yield patient
+        """Iterator yielding all valid patient paths of the trial.
+
+        The iterator only considers entries in ``self.dir`` that can
+        successfully be parsed as a ``Patient`` class to be part of the patient
+        list considered in this trial.
+        """
+
+        def valid_patient(path):
+            """Return ``true`` when reading a ``Patient`` successfully."""
+            path = path.joinpath(patient_config)
+            try:
+                Patient.read(path)
+                return True
+            except (FileNotFoundError):
+                return False
+
+        patient_paths = (self.dir.joinpath(p) for p in os.listdir(self.dir))
+        patient_paths = filter(os.path.isdir, patient_paths)
+        patient_paths = filter(valid_patient, patient_paths)
+        for patient_path in patient_paths:
+            yield patient_path
 
     def create(self):
         """Create a trial and the virtual patients.
@@ -183,6 +199,7 @@ class Trial(Config):
             patient.create()
 
         self.sample_virtual_patient(0, self.get('sample_size'))
+        return self
 
     def append_patient(self, idx: int):
         """Extend the trial with a single virtual patient.
@@ -221,7 +238,7 @@ class Trial(Config):
         assert lower < upper, err
 
         # truncate the patients from lower to upper
-        patients = sorted([trial_path.joinpath(p) for p in self.patients])
+        patients = sorted(list(self.patients))
         patients = patients[lower:upper]
 
         container = create_container(virtual_patient_model,

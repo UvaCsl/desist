@@ -97,3 +97,6 @@ up to date: issue #18)
 
 - The environment is passed into the `LocalRunner`, which is also forwarded by
   `sudo` through passing the `-E` flag.
+- Generic files and/or directories place inside a trial directory are ignored
+  and not attempted to be processed as patients in `trial run` and similar
+  commands.
