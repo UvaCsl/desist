@@ -90,3 +90,10 @@ at in a separate repository [`insist-trials`](https://gitlab.computationalscienc
 More in depth documentation can be found at:
 `https://insilicostroketrial.eu/insist_docs/.` (Hosted documentation is not yet
 up to date: issue #18)
+
+## Change log
+
+2021/06/22
+
+- The environment is passed into the `LocalRunner`, which is also forwarded by
+  `sudo` through passing the `-E` flag.
