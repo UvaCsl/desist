@@ -1,6 +1,7 @@
 import pytest
 
 from desist.isct.runner import Runner, LocalRunner, Logger, ParallelRunner
+from desist.isct.runner import QCGRunner
 from desist.isct.runner import new_runner
 
 
@@ -50,6 +51,16 @@ def test_new_runner(verbose, parallel, logger):
     assert isinstance(new_runner(verbose, parallel), logger)
 
 
+@pytest.mark.parametrize('verbose, parallel, qcg, logger', [
+    (False, False, True, QCGRunner),
+    (False, True, True, Logger),
+    (True, True, True, Logger),
+])
+def test_new_runner_qcg(verbose, parallel, qcg, logger):
+    pytest.importorskip("qcg.pilotjob.api.manager")
+    assert isinstance(new_runner(verbose, parallel, qcg), logger)
+
+
 def test_test_runner():
     runner = DummyRunner()
     cmd = ["cmd", "cmd"]
@@ -72,3 +83,20 @@ def test_parallel_runner(capsys):
     # ensure the `cmd` is echoed into `stdout`
     out, _ = capsys.readouterr()
     assert cmd in out
+
+
+def test_qcg_runner():
+    pytest.importorskip("qcg.pilotjob.api.manager")
+
+    cmd = 'true'
+    runner = QCGRunner()
+    assert len(runner.jobs.jobs()) == 0
+    runner.run(cmd.split())
+    assert len(runner.jobs.jobs()) == 1
+
+    # the command should be present with exactly a single core allocated
+    job = runner.jobs.jobs()[0]
+    assert job['execution']['script'] == cmd
+    assert job['resources']['numCores']['exact'] == 1
+
+    runner.wait()

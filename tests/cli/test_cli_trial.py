@@ -137,7 +137,7 @@ def test_trial_append(tmpdir, n):
 
 @pytest.mark.parametrize('keep_files', [True, False])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-@pytest.mark.parametrize('parallel', [True, False])
+@pytest.mark.parametrize('parallel', [None, '--parallel', '--qcg'])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
@@ -151,7 +151,8 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
         assert result.exit_code == 0
 
         cmd = [str(path)]
-        cmd = cmd + ['--parallel'] if parallel else cmd + ['-x']
+        cmd = cmd if parallel is None else cmd + [parallel]
+        cmd = cmd + ['-x']
         cmd = cmd + [keep_cmd]
 
         # create a large file in one of the patients
@@ -167,17 +168,18 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
         for i in range(num):
             assert f'patient_{i:05}' in result.output
 
-        if parallel:
-            assert 'docker' not in result.output
-            assert keep_cmd in result.output
-        else:
+        if parallel is None:
             for k in ['docker', 'run']:
                 assert k in result.output
             assert keep_files == large_file.exists()
+        else:
+            assert 'docker' not in result.output
+            assert keep_cmd in result.output
 
 
+@pytest.mark.parametrize('parallel', ['--parallel', '--qcg'])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-def test_trial_run_parallel_singularity(mocker, tmpdir, platform):
+def test_trial_run_parallel_singularity(mocker, tmpdir, platform, parallel):
     mocker.patch('desist.isct.utilities.OS.from_platform',
                  return_value=platform)
 
@@ -195,7 +197,7 @@ def test_trial_run_parallel_singularity(mocker, tmpdir, platform):
         result = runner.invoke(create, args)
         assert result.exit_code == 0
 
-        result = runner.invoke(run, [str(path), '--parallel', '-x'])
+        result = runner.invoke(run, [str(path), parallel, '-x'])
         assert result.exit_code == 0
 
         # assert the local directory is used by default, i.e. the one specified
@@ -208,7 +210,7 @@ def test_trial_run_parallel_singularity(mocker, tmpdir, platform):
         assert f'{local}' in result.output
 
         # assert the remote directory is used when specific manually.
-        cmd = [str(path), '--parallel', '-x', '-c', str(remote)]
+        cmd = [str(path), parallel, '-x', '-c', str(remote)]
         result = runner.invoke(run, cmd)
         for i in range(len(trial)):
             assert f'patient_{i:05}' in result.output
@@ -219,7 +221,7 @@ def test_trial_run_parallel_singularity(mocker, tmpdir, platform):
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-@pytest.mark.parametrize('parallel', [True, False])
+@pytest.mark.parametrize('parallel', [None, '--parallel', '--qcg'])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
@@ -231,7 +233,8 @@ def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
         assert result.exit_code == 0
 
         cmd = [str(path)]
-        cmd = cmd + ['--parallel'] if parallel else cmd + ['-x']
+        cmd = cmd if parallel is None else cmd + [parallel]
+        cmd = cmd + ['-x']
 
         # remove the config
         trial = Trial.read(path.joinpath(trial_config))
@@ -246,11 +249,11 @@ def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
         for i in range(num):
             assert f'patient_{i:05}' in result.output
 
-        if parallel:
-            assert 'docker' not in result.output
-        else:
+        if parallel is None:
             for k in ['docker', 'run']:
                 assert k in result.output
+        else:
+            assert 'docker' not in result.output
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
@@ -476,3 +479,15 @@ def test_trial_clean(tmpdir, size_delta):
         result = runner.invoke(clean, [str(path)])
         assert result.exit_code == 0
         assert large_file.exists() == (size_delta < 0)
+
+
+def test_trial_parallel_qcg(tmpdir):
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-n', 10, '-x'])
+        assert result.exit_code == 0
+
+        result = runner.invoke(run, [str(path), '--parallel', '--qcg'])
+        assert result.exit_code == 2
+        assert 'Ambiguous' in result.output

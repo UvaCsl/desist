@@ -8,8 +8,8 @@ _build
 *.jpg
 *.png
 *.log
-*.gz 
-*.tar.gz 
+*.gz
+*.tar.gz
 *.coverage
 cov_html/
 
@@ -18,7 +18,7 @@ cov_html/
 *.ipynb
 
 # containers
-*.sif 
+*.sif
 .vagrant/
 
 # local installation
@@ -30,5 +30,8 @@ cov_html/
 # no virtualenv
 venv
 
-# no tox 
+# no tox
 *.tox
+
+# do not consider any local/temp storage from QCG
+.qcg*

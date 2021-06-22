@@ -11,7 +11,8 @@ _dev = [
 ]
 _test = ['mock', 'pytest', 'pytest-cov', 'pytest-mock']
 _vvuq = ['easyvvuq']
-_all = _dev + _test + _vvuq
+_qcg =  ['qcg-pilotjob']
+_all = _dev + _test + _vvuq + _qcg
 
 setup(
     name="desist",
@@ -35,5 +36,6 @@ setup(
         'dev': _dev,
         'test': _test,
         'vvuq': _vvuq,
+        'qcg': _qcg
     },
 )

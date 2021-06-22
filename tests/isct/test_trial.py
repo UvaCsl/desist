@@ -2,7 +2,7 @@ import os
 import pathlib
 import pytest
 
-from desist.isct.trial import Trial, ParallelTrial, trial_config
+from desist.isct.trial import Trial, ParallelTrial, trial_config, QCGTrial
 from desist.isct.patient import Patient, LowStoragePatient
 from desist.isct.runner import Logger
 from desist.isct.utilities import OS
@@ -137,7 +137,7 @@ def test_trial_outcome(mocker, tmpdir, sample_size, platform):
 
 @pytest.mark.parametrize('keep_files, patient_cls',
                          [(True, Patient), (False, LowStoragePatient)])
-@pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial])
+@pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial, QCGTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
                    patient_cls):
@@ -158,7 +158,7 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
     # these tests could be more extensive
     trial.run()
     assert 'run' in runner
-    if trial_cls == ParallelTrial:
+    if trial_cls == ParallelTrial or trial_cls == QCGTrial:
         assert 'desist' in runner
 
     for patient in trial:
@@ -170,7 +170,7 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
 
     # Parallel is not actually evaluated, i.e. we do not go through gnu
     # parallel in tests, thus we manually set it to completed
-    if trial_cls == ParallelTrial:
+    if trial_cls == ParallelTrial or trial_cls == QCGTrial:
         for patient in trial:
             patient.completed = True
             patient.write()

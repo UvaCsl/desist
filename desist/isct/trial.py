@@ -22,7 +22,7 @@ import os
 from .patient import Patient, LowStoragePatient, patient_config
 from .container import create_container
 from .config import Config
-from .runner import LocalRunner, Logger
+from .runner import LocalRunner, Logger, QCGRunner
 
 trial_config = 'trial.yml'
 """str: Trial configuration filename and suffix."""
@@ -195,6 +195,7 @@ class Trial(Config):
 
         # create patients
         for i in range(self.get('sample_size', 0)):
+            print(self.dir)
             patient = Patient(self.dir, idx=i, prefix=self.get('prefix'))
             patient.create()
 
@@ -333,3 +334,29 @@ class ParallelTrial(Trial):
             cmd += [f'{patient_path}']
 
             self.runner.run(cmd)
+
+
+class QCGTrial(ParallelTrial):
+    """Parallel evaluation of patient simulation using ``QCG-PilotJob``."""
+
+    def run(self, skip_completed=False):
+        """Run all patient simulations using ``QCG-PilotJob``.
+
+        Rather than directly evaluating the patient simulations, as done in
+        :meth:`Trial.run`, or piping the jobs over ``stdout`` as in
+        :meth:`Parallel.run`, this ``run`` command inserts the required jobs
+        into the ``QCG-PilotJob`` manager. After all jobs are submitted, the
+        responsibility for scheduling and evaluating the required job queue is
+        handed over to ``QCG`` through the :class:`~isct.runner.QCGRunner`.
+
+        This routine waits until all jobs are evaluated on the available
+        resources and ``QCG`` terminates.
+        """
+        # When the commands are only logged, the QCG runner does not need to
+        # interfere and simply only forward the parent's verbose
+        # implementation.
+        if not isinstance(self.runner, QCGRunner):
+            return super().run(skip_completed=skip_completed)
+
+        super().run()
+        self.runner.wait()

@@ -93,6 +93,12 @@ up to date: issue #18)
 
 ## Change log
 
+2021/06/30
+
+- Add support for [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob)
+  as a runner for the trials.
+- Add the `--qcg` flag to invoke the `QCGRunner` to run trials.
+
 2021/06/22
 
 - The environment is passed into the `LocalRunner`, which is also forwarded by

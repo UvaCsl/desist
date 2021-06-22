@@ -8,7 +8,7 @@ import pathlib
 import shutil
 
 from desist.isct.config import Config
-from desist.isct.trial import Trial, ParallelTrial, trial_config
+from desist.isct.trial import Trial, QCGTrial, ParallelTrial, trial_config
 from desist.isct.runner import new_runner
 from desist.isct.utilities import clean_large_files
 
@@ -142,7 +142,21 @@ def append(trial, num, dry):
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
-@click.option('--parallel', is_flag=True, default=False)
+@click.option('--parallel', is_flag=True, default=False, help="""Generates a
+sequence of jobs intended for `GNU Parallel`, e.g. `desist trial run $trial
+--parallel || parallel -j4` to run the simulations with 4 jobs in parallel.
+
+For details on `GNU Parallel` please refer to:
+https://www.gnu.org/software/parallel/
+""")
+@click.option('--qcg', is_flag=True, default=False, help="""Runs the simulation
+jobs in parallel through `GCG-PilotJob`. A job manager is created and filled
+with the required tasks, i.e. the tasks otherwise emitted when using
+`--parallel`, which are then distributed by QCG on the available resources.
+
+For details on `QCG-PilotJob` please refer to:
+https://qcg-pilotjob.readthedocs.io/en/latest/index.html
+""")
 @click.option(
     '--keep-files/--clean-files',
     default=True,
@@ -156,24 +170,37 @@ def append(trial, num, dry):
     '--container-path',
     type=click.Path(exists=True, resolve_path=True),
     help="Override the container path as defined in the trial configuration")
-def run(trial, dry, parallel, keep_files, skip_completed, container_path):
+def run(trial, dry, qcg, parallel, keep_files, skip_completed, container_path):
     """Run all simulations for the patients in the in silico trial at TRIAL.
 
     The compute simulation pipeline is evaluated for each patient considered
     in the virtual cohort. The patients can be evaluated in parallel as well
-    as sequentially. For sequential evalaution `desist` will display a simple
+    as sequentially. For sequential evaluation `desist` will display a simple
     progress bar in the terminal, indicating a rough estimate for the remaining
     simulation time till completion. For parallel evaluation this is disabled
     and the parallel evaluation of running the simulations is handled
-    explicitly through `GNU Parallel`.
+    explicitly through `GNU Parallel` or `QCG-PilotJob`.
 
     FIXME: link documentation to example files
 
     """
-    runner = new_runner(dry, parallel=parallel)
+    runner = new_runner(dry, parallel=parallel, qcg=qcg)
     config = pathlib.Path(trial).joinpath(trial_config)
 
-    cls = ParallelTrial if parallel else Trial
+    if qcg and parallel:
+        msg = """Ambiguous parallel flags: `--parallel` and `--gcq`.
+
+Both commands run in parallel, the first using `GNU Parallel`. The second
+using `QCG-PilotJob`. Please specify only one."""
+        raise click.UsageError(click.style(msg, fg='red'))
+
+    if qcg:
+        cls = QCGTrial
+    elif parallel:
+        cls = ParallelTrial
+    else:
+        cls = Trial
+
     try:
         trial = cls.read(config, runner=runner, keep_files=keep_files)
     except (FileNotFoundError, IsADirectoryError):
@@ -201,6 +228,10 @@ def run(trial, dry, parallel, keep_files, skip_completed, container_path):
 
     # enforce container directory from configuration is valid
     assert_container_path(trial)
+
+    # Return early: QCG will take over operation.
+    if qcg:
+        return trial.run(skip_completed=skip_completed)
 
     # For parallel evaluation or when running with explicit debug logging
     # enabled, the trial is evaluated _without_ a progress bar. This prevents

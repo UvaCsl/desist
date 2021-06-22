@@ -13,18 +13,28 @@ import os
 import sys
 
 
-def new_runner(verbose: bool, parallel: bool = False):
+def new_runner(verbose: bool, parallel: bool = False, qcg: bool = False):
     """Return an initialised runner matching `verbose` and parallel`.
+
+    Note: when ambiguous arguments are provided, the function only returns the
+    :class:~`isct.Logger` and does not perform any error checking. This is
+    assumed to be handled already by the caller.
 
     Args:
         verbose: If the evaluation should only be verbose to console.
-        parallel: If the evaluation should happen in parallel.
+        parallel: If the evaluation should happen in ``GNU Parallel``.
+        qcg: If the evaluation should happen using ``QCG``
     """
-    if verbose:
-        runner = Logger()
-    else:
-        runner = ParallelRunner() if parallel else LocalRunner()
-    return runner
+    if verbose or (parallel and qcg):
+        return Logger()
+
+    if parallel:
+        return ParallelRunner()
+
+    if qcg:
+        return QCGRunner()
+
+    return LocalRunner()
 
 
 class Runner(abc.ABC):
@@ -155,3 +165,49 @@ class ParallelRunner(Runner):
         msg = self.format(cmd)
         logging.info(msg)
         sys.stdout.write(f'{msg}\n')
+
+
+class QCGRunner(Runner):
+    """Run simulation jobs through ``QCG PilotJob``.
+
+    The :class:`isct.runner.QCGRunner` requires ``QCG Pilot-Job`` to be present
+    on the system and uses its manager to run the required jobs. This class
+    keeps track of a ``LocalManager`` and a corresponding ``Jobs`` instance.
+    The latter instance is used to keep track of the required jobs to be
+    evaluated, where each command passed to ``run`` is appended to the job
+    list.
+
+    Note: the ``LocalManager`` is only initialised on
+    :func:`isct.runner.QCGrunner.wait` and not immediately when the class is
+    initialised. Only when commands are to be evaluated, we really need the
+    manager to be active, until then we delay the QCG service.
+
+    Afterwards, :func:`isct.runner.QCGRunner.wait` is invoked, which submits
+    all jobs present in ``self.jobs`` to the queue and waits for their
+    completion. The ``LocalManager`` is given full control to schedule the
+    jobs across the available resources, which can either be local, cloud, or
+    HPC-based environments. Note, that when running on multiple machines, the
+    Python environment including `qcg-pilotmanager` should be accessible, as no
+    specific ``venv`` settings are provided here.
+    """
+    def __init__(self):
+        from qcg.pilotjob.api.job import Jobs
+        from qcg.pilotjob.api.manager import LocalManager as QCGManager
+        super().__init__()
+        self.jobs = Jobs()
+        self.manager = QCGManager
+
+    def run(self, cmd):
+        """Add the command to the ``QCG`` job queue."""
+        self.jobs.add(script=' '.join(cmd), numCores=1)
+
+    def wait(self):
+        """Submit all jobs and wait until ``QCG`` has completed all jobs.
+
+        Note: the jobs are evaluated on all available resources detected by the
+        ``qcg.pilotjob.api.manager.LocalManager``.
+        """
+        manager = self.manager()
+        manager.submit(self.jobs)
+        manager.wait4all()
+        manager.finish()
