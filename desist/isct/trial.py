@@ -238,7 +238,7 @@ class Trial(Config):
         assert lower < upper, err
 
         # truncate the patients from lower to upper
-        patients = sorted(list(self.patients))
+        patients = sorted([trial_path.joinpath(p.name) for p in self.patients])
         patients = patients[lower:upper]
 
         container = create_container(virtual_patient_model,
