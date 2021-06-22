@@ -5,7 +5,7 @@ import pytest
 
 from desist.isct.utilities import OS
 from desist.isct.patient import Patient, patient_config, LowStoragePatient
-from test_runner import DummyRunner
+from .test_runner import DummyRunner
 
 
 def test_patient(tmpdir):

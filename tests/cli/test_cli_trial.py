@@ -4,10 +4,12 @@ import pytest
 import os
 
 from desist.cli.trial import create, append, run, list_key, outcome, archive
-from desist.cli.trial import reset
+from desist.cli.trial import reset, clean
 from desist.isct.config import Config
 from desist.isct.trial import Trial, trial_config
 from desist.isct.utilities import OS, MAX_FILE_SIZE
+
+from tests.isct.test_utilities import create_dummy_file
 
 # FIXME: `dry` run does still create all directories though...
 
@@ -154,10 +156,9 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
 
         # create a large file in one of the patients
         trial = Trial.read(path.joinpath(trial_config))
+
         large_file = list(trial)[0].dir.joinpath('large-file')
-        with open(large_file, 'wb') as outfile:
-            outfile.seek(MAX_FILE_SIZE + 10)
-            outfile.write(b"\0")
+        create_dummy_file(large_file, MAX_FILE_SIZE + 10)
         assert large_file.exists()
 
         result = runner.invoke(run, cmd)
@@ -457,3 +458,21 @@ def test_trial_reset(mocker, tmpdir, platform):
         for patient in trial:
             assert not patient.completed
             assert not patient.dir.joinpath('test_file.txt').exists()
+
+
+@pytest.mark.parametrize('size_delta', [+10, -10])
+def test_trial_clean(tmpdir, size_delta):
+    runner = CliRunner()
+    path = pathlib.Path(tmpdir).joinpath('test')
+    with runner.isolated_filesystem():
+        result = runner.invoke(create, [str(path), '-n', 10, '-x'])
+        assert result.exit_code == 0
+
+        trial = Trial.read(path.joinpath(trial_config))
+
+        large_file = list(trial)[0].dir.joinpath('large-file')
+        create_dummy_file(large_file, MAX_FILE_SIZE + size_delta)
+
+        result = runner.invoke(clean, [str(path)])
+        assert result.exit_code == 0
+        assert large_file.exists() == (size_delta < 0)

@@ -4,7 +4,7 @@ import pytest
 from desist.isct.container import create_container
 from desist.isct.docker import Docker
 from desist.isct.singularity import Singularity
-from test_runner import DummyRunner
+from .test_runner import DummyRunner
 from desist.isct.utilities import OS
 
 

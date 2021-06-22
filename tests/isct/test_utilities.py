@@ -4,6 +4,14 @@ import pytest
 from desist.isct.utilities import OS, clean_large_files, MAX_FILE_SIZE
 
 
+def create_dummy_file(path, filesize):
+    """Helper routine to create a dummy file with desired size."""
+    with open(path, "wb") as outfile:
+        outfile.seek(filesize - 1)
+        outfile.write(b"\0")
+    return path
+
+
 @pytest.mark.parametrize("string, platform", [("darwin", OS.MACOS),
                                               ("linux", OS.LINUX)])
 def test_OS_enum(string, platform):
@@ -23,9 +31,7 @@ def test_remove_large_files(tmpdir, fn, delta, remains):
     filename = path.joinpath(fn)
     filesize = MAX_FILE_SIZE + delta
 
-    with open(filename, "wb") as outfile:
-        outfile.seek(filesize - 1)
-        outfile.write(b"\0")
+    create_dummy_file(filename, filesize)
 
     assert filename.exists(), "Test file should be present at start"
 

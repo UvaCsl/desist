@@ -7,7 +7,7 @@ from desist.isct.patient import Patient, LowStoragePatient
 from desist.isct.runner import Logger
 from desist.isct.utilities import OS
 
-from test_runner import DummyRunner
+from .test_runner import DummyRunner
 
 
 def test_trial(tmpdir):

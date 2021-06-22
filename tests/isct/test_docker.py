@@ -4,7 +4,7 @@ import pytest
 
 from desist.isct.utilities import OS
 from desist.isct.docker import Docker
-from test_runner import DummyRunner
+from .test_runner import DummyRunner
 
 
 @pytest.mark.parametrize("platform, permission", [(OS.MACOS, ''),

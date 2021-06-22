@@ -5,7 +5,7 @@ import pytest
 from desist.isct.utilities import OS
 from desist.isct.singularity import Singularity
 from desist.isct.runner import LocalRunner
-from test_runner import DummyRunner
+from .test_runner import DummyRunner
 
 
 @pytest.mark.parametrize("platform", [OS.MACOS, OS.LINUX])
