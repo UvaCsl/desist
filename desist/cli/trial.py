@@ -351,7 +351,12 @@ def archive(trial, archive, add):
     shutil.copy2(trial.path, archive)
 
     # copy trial output if present
-    for fn in ['trial_data.RData', 'trial_outcome.Rmd', 'trial_outcome.html']:
+    default_files = [
+        'trial_outcome_data.RData',
+        'trial_outcome.Rmd',
+        'trial_outcome.html'
+    ]
+    for fn in default_files:
         fn = trial.dir.joinpath(fn)
         try:
             shutil.copy2(fn, archive)

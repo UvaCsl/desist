@@ -93,12 +93,6 @@ up to date: issue #18)
 
 ## Change log
 
-2021/06/30
-
-- Add support for [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob)
-  as a runner for the trials.
-- Add the `--qcg` flag to invoke the `QCGRunner` to run trials.
-
 2021/06/22
 
 - The environment is passed into the `LocalRunner`, which is also forwarded by
@@ -106,3 +100,14 @@ up to date: issue #18)
 - Generic files and/or directories place inside a trial directory are ignored
   and not attempted to be processed as patients in `trial run` and similar
   commands.
+
+2021/06/30
+
+- Add support for [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob)
+  as a runner for the trials.
+- Add the `--qcg` flag to invoke the `QCGRunner` to run trials.
+
+2021/07/02
+
+- Change default archive filename `trial_data.RData` to
+  `trial_outome_data.RData`.
