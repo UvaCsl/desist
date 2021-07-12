@@ -111,3 +111,9 @@ up to date: issue #18)
 
 - Change default archive filename `trial_data.RData` to
   `trial_outome_data.RData`.
+
+2021/07/12
+
+- Event pipelines are propagated from the criteria files (`criteria.yml`) into
+  the patient configuration files (`trial/patient_*/patient.yml`) such that
+  different pipelines can be defined directly in the criteria files.
