@@ -117,3 +117,5 @@ up to date: issue #18)
 - Event pipelines are propagated from the criteria files (`criteria.yml`) into
   the patient configuration files (`trial/patient_*/patient.yml`) such that
   different pipelines can be defined directly in the criteria files.
+- Providing `--clean-files` does not accidentally clean up the files in
+  combination with the `-x` (dry-run) flag.

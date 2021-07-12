@@ -157,6 +157,7 @@ class LowStoragePatient(Patient):
     `isct.utilities.MAX_FILE_SIZE` are deleted. This ensures litte data is
     aggregated along large cohorts of virtual patients.
     """
+
     @classmethod
     def from_patient(cls, patient):
         """Initialise a LowStoragePatient from a patient class."""

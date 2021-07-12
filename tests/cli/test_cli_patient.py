@@ -9,6 +9,8 @@ from desist.isct.utilities import OS, MAX_FILE_SIZE
 from desist.isct.events import default_events
 from desist.isct.trial import Trial, trial_config
 
+from ..isct.test_runner import DummyRunner
+
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_run(mocker, tmpdir, platform):
@@ -37,6 +39,7 @@ def test_patient_run(mocker, tmpdir, platform):
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_keep_files(mocker, tmpdir, platform):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.runner.new_runner', return_value=DummyRunner())
 
     runner = CliRunner()
     path = pathlib.Path('test')
@@ -55,14 +58,17 @@ def test_patient_keep_files(mocker, tmpdir, platform):
 
         assert large_file.exists()
 
-        result = runner.invoke(run, [str(patient.dir), '-x'])
-        result = runner.invoke(run, [str(patient.dir), '-x', '--keep-files'])
-        assert result.exit_code == 0
-        assert large_file.exists(), "no large files should be removed"
-
         result = runner.invoke(run, [str(patient.dir), '-x', '--clean-files'])
         assert result.exit_code == 0
-        assert not large_file.exists(), "all large files should be removed"
+        assert large_file.exists(), "no large files deleted on dry run"
+
+        result = runner.invoke(run, [str(patient.dir), '--keep-files'])
+        assert result.exit_code == 0
+        assert large_file.exists(), "no large files deleted with keep-files"
+
+        result = runner.invoke(run, [str(patient.dir), '--clean-files'])
+        assert result.exit_code == 0
+        assert not large_file.exists(), "large files deleted with clean-files"
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])

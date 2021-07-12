@@ -138,3 +138,8 @@ def test_patient_reset(tmpdir):
     # reset to uncompleted
     patient.reset()
     assert not patient.completed
+
+
+def test_avoid_cleaning_files_on_dry_run(tmpdir):
+    path = pathlib.Path(tmpdir)
+    patient = LowStoragePatient(path, runner=DummyRunner(write_config=True))

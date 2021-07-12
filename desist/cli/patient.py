@@ -3,10 +3,10 @@ import click
 import os
 import pathlib
 
-from desist.isct.trial import Trial, trial_config
-from desist.isct.patient import Patient, LowStoragePatient, patient_config
-from desist.isct.runner import new_runner
 from .trial import assert_container_path
+from desist.isct.patient import Patient, LowStoragePatient, patient_config
+from desist.isct.trial import Trial, trial_config
+import desist.isct.runner as runners
 
 
 @click.group()
@@ -39,9 +39,9 @@ def run(patients, dry, keep_files, container_path):
         path = pathlib.Path(p).joinpath(patient_config)
 
         # define the patient type
-        patient = Patient.read(path, runner=new_runner(dry))
+        patient = Patient.read(path, runner=runners.new_runner(dry))
 
-        if not keep_files:
+        if not keep_files and not dry:
             patient = LowStoragePatient.from_patient(patient)
 
         # extract trial configuration
