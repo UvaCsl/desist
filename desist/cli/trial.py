@@ -100,6 +100,12 @@ def create(trial, criteria, num_patients, dry, singularity):
     if criteria:
         config = Config.read(criteria)
 
+        if ('events' in config) ^ ('labels' in config):
+            msg = (f"Key error in criteria file `{criteria}`. "
+                   "Either key `events` or `labels` are provided, "
+                   "while both are required to fully specify the pipeline.")
+            raise click.UsageError(click.style(click.wrap_text(msg), fg='red'))
+
     # update configuration file with provided path to Singularity containers
     if singularity:
         container_path = pathlib.Path(singularity).absolute()
@@ -142,14 +148,20 @@ def append(trial, num, dry):
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-x', '--dry', is_flag=True, default=False)
-@click.option('--parallel', is_flag=True, default=False, help="""Generates a
+@click.option('--parallel',
+              is_flag=True,
+              default=False,
+              help="""Generates a
 sequence of jobs intended for `GNU Parallel`, e.g. `desist trial run $trial
 --parallel || parallel -j4` to run the simulations with 4 jobs in parallel.
 
 For details on `GNU Parallel` please refer to:
 https://www.gnu.org/software/parallel/
 """)
-@click.option('--qcg', is_flag=True, default=False, help="""Runs the simulation
+@click.option('--qcg',
+              is_flag=True,
+              default=False,
+              help="""Runs the simulation
 jobs in parallel through `GCG-PilotJob`. A job manager is created and filled
 with the required tasks, i.e. the tasks otherwise emitted when using
 `--parallel`, which are then distributed by QCG on the available resources.
@@ -352,9 +364,7 @@ def archive(trial, archive, add):
 
     # copy trial output if present
     default_files = [
-        'trial_outcome_data.RData',
-        'trial_outcome.Rmd',
-        'trial_outcome.html'
+        'trial_outcome_data.RData', 'trial_outcome.Rmd', 'trial_outcome.html'
     ]
     for fn in default_files:
         fn = trial.dir.joinpath(fn)

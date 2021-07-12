@@ -1,4 +1,6 @@
 from click.testing import CliRunner
+
+import click
 import pathlib
 import pytest
 import os
@@ -58,6 +60,27 @@ def test_trial_from_criteria_file(tmpdir, n):
         trial = Trial.read(path.joinpath(trial_config))
         assert trial.get('sample_size') == n
         assert trial.get('testkey', False)
+
+
+@pytest.mark.parametrize('n', [1, 5])
+@pytest.mark.parametrize('key', ['events', 'labels'])
+def test_trial_from_criteria_file_with_incomplete_events(tmpdir, n, key):
+    runner = CliRunner()
+    path = pathlib.Path('test')
+    with runner.isolated_filesystem():
+        criteria = Config('{tmpdir}/criteria.yml', {
+            'sample_size': n,
+            'testkey': True,
+            key: True
+        })
+        criteria.write()
+        assert os.path.exists(criteria.path)
+
+        result = runner.invoke(
+            create,
+            [str(path), '-c', str(criteria.path), '-x'])
+        assert result.exit_code == 2
+        assert 'Key error in criteria file' in result.output
 
 
 @pytest.mark.parametrize('n', [1, 5])

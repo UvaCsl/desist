@@ -42,17 +42,21 @@ class Patient(Config):
         # assign command runner
         self.runner = runner
 
-        # merges properties into config
+        # the provided configuration is merged with default settings
         defaults = {
             'prefix': prefix,
             'id': idx,
             'events': default_events.to_dict(),
-            'pipeline_length': len(list(default_events.models)),
             'labels': default_labels,
             'completed': False,
         }
         config = {**defaults, **config}
+
         super().__init__(path, config)
+
+        # the pipeline length can be updated once the patient is fully
+        # initialised, such that the event property has been assigned
+        config['pipeline_length'] = len(list(self.events.models))
 
     @property
     def completed(self):
@@ -153,7 +157,6 @@ class LowStoragePatient(Patient):
     `isct.utilities.MAX_FILE_SIZE` are deleted. This ensures litte data is
     aggregated along large cohorts of virtual patients.
     """
-
     @classmethod
     def from_patient(cls, patient):
         """Initialise a LowStoragePatient from a patient class."""

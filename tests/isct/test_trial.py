@@ -206,3 +206,17 @@ def test_trial_filter_directories(tmpdir):
     patients = [p for p in trial]
     assert len(patients) == 5
     assert len(trial) == 5
+
+
+def test_trial_extract_patient_configuration(tmpdir):
+    config = {'events': 'events', 'labels': 'labels', 'unrelated': False}
+    trial = Trial(tmpdir, config=config)
+
+    required_keys = ['events', 'labels']
+    unrequired_keys = ['unrelated']
+
+    for key in required_keys:
+        assert key in trial.patient_related_configuration()
+
+    for key in unrequired_keys:
+        assert key not in trial.patient_related_configuration()

@@ -162,7 +162,6 @@ class Trial(Config):
         successfully be parsed as a ``Patient`` class to be part of the patient
         list considered in this trial.
         """
-
         def valid_patient(path):
             """Return ``true`` when reading a ``Patient`` successfully."""
             path = path.joinpath(patient_config)
@@ -177,6 +176,16 @@ class Trial(Config):
         patient_paths = filter(valid_patient, patient_paths)
         for patient_path in patient_paths:
             yield patient_path
+
+    def patient_related_configuration(self):
+        """Returns a dictionary of patient relevant configuration settings.
+
+        This extracts settings of interest for the patient configuration that
+        is specified globally for the trial, e.g. this extracts global pipeline
+        specifications.
+        """
+        required_keys_for_patient = ['events', 'labels']
+        return {k: self[k] for k in required_keys_for_patient if k in self}
 
     def create(self):
         """Create a trial and the virtual patients.
@@ -195,8 +204,10 @@ class Trial(Config):
 
         # create patients
         for i in range(self.get('sample_size', 0)):
-            print(self.dir)
-            patient = Patient(self.dir, idx=i, prefix=self.get('prefix'))
+            patient = Patient(self.dir,
+                              idx=i,
+                              prefix=self.get('prefix'),
+                              config=self.patient_related_configuration())
             patient.create()
 
         self.sample_virtual_patient(0, self.get('sample_size'))
@@ -210,7 +221,10 @@ class Trial(Config):
         Args:
             idx (int): integer value of the to be appended patient.
         """
-        patient = Patient(self.dir, idx=idx, prefix=self.get('prefix'))
+        patient = Patient(self.dir,
+                          idx=idx,
+                          prefix=self.get('prefix'),
+                          config=self.patient_related_configuration())
         patient.create()
 
         # increment the sample size when appending patients
@@ -338,7 +352,6 @@ class ParallelTrial(Trial):
 
 class QCGTrial(ParallelTrial):
     """Parallel evaluation of patient simulation using ``QCG-PilotJob``."""
-
     def run(self, skip_completed=False):
         """Run all patient simulations using ``QCG-PilotJob``.
 
