@@ -56,7 +56,7 @@ class Patient(Config):
 
         # the pipeline length can be updated once the patient is fully
         # initialised, such that the event property has been assigned
-        config['pipeline_length'] = len(list(self.events.models))
+        self['pipeline_length'] = len(list(self.events.models))
 
     @property
     def completed(self):
