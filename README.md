@@ -39,7 +39,7 @@ python3 -m virtualenv venv
 source venv/bin/activate
 
 # install the package locally, -e/--editable to enable easy development
-pip install . -e
+pip install -e .
 ```
 
 To verify if the installation worked evaluate `desist --help` on the
