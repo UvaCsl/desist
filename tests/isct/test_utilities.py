@@ -24,6 +24,7 @@ def test_OS_enum(string, platform):
 @pytest.mark.parametrize('fn, delta, remains', [('removes.txt', +10, False),
                                                 ('remains.txt', -10, True),
                                                 ('remains.yml', +10, True),
+                                                ('remains.yaml', +10, True),
                                                 ('config.xml', +10, True),
                                                 ('anyother.xml', +10, False)])
 def test_remove_large_files(tmpdir, fn, delta, remains):

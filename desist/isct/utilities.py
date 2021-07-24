@@ -41,7 +41,7 @@ def clean_large_files(path):
     be deleted, even when their size is above the max size threshold.
     """
     cnt = saved = 0
-    skip_suffix = ['.yml']
+    skip_suffix = ['.yml', '.yaml']
     skip_files = ['config.xml']
 
     path = pathlib.Path(path)
