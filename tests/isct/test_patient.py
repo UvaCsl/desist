@@ -3,7 +3,7 @@ import pathlib
 import pytest
 
 
-from desist.isct.utilities import OS
+from desist.isct.utilities import OS, CleanFiles
 from desist.isct.patient import Patient, patient_config, LowStoragePatient
 from .test_runner import DummyRunner
 
@@ -123,7 +123,7 @@ def test_lowstorage_patient(tmpdir):
     path = pathlib.Path(tmpdir)
     patient = Patient(path, runner=DummyRunner())
     patient.create()
-    ls_patient = LowStoragePatient.from_patient(patient)
+    ls_patient = LowStoragePatient.from_patient(patient, CleanFiles.ALL)
     assert ls_patient == patient
     assert ls_patient.path == patient.path
     assert ls_patient.runner == patient.runner

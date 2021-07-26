@@ -5,7 +5,7 @@ import pytest
 from desist.isct.trial import Trial, ParallelTrial, trial_config, QCGTrial
 from desist.isct.patient import Patient, LowStoragePatient
 from desist.isct.runner import Logger
-from desist.isct.utilities import OS
+from desist.isct.utilities import OS, CleanFiles
 
 from .test_runner import DummyRunner
 
@@ -135,11 +135,11 @@ def test_trial_outcome(mocker, tmpdir, sample_size, platform):
         assert substring in runner, f'missing {substring} in {runner}'
 
 
-@pytest.mark.parametrize('keep_files, patient_cls',
-                         [(True, Patient), (False, LowStoragePatient)])
+@pytest.mark.parametrize('clean_files, patient_cls',
+                         [(CleanFiles.NONE, Patient), (CleanFiles.LARGE, LowStoragePatient)])
 @pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial, QCGTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
+def test_trial_run(mocker, tmpdir, trial_cls, platform, clean_files,
                    patient_cls):
     """Ensure trial run does not fail, capture commands inside runner."""
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
@@ -149,7 +149,7 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform, keep_files,
     trial = trial_cls(tmpdir,
                       sample_size,
                       runner=runner,
-                      keep_files=keep_files)
+                      clean_files=clean_files)
 
     trial.create()
     assert os.path.isdir(trial.path.parent)

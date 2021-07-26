@@ -8,8 +8,6 @@ import sys
 import yaml
 
 
-# FIXME: support Windows environment
-
 # one megabyte
 MAX_FILE_SIZE = 2**20
 
@@ -19,6 +17,7 @@ class OS(enum.Enum):
     """An enumeration to detect the operating system."""
     LINUX = "linux"
     MACOS = "darwin"
+    # FIXME: support Windows environment
 
     @classmethod
     def from_platform(cls, platform: str):
@@ -31,41 +30,91 @@ class OS(enum.Enum):
             sys.exit("Windows not yet supported.")
 
 
-def clean_large_files(path):
-    """Removes any files larger than 1MB.
+@enum.unique
+class CleanFiles(enum.Enum):
+    """Enumeration containing available file cleaning modes.
 
-    The routine recursively walks all files in the provided directory. Anyfile
-    that is larger than `MAX_FILE_SIZE` is deleted.
-
-    Files with suffix either `.yml` or `.xml` are skipped, i.e. the will not
-    be deleted, even when their size is above the max size threshold.
+    The modes are used by :class:~`isct.utilities.FileCleaner` to determine
+    which files need to be removed.
     """
-    cnt = saved = 0
-    skip_suffix = ['.yml', '.yaml']
-    skip_files = ['config.xml']
+    NONE = "none"
+    LARGE = "1MB"
+    ALL = "all"
 
-    path = pathlib.Path(path)
-    if not path.exists():
-        return
+    @classmethod
+    def from_string(cls, clean_type: str):
+        """Return a :class:~isct.utilities.CleanFiles` from a string.
 
-    for (parent, subdirs, files) in os.walk(path.absolute()):
-        for name in files:
+        This defaults to ``CleanFiles.NONE`` for any unknown conversion to
+        ensure no files are deleted when wrong string indicators are provided.
+        """
+        if clean_type.lower() == "all":
+            return cls.ALL
+        elif clean_type.lower() == "1mb":
+            return cls.LARGE
+        else:
+            return cls.NONE
 
-            filename = pathlib.Path(parent).joinpath(name)
-            if name in skip_files or filename.suffix in skip_suffix:
-                continue
 
-            if (filesize := filename.stat().st_size) > MAX_FILE_SIZE:
-                os.remove(filename)
-                saved += filesize
-                cnt += 1
+class FileCleaner(object):
+    """Allows to clean files from a path.
 
-    # report save file size in MBs
-    unit = 1e6
-    logging.info(f"Removed {cnt} files large than {MAX_FILE_SIZE//unit}MB. \n"
-                 f"Saved {saved//unit}MB.")
+    The ``FileCleaner`` helps cleaning files from paths. This allows to set
+    different suffices or filenames to skip as well as the desired maximum file
+    size threshold.
+    """
+    def __init__(self, mode: CleanFiles, skip_files=['config.xml'],
+                 skip_suffix=['.yml', '.yaml'], max_size=MAX_FILE_SIZE):
 
-    return cnt, saved
+        print('my mode: ', mode)
+        assert isinstance(mode, CleanFiles), \
+            f"FileClear: `mode` argument should be of type: {CleanFiles}."
+        self.mode = mode
+        self.skip_files = skip_files
+        self.skip_suffix = skip_suffix
+        self.max_size = max_size
+        self.unit = 2**20  # one megabyte
+
+    def is_skip_file(self, path):
+        """Returns true on matching skipped filenames or skipped suffices."""
+        return path.name in self.skip_files or path.suffix in self.skip_suffix
+
+    def clean_files(self, path):
+        """Removes any files larger than 1MB.
+
+        The routine recursively walks all files in the provided directory.
+        Anyfile that is larger than `MAX_FILE_SIZE` is deleted.
+
+        Files with suffix either `.yml` or `.xml` are skipped, i.e. the will
+        not be deleted, even when their size is above the max size threshold.
+        """
+        removed_file_count = saved_bytes = 0
+
+        if self.mode == CleanFiles.NONE:
+            return removed_file_count, saved_bytes
+
+        path = pathlib.Path(path)
+        if not path.exists():
+            return removed_file_count, saved_bytes
+
+        for (parent, subdirs, files) in os.walk(path.absolute()):
+            for name in files:
+                filename = pathlib.Path(parent).joinpath(name)
+
+                if self.is_skip_file(filename):
+                    continue
+
+                filesize = filename.stat().st_size
+                if self.mode == CleanFiles.ALL or filesize > self.max_size:
+                    os.remove(filename)
+                    saved_bytes += filesize
+                    removed_file_count += 1
+
+        logging.info(
+            f"Removed {removed_file_count} files > {self.max_size/self.unit}"
+            f"Saved {saved_bytes//self.unit}MB."
+        )
+        return removed_file_count, saved_bytes
 
 
 def read_yaml(path):

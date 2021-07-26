@@ -6,6 +6,7 @@ import pathlib
 from .trial import assert_container_path
 from desist.isct.patient import Patient, LowStoragePatient, patient_config
 from desist.isct.trial import Trial, trial_config
+from desist.isct.utilities import CleanFiles
 import desist.isct.runner as runners
 
 
@@ -22,11 +23,17 @@ def patient():
 @click.argument('patients', type=click.Path(exists=True), nargs=-1)
 @click.option('-x', '--dry', is_flag=True, default=False)
 @click.option(
-    '--keep-files/--clean-files',
-    default=True,
-    help=("Keep or clean large files after evaluating all simulations."))
+    '--clean-files',
+    type=click.Choice([ct.value for ct in CleanFiles], case_sensitive=False),
+    default=CleanFiles.NONE.value,
+    help=(f"""Clean simulation files after evaluating all patient
+    simulations. For \'{CleanFiles.NONE.value}\' no files are removed, this is
+    the same as running without --clean-files. For \'{CleanFiles.LARGE.value}\'
+    only files >1MB are removed, while \'{CleanFiles.ALL.value}\' will remove
+    any file except YAML files (either \'.yml\' or \'.yaml\' suffix),
+    regardless of its size."""))
 @click.option('-c', '--container-path', type=click.Path(exists=True))
-def run(patients, dry, keep_files, container_path):
+def run(patients, dry, clean_files, container_path):
     """Run a patient's simulation pipeline.
 
     The complete simulation pipeline is evaluated for the patient located
@@ -41,8 +48,9 @@ def run(patients, dry, keep_files, container_path):
         # define the patient type
         patient = Patient.read(path, runner=runners.new_runner(dry))
 
-        if not keep_files and not dry:
-            patient = LowStoragePatient.from_patient(patient)
+        clean_files = CleanFiles.from_string(clean_files)
+        if clean_files != CleanFiles.NONE and not dry:
+            patient = LowStoragePatient.from_patient(patient, clean_files)
 
         # extract trial configuration
         trial = Trial.read(patient.dir.parent.joinpath(trial_config))

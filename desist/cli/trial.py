@@ -10,7 +10,7 @@ import shutil
 from desist.isct.config import Config
 from desist.isct.trial import Trial, QCGTrial, ParallelTrial, trial_config
 from desist.isct.runner import new_runner
-from desist.isct.utilities import clean_large_files
+from desist.isct.utilities import FileCleaner, CleanFiles
 
 
 @click.group()
@@ -169,10 +169,16 @@ with the required tasks, i.e. the tasks otherwise emitted when using
 For details on `QCG-PilotJob` please refer to:
 https://qcg-pilotjob.readthedocs.io/en/latest/index.html
 """)
-@click.option(
-    '--keep-files/--clean-files',
-    default=True,
-    help=("Keep or clean large files after evaluating all simulations."))
+@click.option('--clean-files',
+              type=click.Choice([ct.value for ct in CleanFiles],
+                                case_sensitive=False),
+              default=CleanFiles.NONE.value,
+              help=(f"""Clean simulation files after evaluating all patient
+    simulations. For \'{CleanFiles.NONE.value}\' no files are removed, this is
+    the same as running without --clean-files. For \'{CleanFiles.LARGE.value}\'
+    only files >1MB are removed, while \'{CleanFiles.ALL.value}\' will remove
+    any file except YAML files (either \'.yml\' or \'.yaml\' suffix),
+    regardless of its size."""))
 @click.option('--skip-completed',
               is_flag=True,
               default=False,
@@ -182,7 +188,8 @@ https://qcg-pilotjob.readthedocs.io/en/latest/index.html
     '--container-path',
     type=click.Path(exists=True, resolve_path=True),
     help="Override the container path as defined in the trial configuration")
-def run(trial, dry, qcg, parallel, keep_files, skip_completed, container_path):
+def run(trial, dry, qcg, parallel, clean_files, skip_completed,
+        container_path):
     """Run all simulations for the patients in the in silico trial at TRIAL.
 
     The compute simulation pipeline is evaluated for each patient considered
@@ -213,8 +220,11 @@ using `QCG-PilotJob`. Please specify only one."""
     else:
         cls = Trial
 
+    # convert the string argument to enum instance
+    clean_files = CleanFiles.from_string(clean_files)
+
     try:
-        trial = cls.read(config, runner=runner, keep_files=keep_files)
+        trial = cls.read(config, runner=runner, clean_files=clean_files)
     except (FileNotFoundError, IsADirectoryError):
         # If parsing the trial fails due to missing `trial.yml` configuration,
         # we can still attempt to fallback on creating a trial in the
@@ -232,7 +242,7 @@ using `QCG-PilotJob`. Please specify only one."""
         # patients are moved in to other directories, or that patients are
         # generated without specific trial information, such as is commonly
         # done when performing VVUQ analysis.
-        trial = cls(path=config.parent, runner=runner, keep_files=keep_files)
+        trial = cls(path=config.parent, runner=runner, clean_files=clean_files)
 
     # overwrite the container path when provided as argument
     if container_path:
@@ -432,15 +442,24 @@ def reset(trial, remove):
 
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
-def clean(trial):
-    """Clean up files in the trial directory.
+@click.argument('clean-files',
+                type=click.Choice(
+                    [CleanFiles.LARGE.value, CleanFiles.ALL.value],
+                    case_sensitive=False))
+def clean(trial, clean_files):
+    r"""Clean up files in the trial directory.
 
-    Deletes all files greater than 1Mb. This performs the same action as when
-    passing the `--clean-files` flag to the `run` command.
+    Deletes simulation output files from the TRIAL directory. This routine
+    preserves any YAML files with either '.yaml' or '.yml' suffices.
+
+    The deletion has two modes: '1mb' or 'all'. The first only deletes
+    files larger then 1MB of disk size, where the second will delete any file,
+    regardless of the required disk space.
     """
     # ensure the trial can be read
     config = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(config)
+    file_cleaner = FileCleaner(CleanFiles.from_string(clean_files))
 
     for patient in trial:
-        clean_large_files(patient.dir)
+        file_cleaner.clean_files(patient.dir)

@@ -58,15 +58,16 @@ def test_patient_keep_files(mocker, tmpdir, platform):
 
         assert large_file.exists()
 
-        result = runner.invoke(run, [str(patient.dir), '-x', '--clean-files'])
+        result = runner.invoke(run, [str(patient.dir), '-x', '--clean-files=all'])
         assert result.exit_code == 0
         assert large_file.exists(), "no large files deleted on dry run"
 
-        result = runner.invoke(run, [str(patient.dir), '--keep-files'])
+        result = runner.invoke(run, [str(patient.dir), '--clean-files', 'none'])
         assert result.exit_code == 0
         assert large_file.exists(), "no large files deleted with keep-files"
 
-        result = runner.invoke(run, [str(patient.dir), '--clean-files'])
+        result = runner.invoke(run, [str(patient.dir), '--clean-files=all'])
+        print('result', result.output)
         assert result.exit_code == 0
         assert not large_file.exists(), "large files deleted with clean-files"
 

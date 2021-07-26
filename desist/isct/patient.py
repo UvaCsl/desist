@@ -9,7 +9,7 @@ from .config import Config
 from .container import create_container
 from .runner import Logger
 from .events import Events, default_events, default_labels
-from .utilities import clean_large_files
+from .utilities import FileCleaner, CleanFiles
 
 patient_config = 'patient.yml'
 patient_path = pathlib.Path('/patient')
@@ -153,17 +153,24 @@ class Patient(Config):
 class LowStoragePatient(Patient):
     """A low storage variant of the patient.
 
-    After the simulation pipeline is completed, all files larger than
-    `isct.utilities.MAX_FILE_SIZE` are deleted. This ensures litte data is
-    aggregated along large cohorts of virtual patients.
+    This patient variant will clean simulation output files after running
+    all patient simulation containers. The cleaned files are dictated by the
+    ``CleanFiles`` setting and the constructed ``FileCleaner`` instance.
     """
 
+    def __init__(self, *args, **kwargs):
+        """Initialise without cleaning files."""
+        super().__init__(*args, **kwargs)
+        self.file_cleaner = FileCleaner(CleanFiles.NONE)
+
     @classmethod
-    def from_patient(cls, patient):
+    def from_patient(cls, patient, clean_mode):
         """Initialise a LowStoragePatient from a patient class."""
-        return cls.read(patient.path, runner=patient.runner)
+        patient = cls.read(patient.path, runner=patient.runner)
+        patient.file_cleaner = FileCleaner(clean_mode)
+        return patient
 
     def run(self):
         """Cleans simulation output after all models are completed."""
         super().run()
-        clean_large_files(self.dir)
+        self.file_cleaner.clean_files(self.dir)

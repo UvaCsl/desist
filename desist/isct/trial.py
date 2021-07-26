@@ -23,6 +23,7 @@ from .patient import Patient, LowStoragePatient, patient_config
 from .container import create_container
 from .config import Config
 from .runner import LocalRunner, Logger, QCGRunner
+from .utilities import CleanFiles
 
 trial_config = 'trial.yml'
 """str: Trial configuration filename and suffix."""
@@ -49,7 +50,7 @@ class Trial(Config):
             random_seed=1,
             config={},
             runner=LocalRunner(),
-            keep_files=True,
+            clean_files=CleanFiles.NONE,
     ):
         """Initialise a trial from given path and options.
 
@@ -59,7 +60,7 @@ class Trial(Config):
             random_seed (int): The random seed to use in the trial.
             config (dict): Dictionary with default configurations values.
             runner (:class:`~isct.runner.Runner`, optional): Command runner.
-            keep_files (bool): If large files should be kept or deleted.
+            clean_files (CleanFiles): If large files should be kept or deleted.
         """
         # path to patient configuration file `path/trial.yml`
         path = pathlib.Path(path).joinpath(trial_config)
@@ -80,7 +81,7 @@ class Trial(Config):
         self.runner = runner
 
         # store the behaviour to keep/clean files after patient simulations
-        self.keep_files = keep_files
+        self.clean_files = clean_files
 
     def __iter__(self):
         """Iterable over the patients in the trial.
@@ -98,10 +99,10 @@ class Trial(Config):
             # directory into the patient instance.
             patient['container-path'] = self.container_path
 
-            if not self.keep_files:
-                patient = LowStoragePatient.from_patient(patient)
-
-            yield patient
+            if self.clean_files == CleanFiles.NONE:
+                yield patient
+            else:
+                yield LowStoragePatient.from_patient(patient, self.clean_files)
 
     def __len__(self):
         """Returns the number of virtual patients considered in the trial.
@@ -112,7 +113,7 @@ class Trial(Config):
         return len(list(self.patients))
 
     @classmethod
-    def read(cls, path, runner=Logger(), keep_files=True):
+    def read(cls, path, runner=Logger(), clean_files=CleanFiles.NONE):
         """Initialises :class:`Trial` from the provided YAML file.
 
         First the basic :class:`~isct.config.Config` is initialised, afterwhich
@@ -124,7 +125,7 @@ class Trial(Config):
                    random_seed=config.get('random_seed', 0),
                    config=dict(config),
                    runner=runner,
-                   keep_files=keep_files)
+                   clean_files=clean_files)
 
     @property
     def container_path(self):
@@ -314,9 +315,7 @@ class ParallelTrial(Trial):
         """
         # By default files are to be cleaned: running in parallel can quickly
         # accumulate large amounts of data.
-        file_flags = ['--clean-files']
-        if self.keep_files:
-            file_flags = ['--keep-files']
+        file_flags = ['--clean-files', self.clean_files.value]
 
         # Only pass a container flag when the container path is set, i.e.
         # when running with Singularity-based containers. Note: this does

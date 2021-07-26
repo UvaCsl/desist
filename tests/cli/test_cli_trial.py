@@ -9,7 +9,7 @@ from desist.cli.trial import create, append, run, list_key, outcome, archive
 from desist.cli.trial import reset, clean
 from desist.isct.config import Config
 from desist.isct.trial import Trial, trial_config
-from desist.isct.utilities import OS, MAX_FILE_SIZE
+from desist.isct.utilities import OS, MAX_FILE_SIZE, CleanFiles
 
 from tests.isct.test_utilities import create_dummy_file
 
@@ -165,7 +165,10 @@ def test_trial_append(tmpdir, n):
 def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
-    keep_cmd = '--keep-files' if keep_files else '--clean-files'
+    if keep_files:
+        keep_cmd = ['--clean-files', 'none']
+    else:
+        keep_cmd = ['--clean-files', CleanFiles.LARGE.value]
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
@@ -176,7 +179,7 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
         cmd = [str(path)]
         cmd = cmd if parallel is None else cmd + [parallel]
         cmd = cmd + ['-x']
-        cmd = cmd + [keep_cmd]
+        cmd = cmd + keep_cmd
 
         # create a large file in one of the patients
         trial = Trial.read(path.joinpath(trial_config))
@@ -191,13 +194,15 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
         for i in range(num):
             assert f'patient_{i:05}' in result.output
 
+        print('result:', result.output)
+
         if parallel is None:
             for k in ['docker', 'run']:
                 assert k in result.output
             assert keep_files == large_file.exists()
         else:
             assert 'docker' not in result.output
-            assert keep_cmd in result.output
+            assert all(cmd in result.output for cmd in keep_cmd)
 
 
 @pytest.mark.parametrize('parallel', ['--parallel', '--qcg'])
@@ -486,8 +491,9 @@ def test_trial_reset(mocker, tmpdir, platform):
             assert not patient.dir.joinpath('test_file.txt').exists()
 
 
+@pytest.mark.parametrize('mode', [CleanFiles.ALL, CleanFiles.LARGE])
 @pytest.mark.parametrize('size_delta', [+10, -10])
-def test_trial_clean(tmpdir, size_delta):
+def test_trial_clean(tmpdir, mode, size_delta):
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
@@ -499,9 +505,14 @@ def test_trial_clean(tmpdir, size_delta):
         large_file = list(trial)[0].dir.joinpath('large-file')
         create_dummy_file(large_file, MAX_FILE_SIZE + size_delta)
 
-        result = runner.invoke(clean, [str(path)])
+        result = runner.invoke(clean, [str(path), mode.value])
         assert result.exit_code == 0
-        assert large_file.exists() == (size_delta < 0)
+
+        if mode == CleanFiles.ALL:
+            assert not large_file.exists()
+
+        if mode == CleanFiles.LARGE:
+            assert large_file.exists() == (size_delta < 0)
 
 
 def test_trial_parallel_qcg(tmpdir):
