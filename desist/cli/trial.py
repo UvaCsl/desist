@@ -129,6 +129,12 @@ def append(trial, num, dry):
     directories are created, continuing with the original numbering. Again,
     the `virtual-patient-model` is evaluated, now only for the newly appended
     patients, to evaluated their statistical properties.
+
+    NOTE: it cannot be guaranteed that a sampling of `trial create -n N`
+    results in the exact distribution as `trial create -n N/2; trial append -n
+    N/2` as evaluating the random samples are performed by the underlying,
+    user-provided virtual patient model. In case the underlying model does uses
+    consistently set random seeds, this behaviour _could_ be achieved.
     """
     path = pathlib.Path(trial).joinpath(trial_config)
     trial = Trial.read(path, runner=new_runner(dry))
