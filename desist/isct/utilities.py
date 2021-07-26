@@ -65,10 +65,8 @@ class FileCleaner(object):
     """
     def __init__(self, mode: CleanFiles, skip_files=['config.xml'],
                  skip_suffix=['.yml', '.yaml'], max_size=MAX_FILE_SIZE):
-
-        print('my mode: ', mode)
         assert isinstance(mode, CleanFiles), \
-            f"FileClear: `mode` argument should be of type: {CleanFiles}."
+            f"FileCleaner: `mode` argument should be of type: {CleanFiles}."
         self.mode = mode
         self.skip_files = skip_files
         self.skip_suffix = skip_suffix
