@@ -91,6 +91,14 @@ More in depth documentation can be found at:
 `https://insilicostroketrial.eu/insist_docs/.` (Hosted documentation is not yet
 up to date: issue #18)
 
+## Acknowledgements
+
+When using `desist` for your research project, please cite: [`des-ist: A
+Simulation Framework to Streamline Event-Based In Silico
+Trials`](https://link.springer.com/chapter/10.1007/978-3-030-77967-2_53) with
+DOI: `10.1007/978-3-030-77967-2_53`. The corresponding "`.bib`" file is provided
+in [`references.bib`](references.bib).
+
 ## Change log
 
 2021/06/22
