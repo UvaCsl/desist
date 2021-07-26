@@ -75,6 +75,16 @@ class Runner(abc.ABC):
 
         # FIXME: `shell = False` is not needed in all commands
 
+    def wait(self):
+        """A routine to wait until the runner is done.
+
+        For synchronous runners this routine is superfluous, as all simulations
+        will be done once the run finalises. However, for asynchronous runners,
+        such as :class:~`isct.runner.QCGRunner`, ``wait`` will ensure all jobs
+        are completed before continuing.
+        """
+        pass
+
 
 class Logger(Runner):
     """A runner implementation printing the commands to `stdout`."""

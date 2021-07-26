@@ -22,7 +22,7 @@ import os
 from .patient import Patient, LowStoragePatient, patient_config
 from .container import create_container
 from .config import Config
-from .runner import LocalRunner, Logger, QCGRunner
+from .runner import LocalRunner, Logger
 from .utilities import CleanFiles
 
 trial_config = 'trial.yml'
@@ -364,11 +364,5 @@ class QCGTrial(ParallelTrial):
         This routine waits until all jobs are evaluated on the available
         resources and ``QCG`` terminates.
         """
-        # When the commands are only logged, the QCG runner does not need to
-        # interfere and simply only forward the parent's verbose
-        # implementation.
-        if not isinstance(self.runner, QCGRunner):
-            return super().run(skip_completed=skip_completed)
-
-        super().run()
+        super().run(skip_completed=skip_completed)
         self.runner.wait()
