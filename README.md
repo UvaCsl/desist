@@ -119,3 +119,17 @@ up to date: issue #18)
   different pipelines can be defined directly in the criteria files.
 - Providing `--clean-files` does not accidentally clean up the files in
   combination with the `-x` (dry-run) flag.
+
+2021/07/26
+
+- Change `--keep-files/--clean-files` toggles to `--clean-files OPTION` where
+  three choices are possible: `none`, `1mb`, or `all`. The first two, `none` and
+  `1mb` mimic the original behaviour with `--keep-files/--clean-files`
+  respectively. The new `all` flag performs more aggressive file cleaning and
+  removes any file---except for YAML files with `.yml` or `.yaml`
+  suffix---regardless of the required disk space.
+- Add a [`CleanFiles`](desist/isct/utilities.py) enumerated type to keep track
+  of file cleaning modes.
+- Add a [`FileCleaner`](desist/isct/utilities.py) utility class that handles
+  file cleaning and supersedes the separate `clean_large_files` utility
+  function.
