@@ -62,3 +62,14 @@ def test_file_cleaner_clean_files(tmpdir, mode, fn, delta, remains):
             assert not filename.exists(), "File should be removed."
             assert (cnt, size) == (1, filesize)
         return
+
+
+@pytest.mark.parametrize('inp,out',
+                         [('all', CleanFiles.ALL),
+                          ('1mb', CleanFiles.LARGE),
+                          ('none', CleanFiles.NONE),
+                          (CleanFiles.ALL, CleanFiles.ALL),
+                          (CleanFiles.LARGE, CleanFiles.LARGE),
+                          (CleanFiles.NONE, CleanFiles.NONE)])
+def test_clean_files_from_string(inp, out):
+    assert CleanFiles.from_string(inp) == out

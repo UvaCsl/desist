@@ -47,7 +47,14 @@ class CleanFiles(enum.Enum):
 
         This defaults to ``CleanFiles.NONE`` for any unknown conversion to
         ensure no files are deleted when wrong string indicators are provided.
+
+        NOTE: When passing an instance of the CleanFiles enum itself, the
+        received instance is returned and no conversion is attempted.
         """
+        if isinstance(clean_type, cls):
+            # No conversion needed, clean_type is already an CleanFiles enum.
+            return clean_type
+
         if clean_type.lower() == "all":
             return cls.ALL
         elif clean_type.lower() == "1mb":
