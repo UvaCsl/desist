@@ -1,6 +1,5 @@
 from click.testing import CliRunner
 
-import click
 import pathlib
 import pytest
 import os
@@ -163,7 +162,8 @@ def test_trial_append(tmpdir, n):
 @pytest.mark.parametrize('parallel', [None, '--parallel', '--qcg'])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     if keep_files:
         keep_cmd = ['--clean-files', 'none']
@@ -252,7 +252,8 @@ def test_trial_run_parallel_singularity(mocker, tmpdir, platform, parallel):
 @pytest.mark.parametrize('parallel', [None, '--parallel', '--qcg'])
 @pytest.mark.parametrize('num', [1, 2, 5])
 def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
@@ -286,7 +287,8 @@ def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_run_container_path(mocker, tmpdir, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
@@ -462,7 +464,8 @@ def test_trial_archive_custom_file(tmpdir, num_patients):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_reset(mocker, tmpdir, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')

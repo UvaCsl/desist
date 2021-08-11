@@ -52,7 +52,8 @@ def test_trial_config(tmpdir, config):
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('sample_size', list(range(1, 5)))
 def test_trial_create(mocker, tmpdir, sample_size, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     trial = Trial(tmpdir, sample_size, runner=Logger())
     trial.create()
@@ -73,7 +74,8 @@ def test_trial_create(mocker, tmpdir, sample_size, platform):
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('sample_size', list(range(1, 5)))
 def test_trial_sample(mocker, tmpdir, sample_size, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     # record the outcome
     runner = DummyRunner(write_config=True)
@@ -117,7 +119,8 @@ def test_trial_sample_empty_set(tmpdir, sample_size):
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('sample_size', [5])
 def test_trial_outcome(mocker, tmpdir, sample_size, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = DummyRunner(write_config=True)
     trial = Trial(tmpdir, sample_size, runner=runner)
@@ -136,13 +139,15 @@ def test_trial_outcome(mocker, tmpdir, sample_size, platform):
 
 
 @pytest.mark.parametrize('clean_files, patient_cls',
-                         [(CleanFiles.NONE, Patient), (CleanFiles.LARGE, LowStoragePatient)])
+                         [(CleanFiles.NONE, Patient),
+                          (CleanFiles.LARGE, LowStoragePatient)])
 @pytest.mark.parametrize('trial_cls', [Trial, ParallelTrial, QCGTrial])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_trial_run(mocker, tmpdir, trial_cls, platform, clean_files,
                    patient_cls):
     """Ensure trial run does not fail, capture commands inside runner."""
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     sample_size = 5
     runner = DummyRunner(write_config=True)

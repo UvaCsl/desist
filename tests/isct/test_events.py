@@ -2,11 +2,21 @@ from desist.isct.events import Events, Event
 
 baseline = {
     'event': 'baseline',
-    'models': [{'label': 'bloodflow'}, {'label': 'perfusion'}]}
+    'models': [{
+        'label': 'bloodflow'
+    }, {
+        'label': 'perfusion'
+    }]
+}
 
 stroke = {
     'event': 'stroke',
-    'models': [{'label': 'place-clot'}, {'label': 'thrombectomy'}]}
+    'models': [{
+        'label': 'place-clot'
+    }, {
+        'label': 'thrombectomy'
+    }]
+}
 
 
 def test_event():
@@ -27,8 +37,8 @@ def test_events_models_labels():
     example_events = [baseline, baseline]
     events = Events(example_events)
     assert all([events[i] == example_events[i] for i in range(len(events))])
-    assert list(events.labels) == ['bloodflow', 'perfusion',
-                                   'bloodflow', 'perfusion']
+    assert list(
+        events.labels) == ['bloodflow', 'perfusion', 'bloodflow', 'perfusion']
 
 
 def test_event_from_id():

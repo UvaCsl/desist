@@ -12,7 +12,8 @@ from desist.isct.utilities import OS
 @pytest.mark.parametrize("path, container_type",
                          [(None, Docker), ("./containers", Singularity)])
 def test_new_container(mocker, platform, path, container_type):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
     container = create_container(".", path)
     assert isinstance(container, container_type)
 
@@ -20,7 +21,8 @@ def test_new_container(mocker, platform, path, container_type):
 @pytest.mark.parametrize("platform, permission", [(OS.MACOS, ''),
                                                   (OS.LINUX, 'sudo')])
 def test_new_container_permission(mocker, platform, permission):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     # Docker
     container = create_container(".")

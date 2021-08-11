@@ -2,7 +2,6 @@ import os
 import pathlib
 import pytest
 
-
 from desist.isct.utilities import OS, CleanFiles
 from desist.isct.patient import Patient, patient_config, LowStoragePatient
 from .test_runner import DummyRunner
@@ -100,7 +99,8 @@ def test_patient_run(tmpdir):
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_failed_event(mocker, tmpdir, platform):
     """Ensure the simulation raises `AssertionError` for failed event."""
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     path = pathlib.Path(tmpdir)
     patient = Patient(path, runner=DummyRunner(write_config=True))
@@ -142,4 +142,4 @@ def test_patient_reset(tmpdir):
 
 def test_avoid_cleaning_files_on_dry_run(tmpdir):
     path = pathlib.Path(tmpdir)
-    patient = LowStoragePatient(path, runner=DummyRunner(write_config=True))
+    _ = LowStoragePatient(path, runner=DummyRunner(write_config=True))

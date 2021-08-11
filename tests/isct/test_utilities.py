@@ -64,12 +64,11 @@ def test_file_cleaner_clean_files(tmpdir, mode, fn, delta, remains):
         return
 
 
-@pytest.mark.parametrize('inp,out',
-                         [('all', CleanFiles.ALL),
-                          ('1mb', CleanFiles.LARGE),
-                          ('none', CleanFiles.NONE),
-                          (CleanFiles.ALL, CleanFiles.ALL),
-                          (CleanFiles.LARGE, CleanFiles.LARGE),
-                          (CleanFiles.NONE, CleanFiles.NONE)])
+@pytest.mark.parametrize('inp,out', [('all', CleanFiles.ALL),
+                                     ('1mb', CleanFiles.LARGE),
+                                     ('none', CleanFiles.NONE),
+                                     (CleanFiles.ALL, CleanFiles.ALL),
+                                     (CleanFiles.LARGE, CleanFiles.LARGE),
+                                     (CleanFiles.NONE, CleanFiles.NONE)])
 def test_clean_files_from_string(inp, out):
     assert CleanFiles.from_string(inp) == out

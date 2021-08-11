@@ -15,12 +15,15 @@ from ..isct.test_runner import DummyRunner
 @pytest.mark.parametrize('num_patients', [1, 2])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_run(mocker, tmpdir, platform, num_patients):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-x', '-n', str(num_patients)])
+        result = runner.invoke(
+            create,
+            [str(path), '-x', '-n', str(num_patients)])
         assert result.exit_code == 0
 
         trial = Trial.read(path.joinpath(trial_config))
@@ -39,7 +42,8 @@ def test_patient_run(mocker, tmpdir, platform, num_patients):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_keep_files(mocker, tmpdir, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
     mocker.patch('desist.isct.runner.new_runner', return_value=DummyRunner())
 
     runner = CliRunner()
@@ -59,11 +63,13 @@ def test_patient_keep_files(mocker, tmpdir, platform):
 
         assert large_file.exists()
 
-        result = runner.invoke(run, [str(patient.dir), '-x', '--clean-files=all'])
+        result = runner.invoke(run,
+                               [str(patient.dir), '-x', '--clean-files=all'])
         assert result.exit_code == 0
         assert large_file.exists(), "no large files deleted on dry run"
 
-        result = runner.invoke(run, [str(patient.dir), '--clean-files', 'none'])
+        result = runner.invoke(run,
+                               [str(patient.dir), '--clean-files', 'none'])
         assert result.exit_code == 0
         assert large_file.exists(), "no large files deleted with keep-files"
 
@@ -75,7 +81,8 @@ def test_patient_keep_files(mocker, tmpdir, platform):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_run_singularity(mocker, tmpdir, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
@@ -122,9 +129,7 @@ def test_patient_run_container_path(mocker, tmpdir, platform):
         os.makedirs(local)
         os.makedirs(remote)
 
-        result = runner.invoke(
-            create,
-            [str(path), '-x', '-s', str(local)])
+        result = runner.invoke(create, [str(path), '-x', '-s', str(local)])
         assert result.exit_code == 0
 
         trial = Trial.read(path.joinpath(trial_config))
@@ -141,13 +146,15 @@ def test_patient_run_container_path(mocker, tmpdir, platform):
 
         # should run fine: override the container directory manually
         result = runner.invoke(run,
-                               [str(patient.dir), '-x', '-c', str(remote)])
+                               [str(patient.dir), '-x', '-c',
+                                str(remote)])
         assert result.exit_code == 0
 
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 def test_patient_reset(mocker, tmpdir, platform):
-    mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
+    mocker.patch('desist.isct.utilities.OS.from_platform',
+                 return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')

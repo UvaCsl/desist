@@ -3,8 +3,8 @@ import pathlib
 from click.testing import CliRunner
 from desist.cli.container import create, run
 
-
 # FIXME: make these parametric over `[Docker, Singularity]`
+
 
 def test_container_create(tmpdir):
     runner = CliRunner()
