@@ -12,20 +12,21 @@ from desist.isct.trial import Trial, trial_config
 from ..isct.test_runner import DummyRunner
 
 
+@pytest.mark.parametrize('num_patients', [1, 2])
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
-def test_patient_run(mocker, tmpdir, platform):
+def test_patient_run(mocker, tmpdir, platform, num_patients):
     mocker.patch('desist.isct.utilities.OS.from_platform', return_value=platform)
 
     runner = CliRunner()
     path = pathlib.Path('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-x'])
+        result = runner.invoke(create, [str(path), '-x', '-n', str(num_patients)])
         assert result.exit_code == 0
 
         trial = Trial.read(path.joinpath(trial_config))
-        patient = list(trial)[0]
 
-        result = runner.invoke(run, [str(patient.dir), '-x'])
+        patients = [str(list(trial)[i].dir) for i in range(num_patients)]
+        result = runner.invoke(run, [*patients, '-x'])
         assert result.exit_code == 0
 
         for k in ['docker', 'run', '-v', ':/patient']:

@@ -41,6 +41,8 @@ def run(patients, dry, clean_files, container_path):
     the completed flag, i.e. the simulation is _always_ invoked when
     specifically called with this command.
     """
+    clean_files = CleanFiles.from_string(clean_files)
+
     for p in patients:
         # read patient configuration
         path = pathlib.Path(p).joinpath(patient_config)
@@ -48,8 +50,7 @@ def run(patients, dry, clean_files, container_path):
         # define the patient type
         patient = Patient.read(path, runner=runners.new_runner(dry))
 
-        clean_files = CleanFiles.from_string(clean_files)
-        if clean_files != CleanFiles.NONE and not dry:
+        if (clean_files != CleanFiles.NONE) and not dry:
             patient = LowStoragePatient.from_patient(patient, clean_files)
 
         # extract trial configuration
