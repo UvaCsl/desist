@@ -41,3 +41,7 @@
   file cleaning and supersedes the separate `clean_large_files` utility
   function.
 - Add `Runner.wait()` function to avoid type assertion in `QCGRunner.run()`.
+
+2021/08/31
+
+- `**kwargs` are forwarded to API initialisation in `event_handler`.

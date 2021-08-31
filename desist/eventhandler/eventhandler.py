@@ -30,7 +30,7 @@ def test(ctx):
     ctx.obj.test()
 
 
-def event_handler(api_class=API):
+def event_handler(api_class=API, **kwargs):
     """Initialise the event handler API.
 
     Initialises the click-based command-line utility where the API is defined
@@ -38,9 +38,12 @@ def event_handler(api_class=API):
     accepts a patient path and event id, and returns an initialised API
     instance.
 
-    This results in commands formatted as, with ``$id`` the desired event ID:
+    Any ``**kwargs`` are forwarded to the initialisation of the API.
 
-    >>> python3 API.py /patient/ $id event
+    This results in commands formatted as, with ``$id`` the desired event ID
+    and ``$cmd`` either ``event``, ``example``, or ``test``.
+
+    >>> python3 API.py /patient/patient.yml $id $cmd
     """
 
     @click.group()
@@ -48,7 +51,7 @@ def event_handler(api_class=API):
     @click.argument('event', type=int)
     @click.pass_context
     def cli(ctx, patient, event):
-        ctx.obj = api_class(patient, event)
+        ctx.obj = api_class(patient, event, **kwargs)
 
     # attach the default commands
     for command in [event, example, test]:
