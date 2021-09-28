@@ -269,13 +269,24 @@ class Trial(Config):
 
         container.run(args=args)
 
-    def outcome(self):
-        """Evaluate the trial outcome model."""
+    def outcome(self, host_compare=""):
+        """Evaluate the trial outcome model.
+        
+        Args:
+            local_compare (string): path to another trial to run a trial comparison.
+        """
         container = create_container(trial_outcome_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
         container.bind(self.dir, trial_path)
-        container.run()
+        # Need to bind a second trial path and add flag for R script if doing a comparison report
+        if host_compare:
+            local_compare="/comp_trial"
+            container.bind(host=host_compare,local=local_compare)
+            args = f'--compare {local_compare}'
+            container.run(args=args)
+        else:
+            container.run()
 
     def run(self, skip_completed=False):
         """Runs the full trial simulation.

@@ -328,13 +328,17 @@ def list_key(trial, key, n):
 
 @trial.command()
 @click.argument('trial', type=click.Path(exists=True))
+@click.option('-c',
+              '--compare',
+              type=click.Path(exists=True),
+              help="Compare results to another trial.")
 @click.option(
     '-x',
     '--dry',
     is_flag=True,
     default=False,
     help='Logs container commands to `stdout` rather than evaluating directly')
-def outcome(trial, dry):
+def outcome(trial, compare, dry):
     """Evaluates the trial outcome model for TRIAL.
 
     This invokes the defined `trial_outcome_model` for the trial located
@@ -349,7 +353,11 @@ def outcome(trial, dry):
     assert_container_path(trial)
 
     # evaluate the outcome model
-    trial.outcome()
+    if (compare):
+        trial.outcome(host_compare=compare)
+    else:
+        trial.outcome()
+            
 
 
 @trial.command()
