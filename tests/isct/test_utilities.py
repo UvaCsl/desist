@@ -1,8 +1,10 @@
+import os
 import pathlib
 import pytest
 
 from desist.isct.utilities import OS, MAX_FILE_SIZE
 from desist.isct.utilities import CleanFiles, FileCleaner
+from desist.isct.utilities import is_bind_path
 
 
 def create_dummy_file(path, filesize):
@@ -72,3 +74,14 @@ def test_file_cleaner_clean_files(tmpdir, mode, fn, delta, remains):
                                      (CleanFiles.NONE, CleanFiles.NONE)])
 def test_clean_files_from_string(inp, out):
     assert CleanFiles.from_string(inp) == out
+
+
+@pytest.mark.parametrize('path,expected', [('some:other', True),
+                                           ('host/path:local/path', True),
+                                           ('host/path::local/path', False),
+                                           ('host/path', False)])
+def test_is_bind_path(tmpdir, path, expected):
+    assert is_bind_path(path) == expected
+    path = pathlib.Path(tmpdir).joinpath(path)
+    os.makedirs(path, exist_ok=True)
+    assert not is_bind_path(path), "Should always fail if the file is exists"

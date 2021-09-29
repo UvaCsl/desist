@@ -167,3 +167,21 @@ def write_yaml(path, dictionary):
 
     with open(path, 'w') as config_file:
         yaml.safe_dump(dictionary, config_file)
+
+
+def is_bind_path(path) -> bool:
+    """Returns True if the path can be interpreted as a "bind path".
+
+    Here the bind path is assumed to be specified using the
+    ``source:destination`` format, where ``source`` is located on the host
+    machine and ``destination`` is located in the local container environment.
+
+    Only if a single colon (:) is present in the path, we assume the path
+    represents a bind path and can be separated into a source and destination.
+    """
+    if os.path.exists(path):
+        # Assume that any existing file should not be interpreted as a bind
+        # path regardless if the path adheres to the source:destination format.
+        return False
+
+    return sum(1 for _ in filter(lambda x: x == ':', str(path))) == 1

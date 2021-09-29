@@ -118,7 +118,8 @@ def test_trial_sample_empty_set(tmpdir, sample_size):
 
 @pytest.mark.parametrize('platform', [OS.MACOS, OS.LINUX])
 @pytest.mark.parametrize('sample_size', [5])
-def test_trial_outcome(mocker, tmpdir, sample_size, platform):
+@pytest.mark.parametrize('compare_with', [None, "path", "host:local"])
+def test_trial_outcome(mocker, tmpdir, compare_with, sample_size, platform):
     mocker.patch('desist.isct.utilities.OS.from_platform',
                  return_value=platform)
 
@@ -131,11 +132,15 @@ def test_trial_outcome(mocker, tmpdir, sample_size, platform):
 
     # evaluate outcome; only check the emitted command
     runner.clear()
-    trial.outcome()
+    trial.outcome(reference_trial=compare_with)
 
     # assert some expected snippets are present
     for substring in ['run', f'{trial.dir}:/trial', 'trial-outcome']:
         assert substring in runner, f'missing {substring} in {runner}'
+
+    if compare_with is not None:
+        assert compare_with in runner, f'missing {compare_with} in {runner}'
+        assert '--compare' in runner, 'missing "--compare" specification'
 
 
 @pytest.mark.parametrize('clean_files, patient_cls',

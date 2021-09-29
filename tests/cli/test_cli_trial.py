@@ -323,7 +323,7 @@ def test_trial_run_container_path(mocker, tmpdir, platform):
 def test_trial_outcome(tmpdir, num_patients):
     runner = CliRunner()
     path = pathlib.Path('test')
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmpdir) as td:
         result = runner.invoke(create, [str(path), '-n', num_patients, '-x'])
         assert result.exit_code == 0
 
@@ -331,6 +331,11 @@ def test_trial_outcome(tmpdir, num_patients):
         result = runner.invoke(outcome, [str(path), '-x'])
         assert result.exit_code == 0
         assert f'{trial.dir}:/trial' in result.output
+
+        result = runner.invoke(outcome, [str(path), '-x', '-c', 'host:local'])
+        assert result.exit_code == 0
+        assert '--compare' in result.output
+        assert f'-v {td}/host:local' in result.output
 
 
 @pytest.mark.parametrize('num_patients', [1, 2, 5])

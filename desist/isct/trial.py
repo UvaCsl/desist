@@ -23,7 +23,7 @@ from .patient import Patient, LowStoragePatient, patient_config
 from .container import create_container
 from .config import Config
 from .runner import LocalRunner, Logger
-from .utilities import CleanFiles
+from .utilities import CleanFiles, is_bind_path
 
 trial_config = 'trial.yml'
 """str: Trial configuration filename and suffix."""
@@ -269,24 +269,34 @@ class Trial(Config):
 
         container.run(args=args)
 
-    def outcome(self, host_compare=""):
-        """Evaluate the trial outcome model.
-        
+    def outcome(self, reference_trial=None):
+        """Evaluate trial outcome model and perform optional trial comparison.
+
         Args:
-            local_compare (string): path to another trial to run a trial comparison.
+            reference_trial: a path pointing to the reference trial.
         """
         container = create_container(trial_outcome_model,
                                      container_path=self.container_path,
                                      runner=self.runner)
         container.bind(self.dir, trial_path)
-        # Need to bind a second trial path and add flag for R script if doing a comparison report
-        if host_compare:
-            local_compare="/comp_trial"
-            container.bind(host=host_compare,local=local_compare)
-            args = f'--compare {local_compare}'
-            container.run(args=args)
+
+        if reference_trial is None:
+            return container.run()
+
+        reference_trial = str(pathlib.Path(reference_trial).resolve())
+
+        if is_bind_path(reference_trial):
+            host, local = reference_trial.split(':', maxsplit=1)
         else:
-            container.run()
+            host = reference_trial
+            local = "/comp_trial"
+
+        # The reference path is bound and the container responsible for
+        # performing the trial outcome is notified of its presence by passing
+        # along `--compare`.
+        container.bind(host=host, local=local)
+        args = f'--compare {local}'
+        container.run(args=args)
 
     def run(self, skip_completed=False):
         """Runs the full trial simulation.

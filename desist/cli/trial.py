@@ -330,8 +330,11 @@ def list_key(trial, key, n):
 @click.argument('trial', type=click.Path(exists=True))
 @click.option('-c',
               '--compare',
-              type=click.Path(exists=True),
-              help="Compare results to another trial.")
+              type=click.Path(file_okay=True),
+              help="""Compare results to another trial. If the path is given as
+              a bind mount: `source:destination` the `source` is mounted to
+              `destination` inside the container. Otherwise, the path is
+              mounted to `/comp_trial` inside the container environment.""")
 @click.option(
     '-x',
     '--dry',
@@ -341,8 +344,14 @@ def list_key(trial, key, n):
 def outcome(trial, compare, dry):
     """Evaluates the trial outcome model for TRIAL.
 
-    This invokes the defined `trial_outcome_model` for the trial located
-    at the provided TRIAL path on the file system.
+    This invokes the defined ``trial_outcome_model`` for the trial located at
+    the provided TRIAL path on the file system. If the ``-c`` or ``--compare``
+    flag is passed the trial will be compared with the provided reference
+    trial.
+
+    Unless the path can be interpreted as a bind mount, i.e.
+    ``source:destination``, the provided path is assumed to be on the host and
+    is mounted to ``/comp_trial`` within the container's environment.
     """
     # extract the runner and configuration
     runner = new_runner(dry)
@@ -352,12 +361,7 @@ def outcome(trial, compare, dry):
     trial = Trial.read(config, runner=runner)
     assert_container_path(trial)
 
-    # evaluate the outcome model
-    if (compare):
-        trial.outcome(host_compare=compare)
-    else:
-        trial.outcome()
-            
+    trial.outcome(reference_trial=compare)
 
 
 @trial.command()
