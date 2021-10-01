@@ -1,6 +1,11 @@
 Creating containers
 ===================
 
+Although containers can be created with Docker or Singularity directly,
+``desist`` provides a wrapper command ``desist container create`` that wraps
+calls to Docker or Singularity to create containers. The following code snippets
+illustrate how the create and remove these containers using ``desist``.
+
 .. code-block:: bash
 
     # a directory containing a `Dockerfile` and `singularity.def`
@@ -23,5 +28,5 @@ Creating containers
     docker image rm ... # remove specific image
     docker system prune # remove unsused data (all data!)
 
-    # cleaning up Singularity containers
+    # cleaning up all Singularity containers
     rm /path/to/containers/*.sif

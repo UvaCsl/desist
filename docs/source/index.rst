@@ -73,9 +73,42 @@ given in :doc:`reference`.
    tutorial-trials
    tutorial-vvuq
    architecture
+   pipelines
    reference
    cmd
 
+Acknowledgements and citation
+-----------------------------
+
+When using ``desist`` for your research project, please cite: ``des-ist: A
+Simulation Framework to Streamline Event-Based In Silico Trials`` (DOI:
+``10.1007/978-3-030-77967-2_53``). The corresponding ``.bib`` file is provided
+in ``references.bib``.
+
+.. code-block:: bash
+
+   @InProceedings{10.1007/978-3-030-77967-2_53,
+   author="van der Kolk, Max
+   and Miller, Claire
+   and Padmos, Raymond
+   and Azizi, Victor
+   and Hoekstra, Alfons",
+   editor="Paszynski, Maciej
+   and Kranzlm{\"u}ller, Dieter
+   and Krzhizhanovskaya, Valeria V.
+   and Dongarra, Jack J.
+   and Sloot, Peter M.A.",
+   title="des-ist: A Simulation Framework to Streamline Event-Based In Silico Trials",
+   booktitle="Computational Science -- ICCS 2021",
+   year="2021",
+   publisher="Springer International Publishing",
+   address="Cham",
+   pages="648--654",
+   isbn="978-3-030-77967-2"
+   }
+
+Please make sure to properly acknowledge ``GNU Parallel`` or ``QCG-PilotJob``
+depending on your usage.
 
 Indices and tables
 ==================
