@@ -126,7 +126,7 @@ html_sidebars = {
     ]
 }
 
-html_logo = "_static/logo.png"
+html_logo = "_static/logo.svg"
 
 # document constructors
 autoclass_content = 'both'
