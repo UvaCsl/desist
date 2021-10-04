@@ -1,5 +1,7 @@
 # `desist`: Discrete Event Simulation for In Silico Trials
 
+![desist](./docs/source/_static/logo.svg?raw=true "Logo")
+
 `desist` manages running large-scale simulation pipelines for event-based *in
 silico* clinical trials, where it supports users in creating, running, and
 analysing *in silico* trials. The application assumes the underlying simulation
