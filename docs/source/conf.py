@@ -62,9 +62,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'In Silico Clinical Trial Environment'
-copyright = '2019, Victor Azizi'
-author = 'Victor Azizi'
+project = 'desist'
+copyright = '2021, Max van der Kolk'
+author = 'Max van der Kolk, Claire Miller, Victor Azizi'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
