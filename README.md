@@ -87,3 +87,11 @@ depending on your usage:
   [citation notice](https://git.savannah.gnu.org/cgit/parallel.git/tree/doc/citation-notice-faq.txt)
 - [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob/):
   [license](https://github.com/vecma-project/QCG-PilotJob/blob/develop/LICENSE)
+
+Publications using `desist`:
+
+- [`Uncertainty Quantification of Coupled 1D Arterial Blood Flow and 3D Tissue
+  Perfusion Models Using the INSIST
+  Framework`](https://link.springer.com/chapter/10.1007%2F978-3-030-77980-1_52)
+- [`In silico trials for treatment of acute ischemic stroke: Design and
+  implementation`](https://doi.org/10.1016/j.compbiomed.2021.104802)
