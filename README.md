@@ -25,13 +25,20 @@ publication](#acknowledgements).
 
 ## Installation
 
-The package requires a recent [Python](https://www.python.org) version `>=3.8`. For a (local) development
-version it is recommended to setup the package within a (local) [virtual
-environment](https://docs.python.org/3/tutorial/venv.html). Then, to install the
-package within the virtual environment:
+The package requires a recent [Python](https://www.python.org) version `>=3.8`.
+For a (local) development version it is recommended to setup the package within
+a (local) [virtual environment](https://docs.python.org/3/tutorial/venv.html).
+Then, to install the package within the virtual environment:
 
 ```bash
 pip install -e .
+```
+
+To enable the [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob/)
+runner you can include the `[qcg]` feature:
+
+```bash
+pip install -e .[qcg]
 ```
 
 To verify the installation, run `desist --help` from the virtual environment and
