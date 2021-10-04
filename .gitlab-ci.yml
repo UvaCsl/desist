@@ -51,3 +51,13 @@ lint_docs:
   stage: docs
   script:
     - tox -e pydocstyle
+
+create_docs:
+  stage: docs
+  needs: [lint_isct, lint_docs]
+  script:
+    - pip install -e .[dev]
+    - sphinx-build -b html docs/source/ docs/build/
+  artifacts:
+    paths:
+      - docs/build/
