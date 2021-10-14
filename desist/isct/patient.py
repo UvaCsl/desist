@@ -172,5 +172,7 @@ class LowStoragePatient(Patient):
 
     def run(self):
         """Cleans simulation output after all models are completed."""
-        super().run()
-        self.file_cleaner.clean_files(self.dir)
+        try:
+            super().run()
+        finally:
+            self.file_cleaner.clean_files(self.dir)
