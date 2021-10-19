@@ -64,7 +64,7 @@ class API(abc.ABC):
 
         Returns ``None`` if no previous event is present.
         """
-        if (eid := self.event_id - 1) > 0:
+        if (eid := self.event_id - 1) >= 0:
             return self.events[eid]
 
     @property
