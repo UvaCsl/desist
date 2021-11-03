@@ -1,23 +1,12 @@
 # Changelog
 
-2021/06/22
+2021/11/03
 
-- The environment is passed into the `LocalRunner`, which is also forwarded by
-  `sudo` through passing the `-E` flag.
-- Generic files and/or directories place inside a trial directory are ignored
-  and not attempted to be processed as patients in `trial run` and similar
-  commands.
+- Add `desist time [LOG]` to extract elapsed time between model evaluations.
 
-2021/06/30
+2021/08/31
 
-- Add support for [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob)
-  as a runner for the trials.
-- Add the `--qcg` flag to invoke the `QCGRunner` to run trials.
-
-2021/07/02
-
-- Change default archive filename `trial_data.RData` to
-  `trial_outome_data.RData`.
+- `**kwargs` are forwarded to API initialisation in `event_handler`.
 
 2021/07/12
 
@@ -42,6 +31,21 @@
   function.
 - Add `Runner.wait()` function to avoid type assertion in `QCGRunner.run()`.
 
-2021/08/31
+2021/07/02
 
-- `**kwargs` are forwarded to API initialisation in `event_handler`.
+- Change default archive filename `trial_data.RData` to
+  `trial_outome_data.RData`.
+
+2021/06/30
+
+- Add support for [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob)
+  as a runner for the trials.
+- Add the `--qcg` flag to invoke the `QCGRunner` to run trials.
+
+2021/06/22
+
+- The environment is passed into the `LocalRunner`, which is also forwarded by
+  `sudo` through passing the `-E` flag.
+- Generic files and/or directories place inside a trial directory are ignored
+  and not attempted to be processed as patients in `trial run` and similar
+  commands.

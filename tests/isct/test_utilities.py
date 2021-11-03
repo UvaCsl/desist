@@ -5,6 +5,7 @@ import pytest
 from desist.isct.utilities import OS, MAX_FILE_SIZE
 from desist.isct.utilities import CleanFiles, FileCleaner
 from desist.isct.utilities import is_bind_path
+from desist.isct.utilities import extract_simulation_times
 
 
 def create_dummy_file(path, filesize):
@@ -85,3 +86,23 @@ def test_is_bind_path(tmpdir, path, expected):
     path = pathlib.Path(tmpdir).joinpath(path)
     os.makedirs(path, exist_ok=True)
     assert not is_bind_path(path), "Should always fail if the file is exists"
+
+
+timing_test_log = """2021-11-03 07:18:51,274 singularity run
+2021-11-03 07:28:16,458 singularity run
+2021-11-03 07:28:16,776 singularity run
+2021-11-03 07:32:10,684 singularity run
+2021-11-03 07:32:12,387 singularity run
+2021-11-03 07:36:15,743 singularity run
+2021-11-03 07:39:33,346 singularity run
+"""
+
+
+def test_extract_simulation_times(tmpdir):
+    logfile = pathlib.Path(tmpdir).joinpath('test.log')
+    logfile.write_text(timing_test_log)
+
+    timings = extract_simulation_times(logfile).splitlines()
+    assert len(timings) == len(timing_test_log.splitlines())
+    assert "2021-11-03 07:18:51" in timings[0] and "Elapsed" in timings[0]
+    assert "2021-11-03 07:36:15" in timings[-1] and "0:03:18" in timings[-1]

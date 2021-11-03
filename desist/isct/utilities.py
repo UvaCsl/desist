@@ -1,5 +1,7 @@
 """General utility routines for ``isct``."""
 
+import click
+from datetime import datetime
 import enum
 import logging
 import os
@@ -185,3 +187,33 @@ def is_bind_path(path) -> bool:
         return False
 
     return sum(1 for _ in filter(lambda x: x == ':', str(path))) == 1
+
+
+def extract_simulation_times(logfile):
+    """Returns a newline-separated string of (start, elapsed) times.
+
+    The starting timestamps are extracted from the logfile based on the
+    starting time stamp at which the Singularity/Docker container was invoked.
+    The elapsed times follow then from the difference between consecutive
+    starting time.
+    """
+    def is_simulation_start(string: str):
+        """Return True if the line started a Singularity/Docker run-command."""
+        string = string.lower()
+        return ('singularity run' in string) or ('docker run') in string
+
+    def to_timestamp(string):
+        """Convert a log-line to its starting time as a datetime entry."""
+        time_stamp_format = '%Y-%m-%d %H:%M:%S'
+        return datetime.strptime(string[0:string.find(',')], time_stamp_format)
+
+    # Note: requires `click.open_file` to account for passing a dash (`-`) as
+    # the filename specifier to read from `stdin`.
+    with click.open_file(logfile, 'r') as log:
+        starts = list(map(to_timestamp, filter(is_simulation_start, log)))
+
+    timings = [f'{starts[0]}\tElapsed (HH:MM:SS)']
+    for start, stop in zip(starts[:-1], starts[1:]):
+        timings.append(f'{start}\t{stop - start}')
+
+    return "\n".join(timings)

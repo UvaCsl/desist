@@ -7,6 +7,7 @@ from logging.handlers import RotatingFileHandler
 from .container import container
 from .patient import patient
 from .trial import trial
+from .time import time
 
 
 @click.group()
@@ -48,3 +49,4 @@ def cli(verbose, log):
 cli.add_command(container)
 cli.add_command(patient)
 cli.add_command(trial)
+cli.add_command(time)
