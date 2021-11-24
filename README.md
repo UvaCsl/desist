@@ -9,25 +9,25 @@ events are implemented in *containerised* environments, i.e. using either
 [Docker](https://www.docker.com/) or
 [Singularity](https://sylabs.io/singularity/), and coupled using the provided
 [`EventHandler` API](desist/eventhandler/api.py). `desist` implements various
-`Runner`s to evaluate the simulations---either sequentially or (massively)
-parallel---on a variety of environments: ranging from local machines to
-cloud-computing and HPC architectures, where [`GNU
+[`Runner`](desist/isct/runner.py)s to evaluate the simulations---either
+sequentially or (massively) parallel---on a variety of environments: ranging
+from local machines to cloud-computing and HPC architectures, where [`GNU
 Parallel`](https://www.gnu.org/software/parallel/) and/or
 [`QCG-PilotJob`](https://github.com/vecma-project/QCG-PilotJob/) are leveraged
 for scheduling, distribution, and parallelisation of the individual simulation
 events.
 
 The `desist` packages was originally developed to manage the *in silico*
-simulations pipelines within the [INSIST](https://www.insist-h2020.eu/) project
+simulations pipelines within the [INSIST project](https://www.insist-h2020.eu/)
 and later made publicly available for extensions to other event-based *in
 silico* simulation pipelines. For more information, see the [accompanying
 publication](#acknowledgements).
 
 ## Installation
 
-The package requires a recent [Python](https://www.python.org) version `>=3.8`.
-For a (local) development version it is recommended to setup the package within
-a (local) [virtual environment](https://docs.python.org/3/tutorial/venv.html).
+The package requires a recent [Python](https://www.python.org) version
+(`>=3.8`). For a development version it is recommended to setup the package
+within a [virtual environment](https://docs.python.org/3/tutorial/venv.html).
 Then, to install the package within the virtual environment:
 
 ```bash
@@ -56,6 +56,21 @@ documentation](https://insilicostroketrial.eu/insist_docs/) (#18) or create the
 documentation locally using `make docs` or browsing the (raw) source files in
 `docs/source/`.
 
+## Development and contribution
+
+Contributions to `desist` are welcomed and making pull requests is encouraged.
+In case you are unsure about your feature, feel free to open an issue first for
+discussion, before writing/submitting your pull request.
+
+During development you might want to install the additional dependencies for
+testing purposes, through `pip install -e .[dev]`. The test suite can be
+evaluated through [`pytest`](https://docs.pytest.org/).
+
+## Support
+
+For bugs, issues, or other problems experienced with `desist` please open an
+issue and we will try to help to resolve them.
+
 ## Acknowledgements
 
 When using `desist` for your research project, please cite: [`des-ist: A
@@ -75,6 +90,8 @@ depending on your usage:
 
 Publications using `desist`:
 
+- [`des-ist: A Simulation Framework to Streamline Event-Based In Silico
+  Trials`](https://link.springer.com/chapter/10.1007/978-3-030-77967-2_53)
 - [`Uncertainty Quantification of Coupled 1D Arterial Blood Flow and 3D Tissue
   Perfusion Models Using the INSIST
   Framework`](https://link.springer.com/chapter/10.1007%2F978-3-030-77980-1_52)
