@@ -27,6 +27,11 @@ def cli(verbose, log):
     This command-line utility supports evaluation of in silico simulation
     of virtual patient cohorts. The utility provides commands to create,
     run, and analyse in silico trials.
+
+    For more information, please refer to the accompanying publication
+    available at:
+    https://link.springer.com/chapter/10.1007/978-3-030-77967-2_53.
+
     """
     # initialise the logging on `DEBUG` level without any handlers
     logging.basicConfig(level=logging.DEBUG, handlers=[])
