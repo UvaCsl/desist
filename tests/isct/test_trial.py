@@ -8,6 +8,7 @@ from desist.isct.runner import Logger
 from desist.isct.utilities import OS, CleanFiles
 
 from .test_runner import DummyRunner
+from .test_utilities import default_events
 
 
 def test_trial(tmpdir):
@@ -159,6 +160,7 @@ def test_trial_run(mocker, tmpdir, trial_cls, platform, clean_files,
     trial = trial_cls(tmpdir,
                       sample_size,
                       runner=runner,
+                      config={'events': default_events.to_dict()},
                       clean_files=clean_files)
 
     trial.create()

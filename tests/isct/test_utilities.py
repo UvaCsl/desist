@@ -6,6 +6,65 @@ from desist.isct.utilities import OS, MAX_FILE_SIZE
 from desist.isct.utilities import CleanFiles, FileCleaner
 from desist.isct.utilities import is_bind_path
 from desist.isct.utilities import extract_simulation_times
+from desist.isct.events import Event, Events
+from desist.isct.config import Config
+
+
+baseline_event = Event({
+    'event':
+    'baseline',
+    'models': [{
+        'label': '1d-blood-flow',
+    }, {
+        'label': 'perfusion_and_tissue_damage',
+        'type': 'PERFUSION'
+    }]
+})
+
+stroke_event = Event({
+    'event':
+    'stroke',
+    'models': [{
+        'label': 'place_clot',
+    }, {
+        'label': '1d-blood-flow',
+    }, {
+        'label': 'perfusion_and_tissue_damage',
+        'type': 'PERFUSION'
+    }]
+})
+
+treatment_event = Event({
+    'event':
+    'treatment',
+    'models': [{
+        'label': 'simple-thrombolysis',
+    }, {
+        'label': 'thrombectomy',
+    }, {
+        'label': '1d-blood-flow',
+    }, {
+        'evaluate_infarct_estimates': True,
+        'label': 'perfusion_and_tissue_damage',
+        'type': 'PERFUSION'
+    }, {
+        'label': 'perfusion_and_tissue_damage',
+        'type': 'TISSUE-HEALTH'
+    }, {
+        'label': 'patient-outcome-model'
+    }]
+})
+
+default_events = Events([baseline_event, stroke_event, treatment_event])
+default_labels = {k: k.replace("_", "-") for k in default_events.labels}
+default_config = {'events': default_events.to_dict(), 'labels': default_labels}
+
+
+def default_criteria_file(path):
+    config_path = pathlib.Path(path).joinpath('config.yml')
+    config = Config(config_path, default_config)
+    config.write()
+    return str(config.path)
 
 
 def create_dummy_file(path, filesize):
