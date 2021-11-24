@@ -5,13 +5,18 @@ with open("README.md", "r") as fh:
 
 _desist_packages = find_packages()
 
-_dev = [
+# Sufficient to evaluate `pytest`.
+_test = ['mock', 'pytest', 'pytest-cov', 'pytest-mock']
+
+# Additional requirements for formatting and doc generation.
+_dev = _test + [
     'yapf', 'tox', 'flake8', 'pydocstyle', 'numpy', 'sphinx',
     'sphinx_rtd_theme', 'sphinxcontrib-napoleon', 'sphinx_click'
 ]
-_test = ['mock', 'pytest', 'pytest-cov', 'pytest-mock']
+
 _vvuq = ['easyvvuq']
-_qcg =  ['qcg-pilotjob']
+_qcg = ['qcg-pilotjob']
+
 _all = _dev + _test + _vvuq + _qcg
 
 setup(
