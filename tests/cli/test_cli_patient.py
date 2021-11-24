@@ -6,9 +6,10 @@ import pytest
 from desist.cli.patient import run, reset
 from desist.cli.trial import create
 from desist.isct.utilities import OS, MAX_FILE_SIZE
-from desist.isct.events import default_events
 from desist.isct.trial import Trial, trial_config
 
+from ..isct.test_utilities import default_criteria_file
+from ..isct.test_utilities import default_events
 from ..isct.test_runner import DummyRunner
 
 
@@ -23,7 +24,13 @@ def test_patient_run(mocker, tmpdir, platform, num_patients):
     with runner.isolated_filesystem():
         result = runner.invoke(
             create,
-            [str(path), '-x', '-n', str(num_patients)])
+            [
+                str(path), '-x', '-n', str(num_patients),
+                '-c', default_criteria_file(tmpdir)
+            ]
+        )
+        print('hello')
+        print(result)
         assert result.exit_code == 0
 
         trial = Trial.read(path.joinpath(trial_config))
@@ -91,7 +98,11 @@ def test_patient_run_singularity(mocker, tmpdir, platform):
         os.makedirs(singularity)
         result = runner.invoke(
             create,
-            [str(path), '-x', '-s', str(singularity)])
+            [
+                str(path), '-x', '-s', str(singularity),
+                '-c', default_criteria_file(tmpdir)
+            ]
+        )
         assert result.exit_code == 0
 
         trial = Trial.read(path.joinpath(trial_config))

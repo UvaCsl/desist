@@ -4,7 +4,9 @@ from click.testing import CliRunner
 from desist.eventhandler.api import API
 from desist.eventhandler.eventhandler import event_handler
 from desist.isct.patient import Patient
-from desist.isct.events import baseline_event, stroke_event, treatment_event
+from ..isct.test_utilities import baseline_event, stroke_event, treatment_event
+from ..isct.test_utilities import default_config
+
 
 
 class TAPI(API):
@@ -34,7 +36,7 @@ def test_eventhandler_noop():
 @pytest.mark.parametrize('cmd', ['event', 'example', 'test'])
 def test_eventhandler(tmpdir, cmd):
     runner = CliRunner()
-    patient = Patient(tmpdir, idx=0, prefix='test')
+    patient = Patient(tmpdir, idx=0, prefix='test', config=default_config)
     path = patient.path
 
     with runner.isolated_filesystem():
@@ -53,7 +55,7 @@ def test_eventhandler(tmpdir, cmd):
 
 @pytest.mark.parametrize('model_id', [0, 1])
 def test_api_class(tmpdir, model_id):
-    patient = Patient(tmpdir, idx=0, prefix='test')
+    patient = Patient(tmpdir, idx=0, prefix='test', config=default_config)
     patient.write()
 
     api = TAPI(patient=patient.path, model_id=model_id)
@@ -65,7 +67,7 @@ def test_api_class(tmpdir, model_id):
 
 
 def test_api_helpers(tmpdir):
-    patient = Patient(tmpdir, idx=0, prefix='test')
+    patient = Patient(tmpdir, idx=0, prefix='test', config=default_config)
     patient.write()
 
     api = TAPI(patient=patient.path, model_id=0)

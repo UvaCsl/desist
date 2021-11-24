@@ -1,5 +1,13 @@
 # Changelog
 
+2021/11/24
+
+- Remove `default_events` and `default_labels` from default `Patient`
+  initialisation. The event and label mappings _should_ now be provided through
+  a "criteria file" using the `-c` or `--criteria` arguments. The default event
+  and label specifications are kept in `tests.isct.test_utilities` for testing
+  purposes.
+
 2021/11/03
 
 - Add `desist time [LOG]` to extract elapsed time between model evaluations.

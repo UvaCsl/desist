@@ -5,6 +5,7 @@ import pytest
 from desist.isct.utilities import OS, CleanFiles
 from desist.isct.patient import Patient, patient_config, LowStoragePatient
 from .test_runner import DummyRunner
+from ..isct.test_utilities import default_config
 
 
 def test_patient(tmpdir):
@@ -81,7 +82,7 @@ def test_patient_create(tmpdir):
 
 def test_patient_run(tmpdir):
     path = pathlib.Path(tmpdir)
-    patient = Patient(path, runner=DummyRunner())
+    patient = Patient(path, runner=DummyRunner(), config=default_config)
     patient.create()
 
     runner = DummyRunner()
@@ -103,7 +104,9 @@ def test_patient_failed_event(mocker, tmpdir, platform):
                  return_value=platform)
 
     path = pathlib.Path(tmpdir)
-    patient = Patient(path, runner=DummyRunner(write_config=True))
+    patient = Patient(path,
+                      runner=DummyRunner(write_config=True),
+                      config=default_config)
     patient.create()
 
     # mock runner to succeed

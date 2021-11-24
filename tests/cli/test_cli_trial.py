@@ -10,7 +10,8 @@ from desist.isct.config import Config
 from desist.isct.trial import Trial, trial_config
 from desist.isct.utilities import OS, MAX_FILE_SIZE, CleanFiles
 
-from tests.isct.test_utilities import create_dummy_file
+from tests.isct.test_utilities import create_dummy_file, default_criteria_file
+
 
 # FIXME: `dry` run does still create all directories though...
 
@@ -173,7 +174,9 @@ def test_trial_run(mocker, tmpdir, keep_files, platform, num, parallel):
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-n', num, '-x'])
+        result = runner.invoke(create, [
+            str(path), '-n', num, '-x', '-c', default_criteria_file(tmpdir)
+        ])
         assert result.exit_code == 0
 
         cmd = [str(path)]
@@ -258,7 +261,10 @@ def test_trial_run_missing_config(mocker, tmpdir, platform, num, parallel):
     runner = CliRunner()
     path = pathlib.Path(tmpdir).joinpath('test')
     with runner.isolated_filesystem():
-        result = runner.invoke(create, [str(path), '-n', num, '-x'])
+        result = runner.invoke(create, [
+            str(path), '-n', num, '-x', '-c', default_criteria_file(tmpdir)
+            ]
+        )
         assert result.exit_code == 0
 
         cmd = [str(path)]

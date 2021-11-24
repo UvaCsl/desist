@@ -8,7 +8,7 @@ import pathlib
 from .config import Config
 from .container import create_container
 from .runner import Logger
-from .events import Events, default_events, default_labels
+from .events import Events
 from .utilities import FileCleaner, CleanFiles
 
 patient_config = 'patient.yml'
@@ -46,8 +46,8 @@ class Patient(Config):
         defaults = {
             'prefix': prefix,
             'id': idx,
-            'events': default_events.to_dict(),
-            'labels': default_labels,
+            'events': {},
+            'labels': {},
             'completed': False,
         }
         config = {**defaults, **config}
