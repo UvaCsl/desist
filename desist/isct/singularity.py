@@ -1,4 +1,5 @@
 """:class:`~isct.container.Container` implemementation for ``Singularity``."""
+import os
 import pathlib
 
 from .container import Container
@@ -50,7 +51,20 @@ class Singularity(Container):
         From the Singularity documentation: "use minimal ``/dev`` and empty
         other directories (e.g. ``/tmp`` and ``$HOME) instead of sharing
         filesytems from your host."
+
+        On some systems running with ``containall`` might be problematic, for
+        instance due to too little temporary storage available. The flag can be
+        disabled by setting ``SINGULARITY_CONTAINALL=0`` in the running
+        environment, which will disable the ``containall`` flag.
+
+        For example, the variable can be set for a single invocation as:
+
+        >>> SINGULARITY_CONTAINALL=0 desist patient run ...
         """
+
         flags = '--containall'
+        if int(os.environ.get("SINGULARITY_CONTAINALL", -1)) == 0:
+            flags = ''
+
         cmd = f'singularity run {flags} {self.volumes} {self.container} {args}'
         return self.runner.run(cmd.split(), check=True)
